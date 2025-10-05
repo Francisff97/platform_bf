@@ -110,7 +110,7 @@
 
 
   {{-- Packs --}}
-  <section class="max-w-6xl mx-auto mt-[100px]">
+  <section class="max-w-6xl mx-auto my-[100px]">
     <h2 class="text-2xl font-bold mb-6">Our packs</h2>
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
       <div class="md:col-span-2 row-span-2 h-full">
