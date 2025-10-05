@@ -1,5 +1,7 @@
-// database/seeders/OrderSeeder.php
 <?php
+namespace Database\Seeders;
+
+// database/seeders/OrderSeeder.php
 
 use Illuminate\Database\Seeder;
 use App\Models\Order;
