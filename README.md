@@ -1,5 +1,5 @@
 # Laravel Skeleton (Packs, Services, Admin, Public Pages)
-
+:)
 Questo zip contiene **solo i file applicativi** (controller, model, migrazioni, viste, rotte, seeder)
 da **copiare in un progetto Laravel nuovo** (Laravel 11) con Breeze + Spatie Permission.
 
