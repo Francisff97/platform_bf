@@ -1,0 +1,28 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    public function up(): void {
+        Schema::table('site_settings', function (Blueprint $table) {
+            $table->string('discord_server_id')->nullable();
+            $table->string('discord_announcements_channel_id')->nullable();
+            $table->string('discord_feedback_channel_id')->nullable();
+            $table->boolean('discord_news_enabled')->default(false);     // mostra pagina News
+            $table->boolean('discord_feedback_enabled')->default(false); // mostra pagina Feedback
+        });
+    }
+    public function down(): void {
+        Schema::table('site_settings', function (Blueprint $table) {
+            $table->dropColumn([
+                'discord_server_id',
+                'discord_announcements_channel_id',
+                'discord_feedback_channel_id',
+                'discord_news_enabled',
+                'discord_feedback_enabled',
+            ]);
+        });
+    }
+};
