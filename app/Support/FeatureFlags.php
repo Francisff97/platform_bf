@@ -140,29 +140,54 @@ class FeatureFlags
      *
      *  @param string|null $slug  ← NEW: se passato, legge quei flag
      */
-    public static function all(?string $slug = null): array
-    {
-        $defaults = self::defaults();
-        $locals   = self::localFromEnv($defaults);
+    // App\Support\FeatureFlags
 
-        if (self::forceLocal()) {
-            return $locals;
-        }
+public static function cacheKey(?string $slug = null): string
+{
+    $slug = $slug ?: self::slug();
+    return "features.remote.$slug";
+}
 
-        $slug     = self::resolveSlug($slug);
-        $cacheKey = "features.remote.$slug";
+public static function warm(?string $slug = null): array
+{
+    $defaults = self::defaults();
+    $locals   = self::localFromEnv($defaults);
+    $slug     = $slug ?: self::slug();
+    $cacheKey = self::cacheKey($slug);
 
-        try {
-            // usiamo rememberForever per evitare scadenze casuali
-            return Cache::rememberForever($cacheKey, function () use ($defaults, $locals, $slug) {
-                $remote = self::fetchRemoteFor($slug, $defaults);
-                return $remote ?? $locals;
-            });
-        } catch (\Throwable $e) {
-            // es. cache driver DB senza tabella → non fermarti
-            return $locals;
-        }
+    $remote = self::fetchRemoteFor($slug, $defaults);
+    $final  = $remote ?? $locals;
+
+    \Cache::forever($cacheKey, $final);
+    return $final;
+}
+
+/**
+ * PRIORITÀ:
+ *  - se FEATURES_FORCE_LOCAL=true ⇒ defaults + ENV
+ *  - altrimenti: REMOTO (cache forever) per LO SLUG PASSATO (o quello “corrente”)
+ */
+public static function all(?string $slug = null): array
+{
+    $defaults = self::defaults();
+    $locals   = self::localFromEnv($defaults);
+
+    if (self::forceLocal()) {
+        return $locals;
     }
+
+    $slug     = $slug ?: self::slug();
+    $cacheKey = self::cacheKey($slug);
+
+    try {
+        return \Cache::rememberForever($cacheKey, function () use ($defaults, $locals, $slug) {
+            $remote = self::fetchRemoteFor($slug, $defaults);
+            return $remote ?? $locals;
+        });
+    } catch (\Throwable $e) {
+        return $locals;
+    }
+}
 
     /** Helper singolo flag (ora accetta lo slug) */
     public static function enabled(string $key, ?string $slug = null): bool
@@ -189,11 +214,7 @@ class FeatureFlags
     /* ----------------------------------------------------------------------
      |  Cache helpers
      * --------------------------------------------------------------------*/
-    public static function cacheKey(?string $slug = null): string
-    {
-        $slug = self::resolveSlug($slug);
-        return "features.remote.$slug";
-    }
+    
 
     /** Invalida la cache dei flags per uno slug (o quello corrente) */
     public static function clearCache(?string $slug = null): void
@@ -205,19 +226,7 @@ class FeatureFlags
      * Warm esplicito: ricarica da remoto e salva forever.
      * Ritorna i valori salvati in cache.
      */
-    public static function warm(?string $slug = null): array
-    {
-        $defaults = self::defaults();
-        $locals   = self::localFromEnv($defaults);
-        $slug     = self::resolveSlug($slug);
-        $cacheKey = self::cacheKey($slug);
-
-        $remote = self::fetchRemoteFor($slug, $defaults);
-        $final  = $remote ?? $locals;
-
-        Cache::forever($cacheKey, $final);
-        return $final;
-    }
+    
     // in App\Support\FeatureFlags
 public static function currentSlug(): string
 {
