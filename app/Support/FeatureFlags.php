@@ -218,4 +218,19 @@ class FeatureFlags
         Cache::forever($cacheKey, $final);
         return $final;
     }
+    // in App\Support\FeatureFlags
+public static function currentSlug(): string
+{
+    // usa la stessa logica della resolveSlug ma con qualche fonte in più
+    $r = request();
+
+    $fromRoute = $r?->route('slug');           // /admin/{slug}
+    $fromQuery = $r?->query('installation');   // ?installation=...
+    $fromDb    = optional(\App\Models\SiteSetting::first())->flags_installation_slug;
+    $fromEnv   = env('FLAGS_INSTALLATION_SLUG') ?: env('FLAGS_SLUG') ?: config('app.slug');
+
+    $slug = $fromRoute ?? $fromQuery ?? $fromDb ?? $fromEnv ?? 'demo';
+
+    return strtolower(trim((string) $slug));
+}
 }
