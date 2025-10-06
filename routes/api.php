@@ -11,27 +11,35 @@ use App\Support\FeatureFlags;
 Route::match(['GET','POST'], '/discord/config', [DiscordController::class, 'config']);
 Route::match(['GET','POST'], '/discord/incoming', [DiscordWebhookController::class, 'incoming']);
 Route::match(['GET','POST'], '/flags/refresh', function (\Illuminate\Http\Request $r) {
-    $raw    = $r->getContent();                    // corpo *grezzo* così come arriva
-    $sig    = strtolower($r->header('X-Signature', '')); // normalizziamo in lowercase
-    $secret = env('FLAGS_SIGNING_SECRET','');
+    // 1) leggi raw body, con fallback php://input (alcuni stack danno stringa vuota con HTTP/2)
+    $raw = $r->getContent();
+    if ($raw === '' || $raw === null) {
+        $raw = @file_get_contents('php://input') ?: '';
+    }
 
-    // DEBUG TEMPORANEO (sicuro: non stampa il secret)
+    // 2) header firma normalizzato
+    $sig    = strtolower($r->header('X-Signature', ''));
+    // 3) secret da config (fallback env/getenv per sicurezza anche con config:cache)
+    $secret = (string) (config('flags.signing_secret')
+        ?? env('FLAGS_SIGNING_SECRET')
+        ?? getenv('FLAGS_SIGNING_SECRET')
+        ?? '');
+
+    // LOG DIAGNOSTICO (temporaneo)
     Log::warning('[flags-refresh] IN', [
-        'len'        => strlen($raw),
-        'starts'     => substr($raw, 0, 40),
-        'sigHeader'  => substr($sig, 0, 12),
-        'secretLen'  => strlen(trim($secret)),
+        'len'          => strlen($raw),
+        'starts'       => substr($raw, 0, 40),
+        'sigHeader'    => substr($sig, 0, 12),
+        'secretLen'    => strlen(trim($secret)),
+        'ctLenHeader'  => $r->header('content-length'),
+        'allHeaders'   => $r->headers->all(),
     ]);
 
     $calc = hash_hmac('sha256', $raw, $secret);
-
-    Log::warning('[flags-refresh] CALC', [
-        'calc' => substr($calc, 0, 12),
-    ]);
+    Log::warning('[flags-refresh] CALC', ['calc' => substr($calc, 0, 12)]);
 
     $ok = $secret && hash_equals($calc, $sig);
     if (!$ok) {
-        // faccio anche eco (per te) delle 2 firme, solo prefisso
         return response()->json([
             'ok'        => false,
             'error'     => 'bad_signature',
@@ -54,10 +62,7 @@ Route::match(['GET','POST'], '/flags/refresh', function (\Illuminate\Http\Reques
         $invalidated[$s] = $new;
     }
 
-    return [
-        'ok'          => true,
-        'invalidated' => array_keys($invalidated),
-        'values'      => $invalidated,
-    ];
+    return ['ok'=>true, 'invalidated'=>array_keys($invalidated), 'values'=>$invalidated];
 });
+
 
