@@ -92,9 +92,18 @@
         ['label'=>'Google Analytics','route'=>'admin.analytics.edit',   'match'=>['admin.analytics.*']],
       ];
 
-      $features = \App\Support\FeatureFlags::all();
-      // Mostra il box Add-ons se almeno un flag è true e se addons (master) è on
-      $addonsEnabled = (!empty($features['addons'])) && collect($features)->contains(true);
+       // scegli tu da dove ricavare lo slug:
+  // 1) fisso (test)
+  $slug = 'dnln';
+
+  // 2) da ENV (se lo preferisci)
+  // $slug = env('FLAGS_INSTALLATION_SLUG') ?: env('FLAGS_SLUG') ?: 'demo';
+
+  // 3) da DB / impostazioni sito (consigliato in produzione)
+  // $slug = optional(\App\Models\SiteSetting::first())->flags_installation_slug ?: 'demo';
+
+  $features = \App\Support\FeatureFlags::all($slug);
+  $addonsEnabled = (!empty($features['addons'])) && collect($features)->contains(true);
     @endphp
 
     <!-- Aggiungo solo un id per pilotare la sidebar da JS -->
