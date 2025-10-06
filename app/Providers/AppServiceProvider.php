@@ -35,7 +35,7 @@ class AppServiceProvider extends ServiceProvider
         });
         view()->composer('*', function ($view) {
     $site = \App\Models\SiteSetting::first();
-    $view->with('siteDiscord', $site->discord_link);
+    $view->with('siteDiscord', $site?->discord_link ?? null);
 });
 
         // Direttiva @money($cents) o @money($cents, 'EUR')
