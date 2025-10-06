@@ -1,4 +1,3 @@
-
 @props(['title' => 'Admin Dashboard'])
 
 <!DOCTYPE html>
@@ -43,14 +42,24 @@
   @else
     <header class="sticky top-0 z-50 border-b bg-white/80 backdrop-blur dark:bg-gray-900/70 dark:border-gray-800">
       <div class="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <a href="{{ route('home') }}" class="flex items-center gap-2">
-          @if($s?->logo_light_path || $s?->logo_dark_path)
-            <img src="{{ $s?->logo_light_path ? Storage::url($s->logo_light_path) : '' }}" class="h-7 w-auto dark:hidden" alt="Logo">
-            <img src="{{ $s?->logo_dark_path ? Storage::url($s->logo_dark_path) : '' }}" class="hidden h-7 w-auto dark:block" alt="Logo Dark">
-          @else
-            <span class="font-bold">Base Forge</span>
-          @endif
-        </a>
+        <div class="flex items-center gap-2">
+          <!-- Mobile: toggle sidebar -->
+          <button id="sidebarToggle" class="-ml-2 inline-flex h-9 w-9 items-center justify-center rounded-md sm:hidden hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Apri menu" aria-controls="adminSidebar" aria-expanded="false">
+            <!-- hamburger icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
+              <path fill-rule="evenodd" d="M3.75 5.25a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75zm0 6a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75zm0 6a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75z" clip-rule="evenodd" />
+            </svg>
+          </button>
+
+          <a href="{{ route('home') }}" class="flex items-center gap-2">
+            @if($s?->logo_light_path || $s?->logo_dark_path)
+              <img src="{{ $s?->logo_light_path ? Storage::url($s->logo_light_path) : '' }}" class="h-7 w-auto dark:hidden" alt="Logo">
+              <img src="{{ $s?->logo_dark_path ? Storage::url($s->logo_dark_path) : '' }}" class="hidden h-7 w-auto dark:block" alt="Logo Dark">
+            @else
+              <span class="font-bold">Base Forge</span>
+            @endif
+          </a>
+        </div>
         <nav class="hidden gap-6 text-sm sm:flex">
           <a href="{{ route('packs.public') }}"     class="hover:opacity-90 {{ request()->routeIs('packs.*') ? 'text-[var(--accent)] font-medium' : '' }}">Packs</a>
           <a href="{{ route('builders.index') }}"   class="hover:opacity-90 {{ request()->routeIs('builders.*') ? 'text-[var(--accent)] font-medium' : '' }}">Builders</a>
@@ -98,9 +107,22 @@
   $addonsEnabled = (!empty($features['addons'])) && collect($features)->contains(true);
 @endphp
 
-    <aside class="flex w-64 shrink-0 flex-col justify-between border-r bg-white/80 backdrop-blur dark:bg-gray-900/70 dark:border-gray-800">
+    <!-- Backdrop for mobile -->
+    <div id="sidebarBackdrop" class="fixed inset-0 z-40 hidden bg-black/40 sm:hidden" aria-hidden="true"></div>
+
+    <aside id="adminSidebar" class="fixed inset-y-0 left-0 z-50 w-72 sm:w-64 sm:static sm:z-auto
+      flex shrink-0 flex-col justify-between border-r bg-white/80 backdrop-blur dark:bg-gray-900/70 dark:border-gray-800
+      transition-transform duration-200 ease-in-out -translate-x-full sm:translate-x-0">
       <div>
-        <div class="px-5 py-4 text-sm font-semibold">Admin Nav</div>
+        <div class="flex items-center justify-between px-5 py-4 text-sm font-semibold">
+          <span>Admin Nav</span>
+          <!-- Mobile close -->
+          <button id="sidebarClose" class="inline-flex h-8 w-8 items-center justify-center rounded-md sm:hidden hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Chiudi menu">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
+              <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
 
         {{-- Menu principale --}}
         <nav class="px-2 space-y-1 text-sm">
@@ -200,5 +222,36 @@
       </div>
     </main>
   </div>
+
+  <!-- Minimal, framework-free toggle logic (non-invasivo) -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const aside = document.getElementById('adminSidebar');
+      const openBtn = document.getElementById('sidebarToggle');
+      const closeBtn = document.getElementById('sidebarClose');
+      const backdrop = document.getElementById('sidebarBackdrop');
+
+      const open = () => {
+        aside.classList.remove('-translate-x-full');
+        backdrop.classList.remove('hidden');
+        openBtn?.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden'; // preveni scroll dietro
+      };
+      const close = () => {
+        aside.classList.add('-translate-x-full');
+        backdrop.classList.add('hidden');
+        openBtn?.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+      };
+
+      openBtn?.addEventListener('click', open);
+      closeBtn?.addEventListener('click', close);
+      backdrop?.addEventListener('click', close);
+
+      // Chiudi al cambio breakpoint se si ridimensiona in desktop
+      const mq = window.matchMedia('(min-width: 640px)');
+      mq.addEventListener('change', e => { if (e.matches) close(); });
+    });
+  </script>
 </body>
 </html>
