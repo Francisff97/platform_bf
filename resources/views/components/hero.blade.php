@@ -24,7 +24,7 @@
   .hero-controls .swiper-button-prev { color:#fff; }
   .hero-controls .swiper-pagination-bullet{ background:rgba(255,255,255,.6); opacity:1; }
   .hero-controls .swiper-pagination-bullet-active{ background:#fff; }
-    @media screen and (max-width:767px){.inizio{height: 300px !important}}
+    @media screen and (max-width:767px){.inizio{height: 250px !important}}
 </style>
 
 <section class="{{ $full }}">
