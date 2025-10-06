@@ -1,5 +1,4 @@
 {{-- resources/views/home.blade.php --}}
-$discordUrl = $s->discord_link ?? '#';
 <x-app-layout>
 {{-- SLIDER FULL WIDTH (full-bleed) --}}
 <style>
