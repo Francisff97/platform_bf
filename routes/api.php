@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use App\Support\FeatureFlags;
 
-Route::get('/discord/config', [DiscordController::class, 'config']);
-Route::post('/discord/incoming', [DiscordWebhookController::class, 'incoming']);
+Route::match(['GET','POST'], '/discord/config', [DiscordController::class, 'config']);
+Route::match(['GET','POST'], '/discord/incoming', [DiscordWebhookController::class, 'incoming']);
 Route::match(['GET','POST'], '/flags/refresh', function (Request $r) {
     $raw    = $r->getContent();
     $sig    = $r->header('X-Signature', '');
