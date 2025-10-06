@@ -92,8 +92,20 @@
         ['label'=>'Google Analytics','route'=>'admin.analytics.edit',   'match'=>['admin.analytics.*']],
       ];
 
-    $slug = \App\Support\FeatureFlags::currentSlug();
+    $slug =
+      request()->route('slug')
+      ?? request('installation')
+      ?? optional(\App\Models\SiteSetting::first())->flags_installation_slug
+      ?? env('FLAGS_INSTALLATION_SLUG')
+      ?? env('FLAGS_SLUG')
+      ?? 'demo';
+
+  $slug = strtolower(trim($slug));
+
+  // IMPORTANTISSIMO: passa lo slug qui
   $features = \App\Support\FeatureFlags::all($slug);
+
+  // tua logica di visibilità add-ons
   $addonsEnabled = (!empty($features['addons'])) && collect($features)->contains(true);
     @endphp
 
