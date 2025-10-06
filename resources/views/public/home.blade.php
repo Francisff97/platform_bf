@@ -232,13 +232,11 @@
       <div class="flex flex-col sm:flex-row gap-4">
       <a class="text-black py-4 w-fit bg-white rounded px-6" href="/contacts">Contact us!</a>
       @php
-        $discordUrlBtn = $s->discord_url ?? '#';
-      @endphp
-      <a href="{{ $discordUrlBtn }}"
-         class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-white hover:opacity-90"
-         style="background: var(--accent);">
-         <span>Our server</span>
-      </a>
+$discord   = $s?->discord_url ?? $s?->discord_link ?? '#';
+@endphp
+<a href="{{ $discord }}" class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-white hover:opacity-90" style="background: #212121;">
+          Join our Discord
+        </a>
       </div>    
     </div>
   </section>
