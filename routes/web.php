@@ -315,3 +315,14 @@ Route::post('/api/flags/purge', function (Request $r) {
 });
 Route::get('/about', [AboutController::class, 'show'])->name('about');
 Route::get('/about-us', [AboutController::class, 'show']);
+
+Route::post('/flags/debug', function (\Illuminate\Http\Request $r) {
+    $secret = env('FLAGS_SIGNING_SECRET', '');
+    return [
+        'env_secret' => $secret,
+        'body' => $r->getContent(),
+        'header_sig' => $r->header('X-Signature'),
+        'expected_sig' => hash_hmac('sha256', $r->getContent(), $secret),
+        'match' => hash_equals(hash_hmac('sha256', $r->getContent(), $secret), $r->header('X-Signature')),
+    ];
+});
