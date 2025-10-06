@@ -28,7 +28,7 @@ class FeatureFlags
     /** Risolve lo slug: preferisci quello passato; poi ENV; poi config; fallback 'demo' */
     protected static function resolveSlug(?string $slug = null): string
     {
-        if ($slug && is_string($slug)) {
+        if (is_string($slug) && $slug !== '') {
             return strtolower(trim($slug));
         }
 
@@ -37,7 +37,7 @@ class FeatureFlags
         $c = config('app.slug');
 
         $out = $a ?: ($b ?: ($c ?: 'demo'));
-        return strtolower(trim($out));
+        return strtolower(trim((string) $out));
     }
 
     /** Tenuta per compat: non più usata in rememberForever */
@@ -124,79 +124,81 @@ class FeatureFlags
         }
     }
 
-    /** Retro-compat: fetch remoto per lo slug corrente */
+    /** Retro-compat: fetch remoto per lo slug risolto */
     protected static function fetchRemote(array $defaults, ?string $slug = null): ?array
     {
         $slug = self::resolveSlug($slug);
         return self::fetchRemoteFor($slug, $defaults);
     }
 
+    /* ----------------------------------------------------------------------
+     |  Cache helpers
+     * --------------------------------------------------------------------*/
+    public static function cacheKey(?string $slug = null): string
+    {
+        $slug = self::resolveSlug($slug);
+        return "features.remote.$slug";
+    }
+
+    /** Invalida la cache dei flags per uno slug (o quello corrente) */
+    public static function clearCache(?string $slug = null): void
+    {
+        Cache::forget(self::cacheKey($slug));
+    }
+
     /**
-     * Risolve i flag con priorità:
-     *  - se FEATURES_FORCE_LOCAL=true ⇒ defaults + ENV
-     *  - altrimenti REMOTO con cache forever (warm alla prima lettura):
-     *      • se valido ⇒ REMOTO
-     *      • altrimenti ⇒ defaults + ENV
-     *
-     *  @param string|null $slug  ← NEW: se passato, legge quei flag
+     * Warm esplicito: ricarica da remoto e salva forever.
+     * Ritorna i valori salvati in cache.
      */
-    // App\Support\FeatureFlags
+    public static function warm(?string $slug = null): array
+    {
+        $defaults = self::defaults();
+        $locals   = self::localFromEnv($defaults);
+        $slug     = self::resolveSlug($slug);
+        $cacheKey = self::cacheKey($slug);
 
-public static function cacheKey(?string $slug = null): string
-{
-    $slug = $slug ?: self::slug();
-    return "features.remote.$slug";
-}
+        $remote = self::fetchRemoteFor($slug, $defaults);
+        $final  = $remote ?? $locals;
 
-public static function warm(?string $slug = null): array
-{
-    $defaults = self::defaults();
-    $locals   = self::localFromEnv($defaults);
-    $slug     = $slug ?: self::slug();
-    $cacheKey = self::cacheKey($slug);
-
-    $remote = self::fetchRemoteFor($slug, $defaults);
-    $final  = $remote ?? $locals;
-
-    \Cache::forever($cacheKey, $final);
-    return $final;
-}
-
-/**
- * PRIORITÀ:
- *  - se FEATURES_FORCE_LOCAL=true ⇒ defaults + ENV
- *  - altrimenti: REMOTO (cache forever) per LO SLUG PASSATO (o quello “corrente”)
- */
-public static function all(?string $slug = null): array
-{
-    $defaults = self::defaults();
-    $locals   = self::localFromEnv($defaults);
-
-    if (self::forceLocal()) {
-        return $locals;
+        Cache::forever($cacheKey, $final);
+        return $final;
     }
 
-    $slug     = $slug ?: self::slug();
-    $cacheKey = self::cacheKey($slug);
+    /**
+     * PRIORITÀ:
+     *  - se FEATURES_FORCE_LOCAL=true ⇒ defaults + ENV
+     *  - altrimenti: REMOTO (cache forever) per LO SLUG PASSATO (o quello “corrente”)
+     */
+    public static function all(?string $slug = null): array
+    {
+        $defaults = self::defaults();
+        $locals   = self::localFromEnv($defaults);
 
-    try {
-        return \Cache::rememberForever($cacheKey, function () use ($defaults, $locals, $slug) {
-            $remote = self::fetchRemoteFor($slug, $defaults);
-            return $remote ?? $locals;
-        });
-    } catch (\Throwable $e) {
-        return $locals;
+        if (self::forceLocal()) {
+            return $locals;
+        }
+
+        $slug     = self::resolveSlug($slug);
+        $cacheKey = self::cacheKey($slug);
+
+        try {
+            return Cache::rememberForever($cacheKey, function () use ($defaults, $locals, $slug) {
+                $remote = self::fetchRemoteFor($slug, $defaults);
+                return $remote ?? $locals;
+            });
+        } catch (\Throwable $e) {
+            return $locals;
+        }
     }
-}
 
-    /** Helper singolo flag (ora accetta lo slug) */
+    /** Helper singolo flag (accetta lo slug) */
     public static function enabled(string $key, ?string $slug = null): bool
     {
         $all = self::all($slug);
         return !empty($all[$key]);
     }
 
-    /** DEBUG: utile in tinker per capire cosa legge (ora accetta slug) */
+    /** DEBUG: utile in tinker per capire cosa legge (accetta slug) */
     public static function debug(?string $slug = null): array
     {
         $slug = self::resolveSlug($slug);
@@ -211,35 +213,21 @@ public static function all(?string $slug = null): array
         ];
     }
 
-    /* ----------------------------------------------------------------------
-     |  Cache helpers
-     * --------------------------------------------------------------------*/
-    
-
-    /** Invalida la cache dei flags per uno slug (o quello corrente) */
-    public static function clearCache(?string $slug = null): void
-    {
-        Cache::forget(self::cacheKey($slug));
-    }
-
     /**
-     * Warm esplicito: ricarica da remoto e salva forever.
-     * Ritorna i valori salvati in cache.
+     * Slug “corrente” per Blade/Controller:
+     * route('slug') → ?installation= → DB settings → ENV → 'demo'
      */
-    
-    // in App\Support\FeatureFlags
-public static function currentSlug(): string
-{
-    // usa la stessa logica della resolveSlug ma con qualche fonte in più
-    $r = request();
+    public static function currentSlug(): string
+    {
+        $r = request();
 
-    $fromRoute = $r?->route('slug');           // /admin/{slug}
-    $fromQuery = $r?->query('installation');   // ?installation=...
-    $fromDb    = optional(\App\Models\SiteSetting::first())->flags_installation_slug;
-    $fromEnv   = env('FLAGS_INSTALLATION_SLUG') ?: env('FLAGS_SLUG') ?: config('app.slug');
+        $fromRoute = $r?->route('slug');                 // es: /admin/{slug}
+        $fromQuery = $r?->query('installation');         // es: ?installation=dnln
+        $fromDb    = optional(\App\Models\SiteSetting::first())->flags_installation_slug;
+        $fromEnv   = env('FLAGS_INSTALLATION_SLUG') ?: env('FLAGS_SLUG') ?: config('app.slug');
 
-    $slug = $fromRoute ?? $fromQuery ?? $fromDb ?? $fromEnv ?? 'demo';
+        $slug = $fromRoute ?? $fromQuery ?? $fromDb ?? $fromEnv ?? 'demo';
 
-    return strtolower(trim((string) $slug));
-}
+        return strtolower(trim((string) $slug));
+    }
 }
