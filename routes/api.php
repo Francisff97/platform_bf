@@ -58,8 +58,8 @@ Route::match(['GET','POST'], '/flags/refresh', function (\Illuminate\Http\Reques
     // --- payload --------------------------------------------------------------
     $body  = json_decode($raw, true) ?: [];
     $slugA = data_get($body, 'slug');
-    $slugB = env('FLAGS_INSTALLATION_SLUG');
-    $slugC = env('FLAGS_SLUG');
+    $slugB = config('flags.slug');   // unico slug canonico
+$slugC = null;                   // se vuoi, rimuovi del tutto questa variabile
 
     // --- invalidazione cache + warm ------------------------------------------
     $invalidated = [];
