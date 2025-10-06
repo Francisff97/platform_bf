@@ -36,222 +36,157 @@
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <!-- End Google Tag Manager (noscript) -->
 @endif
-  {{-- HEADER --}}
-  @if (view()->exists('components.site-nav'))
-    <x-site-nav />
-  @else
-    <header class="sticky top-0 z-50 border-b bg-white/80 backdrop-blur dark:bg-gray-900/70 dark:border-gray-800">
-      <div class="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center gap-2">
-          <!-- Mobile: toggle sidebar -->
-          <button id="sidebarToggle" class="-ml-2 inline-flex h-9 w-9 items-center justify-center rounded-md sm:hidden hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Apri menu" aria-controls="adminSidebar" aria-expanded="false">
-            <!-- hamburger icon -->
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
-              <path fill-rule="evenodd" d="M3.75 5.25a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75zm0 6a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75zm0 6a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75z" clip-rule="evenodd" />
-            </svg>
-          </button>
 
-          <a href="{{ route('home') }}" class="flex items-center gap-2">
-            @if($s?->logo_light_path || $s?->logo_dark_path)
-              <img src="{{ $s?->logo_light_path ? Storage::url($s->logo_light_path) : '' }}" class="h-7 w-auto dark:hidden" alt="Logo">
-              <img src="{{ $s?->logo_dark_path ? Storage::url($s->logo_dark_path) : '' }}" class="hidden h-7 w-auto dark:block" alt="Logo Dark">
-            @else
-              <span class="font-bold">Base Forge</span>
-            @endif
-          </a>
-        </div>
-        <nav class="hidden gap-6 text-sm sm:flex">
-          <a href="{{ route('packs.public') }}"     class="hover:opacity-90 {{ request()->routeIs('packs.*') ? 'text-[var(--accent)] font-medium' : '' }}">Packs</a>
-          <a href="{{ route('builders.index') }}"   class="hover:opacity-90 {{ request()->routeIs('builders.*') ? 'text-[var(--accent)] font-medium' : '' }}">Builders</a>
-          <a href="{{ route('services.public') }}"  class="hover:opacity-90 {{ request()->routeIs('services.public') ? 'text-[var(--accent)] font-medium' : '' }}">Services</a>
-          <a href="{{ route('coaches.index') }}"    class="hover:opacity-90 {{ request()->routeIs('coaches.*') ? 'text-[var(--accent)] font-medium' : '' }}">Coaches</a>
-          <a href="{{ route('contacts') }}"         class="hover:opacity-90 {{ request()->routeIs('contacts') ? 'text-[var(--accent)] font-medium' : '' }}">Contact</a>
-          <a href="{{ route('admin.dashboard') }}"  class="rounded bg-[var(--accent)] px-3 py-1.5 text-white">Admin</a>
-        </nav>
-        @auth
-          @php $u = auth()->user(); @endphp
-          <a href="{{ route('profile.edit') }}" class="flex items-center gap-2">
-            <img
-              src="{{ $u->avatar_url ?? 'https://www.gravatar.com/avatar/'.md5(strtolower(trim($u->email))).'?s=64&d=identicon' }}"
-              class="h-8 w-8 rounded-full object-cover"
-              alt="{{ $u->name }}"
-            >
-            <span class="hidden text-sm sm:inline">{{ $u->name }}</span>
-          </a>
-        @endauth
-      </div>
-    </header>
-  @endif
+<header class="sticky top-0 z-50 border-b bg-white/80 backdrop-blur dark:bg-gray-900/70 dark:border-gray-800">
+  <div class="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center gap-2">
+      <!-- Mobile: toggle sidebar (header) -->
+      <button id="sidebarToggle"
+        class="inline-flex items-center justify-center rounded-md p-2 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-800 sm:hidden"
+        aria-label="Apri menu" aria-controls="adminSidebar" aria-expanded="false">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6">
+          <path fill-rule="evenodd" d="M3.75 5.25a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75zm0 6a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75zm0 6a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75z" clip-rule="evenodd" />
+        </svg>
+      </button>
 
-  <div class="flex min-h-[calc(100vh-3.5rem)]">
-    {{-- SIDEBAR --}}
-    @php
-      $items = [
-        ['label'=>'Dashboard',       'route'=>'admin.dashboard',        'match'=>['admin.dashboard']],
-        ['label'=>'Packs',           'route'=>'admin.packs.index',      'match'=>['admin.packs.*']],
-        ['label'=>'Categories Pack', 'route'=>'admin.categories.index', 'match'=>['admin.categories.*']],
-        ['label'=>'About page',            'route'=>'admin.about.index',      'match'=>['admin.about.*']],
-        ['label'=>'Services',        'route'=>'admin.services.index',   'match'=>['admin.services.*']],
-        ['label'=>'Builders',        'route'=>'admin.builders.index',   'match'=>['admin.builders.*']],
-        ['label'=>'Coaches',         'route'=>'admin.coaches.index',    'match'=>['admin.coaches.*']],
-        ['label'=>'Sliders',         'route'=>'admin.slides.index',     'match'=>['admin.slides.*']],
-        ['label'=>'Hero Sections',          'route'=>'admin.heroes.index',     'match'=>['admin.heroes.*']],
-        ['label'=>'Orders',          'route'=>'admin.orders.index',     'match'=>['admin.orders.*']],
-        ['label'=>'Appearance',      'route'=>'admin.appearance.edit',  'match'=>['admin.appearance.*']],
-        ['label'=>'Platform info',   'route'=>'admin.platform.info',    'match'=>['admin.platform.*']],
-        ['label'=>'Google Analytics', 'route'=>'admin.analytics.edit', 'match'=>['admin.analytics.*']],
-      ];
-
-      $features = \App\Support\FeatureFlags::all();
-  // Mostra il box Add-ons se almeno un flag è true e se addons (master) è on
-  $addonsEnabled = (!empty($features['addons'])) && collect($features)->contains(true);
-@endphp
-
-    <!-- Backdrop for mobile -->
-    <div id="sidebarBackdrop" class="fixed inset-0 z-40 hidden bg-black/40 sm:hidden" aria-hidden="true"></div>
-
-    <aside id="adminSidebar" class="fixed inset-y-0 left-0 z-50 w-72 sm:w-64 sm:static sm:z-auto
-      flex shrink-0 flex-col justify-between border-r bg-white/80 backdrop-blur dark:bg-gray-900/70 dark:border-gray-800
-      transition-transform duration-200 ease-in-out -translate-x-full sm:translate-x-0">
-      <div>
-        <div class="flex items-center justify-between px-5 py-4 text-sm font-semibold">
-          <span>Admin Nav</span>
-          <!-- Mobile close -->
-          <button id="sidebarClose" class="inline-flex h-8 w-8 items-center justify-center rounded-md sm:hidden hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Chiudi menu">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
-              <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06z" clip-rule="evenodd" />
-            </svg>
-          </button>
-        </div>
-
-        {{-- Menu principale --}}
-        <nav class="px-2 space-y-1 text-sm">
-          @foreach($items as $it)
-            @php $active = request()->routeIs(...$it['match']); @endphp
-            <a href="{{ route($it['route']) }}"
-               class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
-                      {{ $active ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
-              <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $active ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
-              {{ $it['label'] }}
-            </a>
-          @endforeach
-        </nav>
-
-        {{-- ADD-ONS --}}
-@if(!empty($features['addons']))
-  <div class="bg-gray-100 dark:bg-gray-800 my-4 mx-4 rounded-[10px] p-[10px]">
-    <div class="px-3 pt-2 text-xs uppercase text-gray-500">Add-ons</div>
-
-    <nav class="px-2 space-y-1 text-sm mt-1">
-      {{-- Email Templates --}}
-      @if(!empty($features['email_templates']))
-        <!-- @php $active = request()->routeIs('admin.addons.email-templates*'); @endphp -->
-        <a href="{{ route('admin.addons.email-templates') }}"
-           class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
-                  {{ $active ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
-          <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $active ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
-          Email templates
-        </a>
-      @endif
-
-      {{-- Discord --}}
-      @if(!empty($features['discord_integration']))
-        <!-- @php $active = request()->routeIs('admin.addons.discord*'); @endphp -->
-        <a href="{{ route('admin.addons.discord') }}"
-           class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
-                  {{ $active ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
-          <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $active ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
-          Discord integration
-        </a>
-      @endif
-
-      {{-- Tutorials --}}
-      @if(!empty($features['tutorials']))
-        <!-- @php $active = request()->routeIs('admin.addons.tutorials*'); @endphp -->
-        <a href="{{ route('admin.addons.tutorials') }}"
-           class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
-                  {{ $active ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
-          <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $active ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
-          Tutorials
-        </a>
-      @endif
-    </nav>
-  </div>
-@endif
-      </div>
-
-      {{-- PROFILE CARD --}}
-      @auth
-        @php $u = auth()->user(); @endphp
-        <div class="m-3 rounded-xl border p-3 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60">
-          <div class="flex items-center gap-3">
-            <img
-              src="{{ $u->avatar_url ?? 'https://www.gravatar.com/avatar/'.md5(strtolower(trim($u->email))).'?s=128&d=identicon' }}"
-              class="h-10 w-10 rounded-full object-cover"
-              alt="{{ $u->name }}"
-            >
-            <div class="min-w-0">
-              <div class="truncate text-sm font-medium">{{ $u->name }}</div>
-              <div class="truncate text-xs text-gray-500">{{ $u->email }}</div>
-            </div>
-          </div>
-          <div class="mt-3 flex items-center justify-between">
-            <a href="{{ route('profile.edit') }}" class="text-xs underline">Edit profile</a>
-            <form method="POST" action="{{ route('logout') }}">@csrf
-              <button class="text-xs text-red-600 hover:underline">Logout</button>
-            </form>
-          </div>
-        </div>
-      @endauth
-    </aside>
-
-    {{-- MAIN --}}
-    <main class="flex-1">
-      <header class="flex items-center justify-between border-b px-6 py-4 dark:border-gray-800">
-        <h1 class="text-xl font-semibold">{{ $title }}</h1>
-      </header>
-
-      <div class="p-6">
-        @if (session('success'))
-          <div class="mb-4 rounded border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-800">
-            {{ session('success') }}
-          </div>
+      <a href="{{ route('home') }}" class="flex items-center gap-2">
+        @if($s?->logo_light_path || $s?->logo_dark_path)
+          <img src="{{ $s?->logo_light_path ? Storage::url($s->logo_light_path) : '' }}" class="h-7 w-auto dark:hidden" alt="Logo">
+          <img src="{{ $s?->logo_dark_path ? Storage::url($s->logo_dark_path) : '' }}" class="hidden h-7 w-auto dark:block" alt="Logo Dark">
+        @else
+          <span class="font-bold">Base Forge</span>
         @endif
-
-        {{ $slot }}
-      </div>
-    </main>
+      </a>
+    </div>
+    @auth
+      @php $u = auth()->user(); @endphp
+      <a href="{{ route('profile.edit') }}" class="flex items-center gap-2">
+        <img
+          src="{{ $u->avatar_url ?? 'https://www.gravatar.com/avatar/'.md5(strtolower(trim($u->email))).'?s=64&d=identicon' }}"
+          class="h-8 w-8 rounded-full object-cover"
+          alt="{{ $u->name }}"
+        >
+        <span class="hidden text-sm sm:inline">{{ $u->name }}</span>
+      </a>
+    @endauth
   </div>
+</header>
 
-  <!-- Minimal, framework-free toggle logic (non-invasivo) -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const aside = document.getElementById('adminSidebar');
-      const openBtn = document.getElementById('sidebarToggle');
-      const closeBtn = document.getElementById('sidebarClose');
-      const backdrop = document.getElementById('sidebarBackdrop');
+<div class="flex min-h-[calc(100vh-3.5rem)]">
+  @php
+    $items = [
+      ['label'=>'Dashboard','route'=>'admin.dashboard','match'=>['admin.dashboard']],
+      ['label'=>'Packs','route'=>'admin.packs.index','match'=>['admin.packs.*']],
+      ['label'=>'Services','route'=>'admin.services.index','match'=>['admin.services.*']],
+      ['label'=>'Builders','route'=>'admin.builders.index','match'=>['admin.builders.*']],
+      ['label'=>'Coaches','route'=>'admin.coaches.index','match'=>['admin.coaches.*']],
+      ['label'=>'Orders','route'=>'admin.orders.index','match'=>['admin.orders.*']],
+    ];
+  @endphp
 
-      const open = () => {
-        aside.classList.remove('-translate-x-full');
-        backdrop.classList.remove('hidden');
-        openBtn?.setAttribute('aria-expanded', 'true');
-        document.body.style.overflow = 'hidden'; // preveni scroll dietro
-      };
-      const close = () => {
-        aside.classList.add('-translate-x-full');
-        backdrop.classList.add('hidden');
-        openBtn?.setAttribute('aria-expanded', 'false');
-        document.body.style.overflow = '';
-      };
+  <div id="sidebarBackdrop" class="fixed inset-0 z-40 hidden bg-black/40 sm:hidden"></div>
 
-      openBtn?.addEventListener('click', open);
-      closeBtn?.addEventListener('click', close);
-      backdrop?.addEventListener('click', close);
+  <aside id="adminSidebar" class="fixed inset-y-0 left-0 z-50 w-72 sm:w-64 sm:static sm:z-auto
+    flex shrink-0 flex-col justify-between border-r bg-white/90 backdrop-blur dark:bg-gray-900/80 dark:border-gray-800
+    transition-transform duration-200 ease-in-out -translate-x-full sm:translate-x-0">
+    <div>
+      <div class="flex items-center justify-between px-5 py-4 text-sm font-semibold">
+        <span>Admin Nav</span>
+        <button id="sidebarClose" class="inline-flex items-center justify-center rounded-md p-2 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-800 sm:hidden" aria-label="Chiudi menu">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-6 w-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
 
-      // Chiudi al cambio breakpoint se si ridimensiona in desktop
-      const mq = window.matchMedia('(min-width: 640px)');
-      mq.addEventListener('change', e => { if (e.matches) close(); });
-    });
-  </script>
+      <nav class="px-2 space-y-1 text-sm">
+        @foreach($items as $it)
+          @php $active = request()->routeIs(...$it['match']); @endphp
+          <a href="{{ route($it['route']) }}" class="block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 {{ $active ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
+            {{ $it['label'] }}
+          </a>
+        @endforeach
+      </nav>
+    </div>
+  </aside>
+
+  <main class="flex-1">
+    <header class="flex items-center justify-between border-b px-6 py-4 dark:border-gray-800">
+      <h1 class="text-xl font-semibold">{{ $title }}</h1>
+    </header>
+    <div class="p-6">
+      {{ $slot }}
+    </div>
+  </main>
+</div>
+
+<!-- Floating buttons -->
+<button id="fabOpen" aria-label="Apri menu"
+  class="fixed bottom-5 right-5 z-[60] sm:hidden rounded-full bg-[var(--accent)] p-4 text-white shadow-lg ring-2 ring-white/70 dark:ring-black/30">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6">
+    <path fill-rule="evenodd" d="M3.75 5.25a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75zm0 6a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75zm0 6a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75z" clip-rule="evenodd" />
+  </svg>
+</button>
+
+<button id="fabClose" aria-label="Chiudi menu"
+  class="fixed bottom-5 right-5 z-[60] sm:hidden hidden rounded-full bg-red-600 p-4 text-white shadow-lg ring-2 ring-white/70 dark:ring-black/30">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-6 w-6">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+  </svg>
+</button>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const aside = document.getElementById('adminSidebar');
+  const openBtn = document.getElementById('sidebarToggle');
+  const closeBtn = document.getElementById('sidebarClose');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  const fabOpen = document.getElementById('fabOpen');
+  const fabClose = document.getElementById('fabClose');
+
+  function showFab(isOpen) {
+    if (isOpen) {
+      fabOpen.classList.add('hidden');
+      fabClose.classList.remove('hidden');
+    } else {
+      fabOpen.classList.remove('hidden');
+      fabClose.classList.add('hidden');
+    }
+  }
+
+  function open() {
+    aside.classList.remove('-translate-x-full');
+    backdrop.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    showFab(true);
+  }
+
+  function close() {
+    aside.classList.add('-translate-x-full');
+    backdrop.classList.add('hidden');
+    document.body.style.overflow = '';
+    showFab(false);
+  }
+
+  [openBtn, fabOpen].forEach(btn => btn?.addEventListener('click', open));
+  [closeBtn, fabClose, backdrop].forEach(btn => btn?.addEventListener('click', close));
+
+  // Gestisci resize
+  const mq = window.matchMedia('(min-width: 640px)');
+  mq.addEventListener('change', e => {
+    if (e.matches) {
+      aside.classList.remove('-translate-x-full');
+      backdrop.classList.add('hidden');
+      fabOpen.classList.add('hidden');
+      fabClose.classList.add('hidden');
+    } else {
+      close();
+    }
+  });
+
+  // Stato iniziale mobile
+  if (window.matchMedia('(max-width: 639px)').matches) close();
+});
+</script>
 </body>
 </html>
