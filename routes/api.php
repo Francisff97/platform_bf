@@ -20,10 +20,8 @@ Route::match(['GET','POST'], '/flags/refresh', function (\Illuminate\Http\Reques
     // 2) header firma normalizzato
     $sig    = strtolower($r->header('X-Signature', ''));
     // 3) secret da config (fallback env/getenv per sicurezza anche con config:cache)
-    $secret = (string) (config('flags.signing_secret')
-        ?? env('FLAGS_SIGNING_SECRET')
-        ?? getenv('FLAGS_SIGNING_SECRET')
-        ?? '');
+    $secret = trim(config('flags.signing_secret', ''))
+       ?: trim(config('flags.signing_secret_fallback', ''));
 
     // LOG DIAGNOSTICO (temporaneo)
     Log::warning('[flags-refresh] IN', [
