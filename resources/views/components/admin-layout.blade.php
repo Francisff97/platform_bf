@@ -44,13 +44,7 @@
       <div class="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div class="flex items-center gap-2">
           <!-- Mobile: toggle sidebar -->
-          <!-- Mobile: toggle sidebar -->
-<button id="sidebarToggle"
-  class="inline-flex items-center justify-center rounded-md p-2 text-gray-700 hover:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-700 sm:hidden"
-  aria-label="Apri menu" aria-controls="adminSidebar" aria-expanded="false">
-  <img src="#" alt="logo website"/>
-</button>
-
+          <button id="sidebarToggle" class="-ml-2 inline-flex h-9 w-9 items-center justify-center rounded-md sm:hidden hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Apri menu" aria-controls="adminSidebar" aria-expanded="false">
             <!-- hamburger icon -->
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
               <path fill-rule="evenodd" d="M3.75 5.25a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75zm0 6a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75zm0 6a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75z" clip-rule="evenodd" />
@@ -123,16 +117,11 @@
         <div class="flex items-center justify-between px-5 py-4 text-sm font-semibold">
           <span>Admin Nav</span>
           <!-- Mobile close -->
-          <!-- Mobile close -->
-<button id="sidebarClose"
-  class="inline-flex items-center justify-center rounded-md p-2 text-gray-700 hover:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-700 sm:hidden"
-  aria-label="Chiudi menu">
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-       stroke-width="2" stroke="currentColor" class="h-6 w-6">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-  </svg>
-</button>
-
+          <button id="sidebarClose" class="inline-flex h-8 w-8 items-center justify-center rounded-md sm:hidden hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Chiudi menu">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
+              <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06z" clip-rule="evenodd" />
+            </svg>
+          </button>
         </div>
 
         {{-- Menu principale --}}
