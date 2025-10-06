@@ -32,8 +32,8 @@ class FeatureFlags
             return strtolower(trim($slug));
         }
 
-        $a = env('FLAGS_INSTALLATION_SLUG');
-        $b = env('FLAGS_SLUG');
+        $a = config('flags.installations.slug');
+        $b = env('flags.slug');
         $c = config('app.slug');
 
         $out = $a ?: ($b ?: ($c ?: 'demo'));
