@@ -231,7 +231,14 @@
       </div>
       <div class="flex flex-col sm:flex-row gap-4">
       <a class="text-black py-4 w-fit bg-white rounded px-6" href="/contacts">Contact us!</a>
-      <a class="py-4 w-fit bg-black text-white rounded px-6" href="https://discord.gg/fgjfshdgk" target="_blank">Enter into our server!</a>
+      @php
+        $discordUrlBtn = $s->discord_url ?? '#';
+      @endphp
+      <a href="{{ $discordUrlBtn }}"
+         class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-white hover:opacity-90"
+         style="background: var(--accent);">
+         <span>Our server</span>
+      </a>
       </div>    
     </div>
   </section>
