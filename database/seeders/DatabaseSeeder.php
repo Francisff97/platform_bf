@@ -22,6 +22,6 @@ class DatabaseSeeder extends Seeder
         $this->call(\Database\Seeders\AdminUserSeeder::class);
         $this->call(\Database\Seeders\StorageRelinkerSeeder::class);
         $this->call(\Database\Seeders\SiteSettingSeeder::class);
-        $this->call(\Database\Seeders\EmailTEmplateSeeder::class);
+        $this->call(\Database\Seeders\EmailTemplateSeeder::class);
 }
     }
