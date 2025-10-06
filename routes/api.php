@@ -10,7 +10,7 @@ use App\Support\FeatureFlags;
 
 Route::match(['GET','POST'], '/discord/config', [DiscordController::class, 'config']);
 Route::match(['GET','POST'], '/discord/incoming', [DiscordWebhookController::class, 'incoming']);
-Route::post('/flags/refresh', function (\Illuminate\Http\Request $r) {
+Route::match(['GET','POST'], '/flags/refresh', function (\Illuminate\Http\Request $r) {
     $raw    = $r->getContent();                    // corpo *grezzo* così come arriva
     $sig    = strtolower($r->header('X-Signature', '')); // normalizziamo in lowercase
     $secret = env('FLAGS_SIGNING_SECRET','');
