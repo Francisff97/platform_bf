@@ -24,10 +24,11 @@
   .hero-controls .swiper-button-prev { color:#fff; }
   .hero-controls .swiper-pagination-bullet{ background:rgba(255,255,255,.6); opacity:1; }
   .hero-controls .swiper-pagination-bullet-active{ background:#fff; }
+    @media screen and (max-width:767px){.inizio{height: 300px !important}}
 </style>
 
 <section class="{{ $full }}">
-  <figure class="relative w-full" style="height: {{ $h }};">
+  <figure class="inizio relative w-full" style="height: {{ $h }};">
     @if(($hero && $hero->image_path) || $image)
       <img src="{{ $hero? Storage::url($hero->image_path) : $image }}"
            alt="{{ $hero->title ?? $title }}"
