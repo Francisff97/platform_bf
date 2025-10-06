@@ -92,16 +92,7 @@
         ['label'=>'Google Analytics','route'=>'admin.analytics.edit',   'match'=>['admin.analytics.*']],
       ];
 
-       // scegli tu da dove ricavare lo slug:
-  // 1) fisso (test)
-  $slug = 'dnln';
-
-  // 2) da ENV (se lo preferisci)
-  // $slug = env('FLAGS_INSTALLATION_SLUG') ?: env('FLAGS_SLUG') ?: 'demo';
-
-  // 3) da DB / impostazioni sito (consigliato in produzione)
-  // $slug = optional(\App\Models\SiteSetting::first())->flags_installation_slug ?: 'demo';
-
+    $slug = \App\Support\FeatureFlags::currentSlug();
   $features = \App\Support\FeatureFlags::all($slug);
   $addonsEnabled = (!empty($features['addons'])) && collect($features)->contains(true);
     @endphp
