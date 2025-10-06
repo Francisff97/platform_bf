@@ -48,11 +48,7 @@
 <button id="sidebarToggle"
   class="inline-flex items-center justify-center rounded-md p-2 text-gray-700 hover:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-700 sm:hidden"
   aria-label="Apri menu" aria-controls="adminSidebar" aria-expanded="false">
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-       stroke-width="2" stroke="currentColor" class="h-6 w-6">
-    <path stroke-linecap="round" stroke-linejoin="round"
-          d="M4 6h16M4 12h16M4 18h16" />
-  </svg>
+  <img src="#" alt="logo website"/>
 </button>
 
             <!-- hamburger icon -->
