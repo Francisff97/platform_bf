@@ -11,32 +11,40 @@ use App\Support\FeatureFlags;
 Route::match(['GET','POST'], '/discord/config', [DiscordController::class, 'config']);
 Route::match(['GET','POST'], '/discord/incoming', [DiscordWebhookController::class, 'incoming']);
 Route::match(['GET','POST'], '/flags/refresh', function (\Illuminate\Http\Request $r) {
-    // 1) leggi raw body, con fallback php://input (alcuni stack danno stringa vuota con HTTP/2)
+    // --- metodo --------------------------------------------------------------
+    if ($r->isMethod('get')) {
+        return response()->json(['ok' => true, 'method' => 'GET', 'hint' => 'send POST with HMAC'], 200);
+    }
+
+    // --- body robusto (HTTP/2/chunked ecc.) ----------------------------------
     $raw = $r->getContent();
     if ($raw === '' || $raw === null) {
         $raw = @file_get_contents('php://input') ?: '';
     }
 
-    // 2) header firma normalizzato
-    $sig    = strtolower($r->header('X-Signature', ''));
-    // 3) secret da config (fallback env/getenv per sicurezza anche con config:cache)
-    $secret = trim(config('flags.signing_secret', ''))
-       ?: trim(config('flags.signing_secret_fallback', ''));
+    // --- firma header normalizzata -------------------------------------------
+    $sig = strtolower(trim($r->header('X-Signature', '')));
 
-    // LOG DIAGNOSTICO (temporaneo)
+    // --- secret: config -> fallback config -> env -> getenv -------------------
+    $secret =
+        trim((string) config('flags.signing_secret', '')) ?:
+        trim((string) config('flags.signing_secret_fallback', '')) ?:
+        trim((string) env('FLAGS_SIGNING_SECRET', '')) ?:
+        trim((string) (getenv('FLAGS_SIGNING_SECRET') ?: ''));
+
+    // --- log diagnostico essenziale ------------------------------------------
     Log::warning('[flags-refresh] IN', [
-        'len'          => strlen($raw),
-        'starts'       => substr($raw, 0, 40),
-        'sigHeader'    => substr($sig, 0, 12),
-        'secretLen'    => strlen(trim($secret)),
-        'ctLenHeader'  => $r->header('content-length'),
-        'allHeaders'   => $r->headers->all(),
+        'len'        => strlen($raw),
+        'sigHeader'  => substr($sig, 0, 12),
+        'secretLen'  => strlen($secret),
+        'ctLen'      => $r->header('content-length'),
     ]);
 
+    // --- calcolo HMAC e verifica ---------------------------------------------
     $calc = hash_hmac('sha256', $raw, $secret);
     Log::warning('[flags-refresh] CALC', ['calc' => substr($calc, 0, 12)]);
 
-    $ok = $secret && hash_equals($calc, $sig);
+    $ok = $secret !== '' && $sig !== '' && hash_equals($calc, $sig);
     if (!$ok) {
         return response()->json([
             'ok'        => false,
@@ -47,11 +55,13 @@ Route::match(['GET','POST'], '/flags/refresh', function (\Illuminate\Http\Reques
         ], 401);
     }
 
+    // --- payload --------------------------------------------------------------
     $body  = json_decode($raw, true) ?: [];
     $slugA = data_get($body, 'slug');
     $slugB = env('FLAGS_INSTALLATION_SLUG');
     $slugC = env('FLAGS_SLUG');
 
+    // --- invalidazione cache + warm ------------------------------------------
     $invalidated = [];
     foreach (array_filter([$slugA, $slugB, $slugC]) as $s) {
         $key = "features.remote.$s";
@@ -60,7 +70,11 @@ Route::match(['GET','POST'], '/flags/refresh', function (\Illuminate\Http\Reques
         $invalidated[$s] = $new;
     }
 
-    return ['ok'=>true, 'invalidated'=>array_keys($invalidated), 'values'=>$invalidated];
+    return [
+        'ok'          => true,
+        'invalidated' => array_keys($invalidated),
+        'values'      => $invalidated, // utile per debug
+    ];
 });
 
 
