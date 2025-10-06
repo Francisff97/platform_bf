@@ -25,10 +25,19 @@ class FeatureFlags
         return rtrim(config('flags.base_url', env('FLAGS_BASE_URL', '')), '/');
     }
 
-    /** ⚠️ legge prima FLAGS_INSTALLATION_SLUG, poi FLAGS_SLUG, poi config app.slug */
-    protected static function slug(): string
+    /** Risolve lo slug: preferisci quello passato; poi ENV; poi config; fallback 'demo' */
+    protected static function resolveSlug(?string $slug = null): string
     {
-        return config('app.slug', env('FLAGS_INSTALLATION_SLUG', env('FLAGS_SLUG', 'demo')));
+        if ($slug && is_string($slug)) {
+            return strtolower(trim($slug));
+        }
+
+        $a = env('FLAGS_INSTALLATION_SLUG');
+        $b = env('FLAGS_SLUG');
+        $c = config('app.slug');
+
+        $out = $a ?: ($b ?: ($c ?: 'demo'));
+        return strtolower(trim($out));
     }
 
     /** Tenuta per compat: non più usata in rememberForever */
@@ -73,7 +82,7 @@ class FeatureFlags
     }
 
     /* ----------------------------------------------------------------------
-     |  FETCH REMOTO (per slug specifico)  — NUOVO
+     |  FETCH REMOTO (per slug specifico)
      * --------------------------------------------------------------------*/
     protected static function fetchRemoteFor(string $slug, array $defaults): ?array
     {
@@ -116,9 +125,10 @@ class FeatureFlags
     }
 
     /** Retro-compat: fetch remoto per lo slug corrente */
-    protected static function fetchRemote(array $defaults): ?array
+    protected static function fetchRemote(array $defaults, ?string $slug = null): ?array
     {
-        return self::fetchRemoteFor(self::slug(), $defaults);
+        $slug = self::resolveSlug($slug);
+        return self::fetchRemoteFor($slug, $defaults);
     }
 
     /**
@@ -127,8 +137,10 @@ class FeatureFlags
      *  - altrimenti REMOTO con cache forever (warm alla prima lettura):
      *      • se valido ⇒ REMOTO
      *      • altrimenti ⇒ defaults + ENV
+     *
+     *  @param string|null $slug  ← NEW: se passato, legge quei flag
      */
-    public static function all(): array
+    public static function all(?string $slug = null): array
     {
         $defaults = self::defaults();
         $locals   = self::localFromEnv($defaults);
@@ -137,7 +149,7 @@ class FeatureFlags
             return $locals;
         }
 
-        $slug     = self::slug();
+        $slug     = self::resolveSlug($slug);
         $cacheKey = "features.remote.$slug";
 
         try {
@@ -152,33 +164,34 @@ class FeatureFlags
         }
     }
 
-    /** Helper singolo flag */
-    public static function enabled(string $key): bool
+    /** Helper singolo flag (ora accetta lo slug) */
+    public static function enabled(string $key, ?string $slug = null): bool
     {
-        $all = self::all();
+        $all = self::all($slug);
         return !empty($all[$key]);
     }
 
-    /** DEBUG: utile in tinker per capire cosa legge */
-    public static function debug(): array
+    /** DEBUG: utile in tinker per capire cosa legge (ora accetta slug) */
+    public static function debug(?string $slug = null): array
     {
+        $slug = self::resolveSlug($slug);
         return [
             'base_url'   => self::baseUrl(),
-            'slug'       => self::slug(),
+            'slug'       => $slug,
             'forceLocal' => self::forceLocal(),
             'defaults'   => self::defaults(),
             'locals'     => self::localFromEnv(self::defaults()),
-            'remote'     => self::fetchRemote(self::defaults()),
-            'final'      => self::all(),
+            'remote'     => self::fetchRemote(self::defaults(), $slug),
+            'final'      => self::all($slug),
         ];
     }
 
     /* ----------------------------------------------------------------------
-     |  Cache helpers — NUOVI
+     |  Cache helpers
      * --------------------------------------------------------------------*/
     public static function cacheKey(?string $slug = null): string
     {
-        $slug = $slug ?: self::slug();
+        $slug = self::resolveSlug($slug);
         return "features.remote.$slug";
     }
 
@@ -196,7 +209,7 @@ class FeatureFlags
     {
         $defaults = self::defaults();
         $locals   = self::localFromEnv($defaults);
-        $slug     = $slug ?: self::slug();
+        $slug     = self::resolveSlug($slug);
         $cacheKey = self::cacheKey($slug);
 
         $remote = self::fetchRemoteFor($slug, $defaults);
