@@ -3,40 +3,29 @@
 namespace App\Http\Controllers;
 
 use App\Models\DiscordMessage;
-use App\Models\SiteSetting; // <-- usa il tuo model; se differisce vedi helper sotto
+use App\Models\SiteSetting; // deve avere i campi come colonne
 use Illuminate\Http\Request;
 
 class DiscordController extends Controller
 {
     /**
      * GET/POST /api/discord/config
-     * Legge SOLO i 3 ID da SiteSettings (fallback .env) e li espone
-     * nel formato atteso dal bot.
-     *
-     * SiteSettings (chiavi esatte):
+     * Legge i 3 ID dalle COLONNE della tabella site_settings:
      *  - discord_server_id
      *  - discord_announcements_channel_id
      *  - discord_feedback_channel_id
+     * Fallback a .env se non presenti.
      */
     public function config(Request $req)
     {
-        // prendi in un colpo solo (adatta se il tuo model/columns differiscono)
-        $map = $this->getSettings([
-            'discord_server_id',
-            'discord_announcements_channel_id',
-            'discord_feedback_channel_id',
-        ]);
+        // prendi la prima riga delle impostazioni (adatta se hai multi-tenant)
+        $s = SiteSetting::query()->first();
 
-        $guildId = (string)($map['discord_server_id']
-            ?? env('DISCORD_GUILD_ID', ''));
+        $guildId = (string)($s->discord_server_id ?? env('DISCORD_GUILD_ID', ''));
+        $chAnn   = (string)($s->discord_announcements_channel_id ?? env('DISCORD_CHANNEL_ANNOUNCEMENTS', ''));
+        $chFb    = (string)($s->discord_feedback_channel_id      ?? env('DISCORD_CHANNEL_FEEDBACK', ''));
 
-        $chAnn  = (string)($map['discord_announcements_channel_id']
-            ?? env('DISCORD_CHANNEL_ANNOUNCEMENTS', ''));
-
-        $chFb   = (string)($map['discord_feedback_channel_id']
-            ?? env('DISCORD_CHANNEL_FEEDBACK', ''));
-
-        // enabled solo se ho tutti e tre
+        // abilita solo se ho tutti e tre gli ID
         $enabled = $guildId !== '' && $chAnn !== '' && $chFb !== '';
 
         return response()->json([
@@ -54,8 +43,7 @@ class DiscordController extends Controller
 
     /**
      * POST /api/discord/incoming
-     * Accetta l'envelope { event, data } firmato HMAC-SHA256 (header: x-signature)
-     * Segreto: APP_WEBHOOK_SECRET (fallback DISCORD_WEBHOOK_SECRET).
+     * (resta uguale alla versione envelope {event,data} con HMAC)
      */
     public function incoming(Request $req)
     {
@@ -72,7 +60,7 @@ class DiscordController extends Controller
         $event = $json['event'] ?? null;
         $data  = $json['data']  ?? null;
 
-        // compat: se arriva “piatto”, massaggia in {event,data}
+        // compat vecchio formato "piatto"
         if (!$event && !$data) {
             $flat = $json;
             if (isset($flat['message_id']) || isset($flat['guild_id']) || isset($flat['channel_id'])) {
@@ -80,38 +68,30 @@ class DiscordController extends Controller
                 $data  = $flat;
             }
         }
-
         if (!$event) {
             return response()->json(['ok' => false, 'error' => 'invalid payload'], 400);
         }
 
         if ($event === 'bot.hello') {
-            // opzionale: log/metrics
             return response()->json(['ok' => true]);
         }
 
         if ($event === 'discord.message') {
-            $channelId = (string)($data['channel_id'] ?? '');
-            $kind      = $data['kind'] ?? null;
-
-            // se non passato “kind” non ci complichiamo: non inferiamo; opzionale
-            // (se vuoi inferirlo, puoi ripescare i due channel id da SiteSettings come sopra)
-
             $createdAt = isset($data['created_at'])
                 ? now()->createFromTimestampMs((int)$data['created_at'])
                 : now();
 
-            DiscordMessage::updateOrCreate(
+            \App\Models\DiscordMessage::updateOrCreate(
                 ['message_id' => (string)($data['message_id'] ?? '')],
                 [
                     'guild_id'           => (string)($data['guild_id'] ?? ''),
-                    'channel_id'         => $channelId,
+                    'channel_id'         => (string)($data['channel_id'] ?? ''),
                     'channel_name'       => (string)($data['channel_name'] ?? ''),
                     'author_id'          => (string)($data['author_id'] ?? ''),
                     'author_name'        => (string)($data['author_name'] ?? ''),
                     'content'            => (string)($data['content'] ?? ''),
                     'attachments'        => $data['attachments'] ?? [],
-                    'kind'               => $kind, // può essere null
+                    'kind'               => $data['kind'] ?? null, // opzionale
                     'message_created_at' => $createdAt,
                 ]
             );
@@ -120,23 +100,5 @@ class DiscordController extends Controller
         }
 
         return response()->json(['ok' => false, 'error' => 'unsupported event'], 400);
-    }
-
-    // -------------------- helpers --------------------
-
-    /**
-     * Recupera più chiavi da SiteSettings e ritorna ['key' => 'value'].
-     * Adatta questo metodo alla tua struttura:
-     *  - Se hai colonne diverse (es. name/value), cambia le where/pluck.
-     *  - Se hai un accessor globale (es. settings('key')), sostituisci.
-     */
-    private function getSettings(array $keys): array
-    {
-        // esempio: SiteSetting ha colonne: key, value
-        $rows = SiteSetting::query()
-            ->whereIn('key', $keys)
-            ->pluck('value', 'key');
-
-        return $rows->toArray();
     }
 }
