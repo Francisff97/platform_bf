@@ -22,36 +22,37 @@ class FeatureFlags
 
     protected static function baseUrl(): string
     {
-        return rtrim(config('flags.base_url', env('FLAGS_BASE_URL', '')), '/');
+        return rtrim((string) config('flags.base_url', ''), '/');
     }
 
-    /** Risolve lo slug: preferisci quello passato; poi ENV; poi config; fallback 'demo' */
+    /** Risolve lo slug: preferisci quello passato; poi config; fallback 'demo' */
     protected static function resolveSlug(?string $slug = null): string
     {
         if (is_string($slug) && $slug !== '') {
             return strtolower(trim($slug));
         }
 
-        $a = config('flags.installations.slug');
-        $b = env('flags.slug');
-        $c = config('app.slug');
+        // leggi solo da config
+        $a = (string) config('flags.installation_slug', ''); // es. FLAGS_INSTALLATION_SLUG
+        $b = (string) config('app.slug', '');                // eventuale slug app
+        $c = (string) config('flags.default_slug', 'demo');  // fallback
 
-        $out = $a ?: ($b ?: ($c ?: 'demo'));
-        return strtolower(trim((string) $out));
+        $out = trim($a) !== '' ? $a : (trim($b) !== '' ? $b : $c);
+        return strtolower(trim($out));
     }
 
     /** Tenuta per compat: non più usata in rememberForever */
     protected static function ttl(): int
     {
-        return (int) config('flags.ttl', env('FLAGS_TTL', 60));
+        return (int) config('flags.ttl', 60);
     }
 
     protected static function forceLocal(): bool
     {
-        return (bool) env('FEATURES_FORCE_LOCAL', false);
+        return (bool) config('features.force_local', false);
     }
 
-    /** true/false robusto da stringhe ENV */
+    /** true/false robusto da stringhe di config */
     protected static function toBool($v): bool
     {
         if (is_bool($v)) return $v;
@@ -59,21 +60,22 @@ class FeatureFlags
         return in_array($s, ['1','true','yes','on','y','t'], true);
     }
 
-    /** Override locali da ENV singole */
+    /** Override locali presi da config/features.php → ['overrides' => [...]] */
     protected static function localFromEnv(array $defaults): array
     {
+        // leggiamo da config('features.overrides.*'), non da env()
         $map = [
-            'addons'              => 'FEATURES_ADDONS',
-            'email_templates'     => 'FEATURES_EMAIL_TEMPLATES',
-            'discord_integration' => 'FEATURES_DISCORD_INTEGRATION',
-            'tutorials'           => 'FEATURES_TUTORIALS',
-            'announcements'       => 'FEATURES_ANNOUNCEMENTS',
+            'addons'              => 'features.overrides.addons',
+            'email_templates'     => 'features.overrides.email_templates',
+            'discord_integration' => 'features.overrides.discord_integration',
+            'tutorials'           => 'features.overrides.tutorials',
+            'announcements'       => 'features.overrides.announcements',
         ];
 
         $out = [];
-        foreach ($map as $key => $envKey) {
-            $raw = env($envKey, null);
-            if ($raw === null) continue;
+        foreach ($map as $key => $confKey) {
+            $raw = config($confKey, null);
+            if ($raw === null) continue; // nessun override configurato
             $out[$key] = self::toBool($raw);
         }
 
@@ -166,7 +168,7 @@ class FeatureFlags
 
     /**
      * PRIORITÀ:
-     *  - se FEATURES_FORCE_LOCAL=true ⇒ defaults + ENV
+     *  - se FEATURES_FORCE_LOCAL=true ⇒ defaults + overrides da config
      *  - altrimenti: REMOTO (cache forever) per LO SLUG PASSATO (o quello “corrente”)
      */
     public static function all(?string $slug = null): array
@@ -215,18 +217,21 @@ class FeatureFlags
 
     /**
      * Slug “corrente” per Blade/Controller:
-     * route('slug') → ?installation= → DB settings → ENV → 'demo'
+     * route('slug') → ?installation= → DB settings → config → 'demo'
      */
     public static function currentSlug(): string
     {
         $r = request();
 
-        $fromRoute = $r?->route('slug');                 // es: /admin/{slug}
-        $fromQuery = $r?->query('installation');         // es: ?installation=dnln
+        $fromRoute = $r?->route('slug');                         // es: /admin/{slug}
+        $fromQuery = $r?->query('installation');                 // es: ?installation=dnln
         $fromDb    = optional(\App\Models\SiteSetting::first())->flags_installation_slug;
-        $fromEnv   = env('FLAGS_INSTALLATION_SLUG') ?: env('FLAGS_SLUG') ?: config('app.slug');
 
-        $slug = $fromRoute ?? $fromQuery ?? $fromDb ?? $fromEnv ?? 'demo';
+        // solo config, niente env()
+        $fromCfg   = (string) config('flags.installation_slug', '');
+        $fallback  = (string) (config('app.slug', '') ?: config('flags.default_slug', 'demo'));
+
+        $slug = $fromRoute ?? $fromQuery ?? $fromDb ?? ($fromCfg !== '' ? $fromCfg : $fallback);
 
         return strtolower(trim((string) $slug));
     }
