@@ -72,19 +72,33 @@ class DiscordController extends Controller
             return response()->json(['ok' => false, 'error' => 'invalid payload'], 400);
         }
 
+        // --- Aggiunta 1: pulizia globale quando arriva la nuova guild ---
         if ($event === 'bot.hello') {
+            $guildId = (string)($data['guild_id'] ?? '');
+            if ($guildId !== '') {
+                // elimina TUTTO ciò che non appartiene alla nuova guild
+                DiscordMessage::where('guild_id', '!=', $guildId)->delete();
+            }
             return response()->json(['ok' => true]);
         }
 
         if ($event === 'discord.message') {
+            $guildId = (string)($data['guild_id'] ?? '');
+            $phase   = (string)($data['phase'] ?? '');
+
+            // --- Aggiunta 2: pulizia per-guild all'inizio del bootstrap ---
+            if ($phase === 'bootstrap' && $guildId !== '') {
+                DiscordMessage::where('guild_id', $guildId)->delete();
+            }
+
             $createdAt = isset($data['created_at'])
                 ? now()->createFromTimestampMs((int)$data['created_at'])
                 : now();
 
-            \App\Models\DiscordMessage::updateOrCreate(
+            DiscordMessage::updateOrCreate(
                 ['message_id' => (string)($data['message_id'] ?? '')],
                 [
-                    'guild_id'           => (string)($data['guild_id'] ?? ''),
+                    'guild_id'           => $guildId,
                     'channel_id'         => (string)($data['channel_id'] ?? ''),
                     'channel_name'       => (string)($data['channel_name'] ?? ''),
                     'author_id'          => (string)($data['author_id'] ?? ''),
