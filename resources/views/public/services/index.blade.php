@@ -1,4 +1,5 @@
 <x-app-layout>
+<x-auto-hero/>
 
   {{-- HERO / INTRO --}}
   <section class="relative mx-auto mt-[60px] max-w-5xl text-center">
