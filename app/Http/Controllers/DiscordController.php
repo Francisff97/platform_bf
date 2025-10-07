@@ -47,7 +47,7 @@ class DiscordController extends Controller
      */
     public function incoming(Request $req)
     {
-        $secret = env('APP_WEBHOOK_SECRET') ?: env('DISCORD_WEBHOOK_SECRET', '');
+        $secret = config('discord.webhook_secret');
         $raw    = $req->getContent();
         $sig    = $req->header('x-signature', '');
         $exp    = hash_hmac('sha256', $raw, (string) $secret);
