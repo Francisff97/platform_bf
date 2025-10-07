@@ -13,7 +13,7 @@
   @endphp
 
   @if($hasSections)
-    <div class="space-y-10 my-[50px]">
+    <div class="my-[100px]">
       @foreach($sections as $sct)
         @include('partials.about-section', ['s' => $sct])
       @endforeach
