@@ -84,6 +84,7 @@
         ['label'=>'Services',        'route'=>'admin.services.index',   'match'=>['admin.services.*']],
         ['label'=>'Builders',        'route'=>'admin.builders.index',   'match'=>['admin.builders.*']],
         ['label'=>'Coaches',         'route'=>'admin.coaches.index',    'match'=>['admin.coaches.*']],
+        ['label'=>'Partners',         'route'=>'admin.partners.index',    'match'=>['admin.partners.*']],
         ['label'=>'Sliders',         'route'=>'admin.slides.index',     'match'=>['admin.slides.*']],
         ['label'=>'Hero Sections',   'route'=>'admin.heroes.index',     'match'=>['admin.heroes.*']],
         ['label'=>'Orders',          'route'=>'admin.orders.index',     'match'=>['admin.orders.*']],
@@ -158,7 +159,7 @@
                    class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
                           {{ $active ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
                   <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $active ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
-                  Tutorials
+                  Videos
                 </a>
               @endif
             </nav>
