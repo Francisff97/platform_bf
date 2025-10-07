@@ -24,7 +24,7 @@
 @elseif($s->layout === 'image_right')
   {{-- Mobile: immagine sopra, testo sotto.
        Da md in su: due colonne con immagine a destra (colonna 2). --}}
-  <section class="grid items-center gap-6 md:grid-cols-2">
+  <section class="grid items-center gap-6 md:grid-cols-2 mt-[50px]">
     @if($img)
       <img
         src="{{ $img }}"
