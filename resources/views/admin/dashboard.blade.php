@@ -1,4 +1,4 @@
-<x-admin-layout title="Dashboard">
+<x-admin-layout title="Dashboard Admin">
   {{-- Top note --}}
   <div class="mb-6 rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-5 text-sm text-gray-700 shadow-sm dark:border-gray-700 dark:from-gray-800 dark:to-gray-900 dark:text-gray-100">
     <div class="flex items-start gap-3">
