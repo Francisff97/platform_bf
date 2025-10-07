@@ -9,42 +9,114 @@
     </div>
   </div>
 
-  {{-- KPI / Stats --}}
-  <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
-    <x-stat label="Packs"    :value="$packsCount ?? 0" />
-    <x-stat label="Services" :value="$servicesCount ?? 0" />
-    <x-stat label="Builders" :value="$buildersCount ?? 0" />
-    <x-stat label="Heroes"   :value="$heroesCount ?? 0" />
-    <x-stat label="Slides"   :value="$slidesCount ?? 0" />
-    <x-stat label="Users"    :value="$usersCount ?? 0" />
-  </div>
+  {{-- KPI / Stats (nuove cards) --}}
+@php
+  $packsCount    = $packsCount    ?? 0;
+  $servicesCount = $servicesCount ?? 0;
+  $buildersCount = $buildersCount ?? 0;
+  $heroesCount   = $heroesCount   ?? 0;
+  $slidesCount   = $slidesCount   ?? 0;
+  $usersCount    = $usersCount    ?? 0;
 
-  @php
-    // --- Fallback / computed data ------------------------------------------
-    $ordersPerDay = $ordersPerDay ?? [3,6,4,9,7,10,5];
-    $ordersMax    = max($ordersPerDay) ?: 1;
+  $stats = [
+    [
+      'label' => 'Packs',
+      'value' => $packsCount,
+      'href'  => route('admin.packs.index'),
+      'icon'  => '<path d="M3 7l9-4 9 4-9 4-9-4Z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/>',
+    ],
+    [
+      'label' => 'Services',
+      'value' => $servicesCount,
+      'href'  => route('admin.services.index'),
+      'icon'  => '<path d="M12 3v3M12 18v3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M3 12h3M18 12h3M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12"/><circle cx="12" cy="12" r="4"/>',
+    ],
+    [
+      'label' => 'Builders',
+      'value' => $buildersCount,
+      'href'  => route('admin.builders.index'),
+      'icon'  => '<path d="M14 14.76V22l-2-1-2 1v-7.24"/><path d="M6 10l6-6 6 6-6 6-6-6Z"/>',
+    ],
+    [
+      'label' => 'Heroes',
+      'value' => $heroesCount,
+      'href'  => route('admin.heroes.index'),
+      'icon'  => '<circle cx="12" cy="7" r="3"/><path d="M5.5 21a6.5 6.5 0 0 1 13 0"/>',
+    ],
+    [
+      'label' => 'Slides',
+      'value' => $slidesCount,
+      'href'  => route('admin.slides.index'),
+      'icon'  => '<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M2 9h20M8 21h8M12 17v4"/>',
+    ],
+    [
+      'label' => 'Users',
+      'value' => $usersCount,
+      'href'  => route('admin.users.index'),
+      'icon'  => '<path d="M20 21a8 8 0 1 0-16 0"/><circle cx="12" cy="7" r="4"/>',
+    ],
+  ];
+@endphp
 
-    $contentMix = $contentMix ?? [
-      ['label'=>'Packs',    'value'=>$packsCount   ?? 0, 'color'=>'#7c3aed'],
-      ['label'=>'Services', 'value'=>$servicesCount?? 0, 'color'=>'#06b6d4'],
-      ['label'=>'Builders', 'value'=>$buildersCount?? 0, 'color'=>'#10b981'],
-      ['label'=>'Heroes',   'value'=>$heroesCount  ?? 0, 'color'=>'#f59e0b'],
-      ['label'=>'Slides',   'value'=>$slidesCount  ?? 0, 'color'=>'#ef4444'],
-    ];
-    $contentTotal = collect($contentMix)->sum('value') ?: 1;
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+  @foreach($stats as $s)
+    <a href="{{ $s['href'] }}"
+       class="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition
+              hover:-translate-y-0.5 hover:shadow-lg dark:border-gray-700 dark:bg-gray-900/70">
+      {{-- glow accent --}}
+      <span class="pointer-events-none absolute -inset-0.5 rounded-2xl opacity-0 blur-2xl transition
+                   group-hover:opacity-60"
+            style="background: radial-gradient(500px 160px at 110% -10%, color-mix(in oklab, var(--accent) 25%, transparent) 0%, transparent 60%);"></span>
 
-    // Donut gradient string
-    $acc = 0;
-    $stops = [];
-    foreach ($contentMix as $row) {
-      $pct = round(($row['value'] / $contentTotal) * 100);
-      $from = $acc;
-      $to   = min(100, $acc + $pct);
-      $stops[] = "{$row['color']} {$from}% {$to}%";
-      $acc = $to;
-    }
-    $donutGradient = 'conic-gradient('.implode(', ', $stops).')';
-  @endphp
+      <div class="relative flex items-start justify-between">
+        {{-- Icona circolare --}}
+        <div class="grid h-10 w-10 place-items-center rounded-xl border border-[color:var(--accent)]/30
+                    bg-[color:var(--accent)]/10 text-[color:var(--accent)]">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            {!! $s['icon'] !!}
+          </svg>
+        </div>
+
+        {{-- Badge "View" che appare al hover --}}
+        <span class="translate-y-1 rounded-full border border-[color:var(--accent)]/30 bg-[color:var(--accent)]/10
+                      px-2 py-0.5 text-xs text-[color:var(--accent)] opacity-0 transition
+                      group-hover:translate-y-0 group-hover:opacity-100">
+          Open
+        </span>
+      </div>
+
+      {{-- Valore + label --}}
+      <div class="relative mt-4">
+        <div class="font-mono text-3xl font-semibold leading-none text-gray-900 dark:text-gray-50">
+          <span
+            x-data="{ n: 0 }"
+            x-init="let t=0, end={{ (int) $s['value'] }}; if(!window.requestAnimationFrame){ n=end; return; }
+                    let step = (ts) => {
+                      t = t || ts;
+                      const p = Math.min(1, (ts - t) / 700);
+                      n = Math.round(end * (0.2 + 0.8 * p));
+                      if (p < 1) requestAnimationFrame(step);
+                    };
+                    requestAnimationFrame(step);"
+            x-text="n"
+          >{{ (int) $s['value'] }}</span>
+        </div>
+        <div class="mt-1 text-sm text-gray-600 dark:text-gray-300">{{ $s['label'] }}</div>
+      </div>
+
+      {{-- progress bar estetica (solo look, scala sul valore relativo ai massimi) --}}
+      @php
+        // normalizzo sul max dei valori per dare una sensazione di “riempimento”
+        $maxStat = max($packsCount, $servicesCount, $buildersCount, $heroesCount, $slidesCount, $usersCount) ?: 1;
+        $pct = max(6, intval(($s['value'] / $maxStat) * 100));
+      @endphp
+      <div class="relative mt-4 h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+        <div class="h-full rounded-full bg-[color:var(--accent)] transition-all duration-700 ease-out"
+             style="width: {{ $pct }}%"></div>
+      </div>
+    </a>
+  @endforeach
+</div>
 
   {{-- Actions + charts --}}
   <div class="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
