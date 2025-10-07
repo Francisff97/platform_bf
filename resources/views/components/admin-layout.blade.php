@@ -125,46 +125,54 @@
         </nav>
 
         {{-- ADD-ONS --}}
-        @if(!empty($features['addons']))
-          <div class="bg-gray-100 dark:bg-gray-800 my-4 mx-4 rounded-[10px] p-[10px]">
-            <div class="px-3 pt-2 text-xs uppercase text-gray-500">Add-ons</div>
+@php
+  // feature flags già calcolati sopra in $features
+  $hasEmailTemplates = \Illuminate\Support\Facades\Route::has('admin.addons.email-templates');
+  $hasDiscord        = \Illuminate\Support\Facades\Route::has('admin.addons.discord');
+  $hasTutorials      = \Illuminate\Support\Facades\Route::has('admin.addons.tutorials');
+@endphp
 
-            <nav class="px-2 space-y-1 text-sm mt-1">
-              {{-- Email Templates --}}
-              @if(!empty($features['email_templates']))
-                <!-- @php $active = request()->routeIs('admin.addons.email-templates*'); @endphp -->
-                <a href="{{ route('admin.addons.email-templates') }}"
-                   class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
-                          {{ $active ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
-                  <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $active ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
-                  Email templates
-                </a>
-              @endif
+@if(!empty($features['addons']))
+  <div class="bg-gray-100 dark:bg-gray-800 my-4 mx-4 rounded-[10px] p-[10px]">
+    <div class="px-3 pt-2 text-xs uppercase text-gray-500">Add-ons</div>
 
-              {{-- Discord --}}
-              @if(!empty($features['discord_integration']))
-                <!-- @php $active = request()->routeIs('admin.addons.discord*'); @endphp -->
-                <a href="{{ route('admin.addons.discord') }}"
-                   class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
-                          {{ $active ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
-                  <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $active ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
-                  Discord integration
-                </a>
-              @endif
+    <nav class="px-2 space-y-1 text-sm mt-1">
+      {{-- Email Templates --}}
+      @if(!empty($features['email_templates']) && $hasEmailTemplates)
+        @php $active = request()->routeIs('admin.addons.email-templates*'); @endphp
+        <a href="{{ route('admin.addons.email-templates') }}"
+           class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
+                  {{ $active ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
+          <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $active ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
+          Email templates
+        </a>
+      @endif
 
-              {{-- Tutorials --}}
-              @if(!empty($features['tutorials']))
-                <!-- @php $active = request()->routeIs('admin.addons.tutorials*'); @endphp -->
-                <a href="{{ route('admin.addons.tutorials') }}"
-                   class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
-                          {{ $active ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
-                  <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $active ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
-                  Videos
-                </a>
-              @endif
-            </nav>
-          </div>
-        @endif
+      {{-- Discord --}}
+      @if(!empty($features['discord_integration']) && $hasDiscord)
+        @php $active = request()->routeIs('admin.addons.discord*'); @endphp
+        <a href="{{ route('admin.addons.discord') }}"
+           class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
+                  {{ $active ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
+          <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $active ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
+          Discord integration
+        </a>
+      @endif
+
+      {{-- Tutorials --}}
+      @if(!empty($features['tutorials']) && $hasTutorials)
+        @php $active = request()->routeIs('admin.addons.tutorials*'); @endphp
+        <a href="{{ route('admin.addons.tutorials') }}"
+           class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
+                  {{ $active ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
+          <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $active ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
+          Videos
+        </a>
+      @endif
+    </nav>
+  </div>
+@endif
+
       </div>
 
       {{-- PROFILE CARD --}}
