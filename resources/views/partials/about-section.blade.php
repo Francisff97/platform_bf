@@ -3,7 +3,7 @@
 @endphp
 
 @if($s->layout === 'hero')
-  <section class="rounded-2xl bg-gradient-to-br from-indigo-50 to-white dark:from-gray-800 dark:to-gray-900 border p-8">
+  <section class="rounded-2xl my-[50px] bg-gradient-to-br from-indigo-50 to-white dark:from-gray-800 dark:to-gray-900 border p-8">
     <h2 class="text-2xl font-bold mb-2">{{ $s->title }}</h2>
     @if($s->body)<p class="text-gray-600 dark:text-gray-300 leading-relaxed">{{ $s->body }}</p>@endif
     @if($img)<img src="{{ $img }}" class="mt-6 rounded-xl w-full object-cover" alt="About image">@endif
