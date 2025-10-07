@@ -12,7 +12,7 @@ use Illuminate\Cache\RedisStore;
 use Illuminate\Cache\DatabaseStore;
 
 Route::match(['GET','POST'], '/discord/config', [DiscordController::class, 'config']);
-Route::match(['GET','POST'], '/discord/incoming', [DiscordWebhookController::class, 'incoming']);
+Route::match(['GET','POST'], '/discord/incoming', [DiscordController::class, 'incoming']);
 Route::match(['GET','POST'], '/flags/refresh', function (\Illuminate\Http\Request $r) {
     // --- Body & Signature ---
     $raw = $r->getContent() ?: (@file_get_contents('php://input') ?: '');
