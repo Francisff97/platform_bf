@@ -95,21 +95,14 @@
       // ------------------------------
       // SLUG + FLAGS (come richiesto)
       // ------------------------------
-      $slug =
-          request('installation') // ?installation=dnln (utile per test/multi-tenant)
-          ?: optional(\App\Models\SiteSetting::first())->flags_installation_slug
-          ?: env('FLAGS_INSTALLATION_SLUG')
-          ?: env('FLAGS_SLUG')
-          ?: config('app.slug')
-          ?: 'demo';
+       $slug =
+      request('installation') ? strtolower(trim(request('installation'))) :
+      (optional(\App\Models\SiteSetting::first())->flags_installation_slug
+        ? strtolower(trim(optional(\App\Models\SiteSetting::first())->flags_installation_slug))
+        : (config('flags.installation_slug') ?: config('flags.default_slug', 'demo')));
 
-      $slug = strtolower(trim($slug));
-
-      // Flags per quello slug (usa cache forever sotto il cofano)
-      $features = \App\Support\FeatureFlags::all($slug);
-
-      // Mostra il box Add-ons se almeno un flag è true e se addons (master) è on
-      $addonsEnabled = (!empty($features['addons'])) && collect($features)->contains(true);
+  $features = \App\Support\FeatureFlags::all($slug);
+  $addonsEnabled = (!empty($features['addons'])) && collect($features)->contains(true);
     @endphp
 
     <!-- Aggiungo solo un id per pilotare la sidebar da JS -->
