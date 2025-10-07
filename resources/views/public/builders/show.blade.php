@@ -1,7 +1,7 @@
 <x-app-layout>
 <x-slot name="header"><h1 class="text-2xl font-bold">{{ $builder->name }}</h1></x-slot>
 
-<div class="grid grid-cols-2">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-[30px]">
       {{-- avatar/immagine --}}
       @if($builder->image_path)
         <img src="{{ Storage::url($builder->image_path) }}" class="rounded-xl object-cover w-full">
@@ -16,15 +16,14 @@
             @endforeach
           </div>
         @endif
-      </div>
-    </div>
-
-    <div class="md:col-span-2">
+          <div class="md:col-span-2">
       @if($builder->description)
         <div class="prose max-w-none dark:prose-invert">
           {!! nl2br(e($builder->description)) !!}
         </div>
       @endif
+      </div>
+    </div>
 
   <h2 class="mb-3 text-lg font-semibold">Packs di {{ $builder->name }}</h2>
   <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
