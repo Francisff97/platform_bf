@@ -25,7 +25,6 @@
   {{-- Mobile: immagine sopra, testo sotto.
        Da md in su: due colonne con immagine a destra e testo centrato verticalmente. --}}
   <section class="grid gap-6 mt-[50px] md:grid-cols-2 md:items-center">
-      <div>
     @if($img)
       <img
         src="{{ $img }}"
@@ -34,7 +33,7 @@
       >
     @endif
 
-    <div class="md:col-start-1 flex flex-col justify-center">
+    <div>
       @if($s->title)<h3 class="text-xl font-semibold mb-2">{{ $s->title }}</h3>@endif
       @if($s->body)
         <div class="prose max-w-none dark:prose-invert">
