@@ -133,7 +133,7 @@ Route::post('analytics', [\App\Http\Controllers\Admin\AnalyticsController::class
             ->parameters(['about' => 'about'])   // parametro {about}
             ->names('about');
         Route::get('/', \App\Http\Controllers\Admin\DashboardController::class)->name('dashboard');
-        Route::resource('partners', \App\Https\Controllers\Admin\PartnerController::class)->except(['show']);
+        Route::resource('partners', \App\Http\Controllers\Admin\PartnerController::class)->except(['show']);
         Route::resource('packs',    \App\Http\Controllers\Admin\PackController::class)->except(['show']);
         Route::resource('services', \App\Http\Controllers\Admin\ServiceController::class)->except(['show']);
         Route::resource('builders', \App\Http\Controllers\Admin\BuilderController::class)->except(['show']);
