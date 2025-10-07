@@ -5,6 +5,8 @@ use App\Http\Controllers\DiscordPublicController;
 use App\Http\Middleware\FeatureGate;
 use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Support\FeatureFlags;
+// routes/web.php (o routes/admin.php se lo usi)
+use App\Http\Controllers\Admin\DiscordAddonsController;
 
 // BOT
 
@@ -111,11 +113,11 @@ Route::middleware(['auth', AdminOnly::class])
     ->prefix('admin')->name('admin.')
     ->group(function () {
         Route::prefix('addons')->name('addons.')->group(function () {
-            Route::get('discord', [\App\Http\Controllers\Admin\DiscordAddonController::class,'index'])
+            Route::get('discord', [\App\Http\Controllers\Admin\DiscordAddonsController::class,'index'])
                 ->name('discord');
-            Route::post('discord', [\App\Http\Controllers\Admin\DiscordAddonController::class,'save'])
+            Route::post('discord', [\App\Http\Controllers\Admin\DiscordAddonsController::class,'save'])
                 ->name('discord.save');
-            Route::get('discord/sync', [\App\Http\Controllers\Admin\DiscordAddonController::class,'sync'])
+            Route::get('discord/sync', [\App\Http\Controllers\Admin\DiscordAddonsController::class,'sync'])
                 ->name('discord.sync');
         });
         // Admin > Analytics (GTM)
