@@ -72,7 +72,7 @@
         $public  = $coach->tutorials()->where('is_public', true)->get();
         $private = collect();
 
-        $canSeePrivate = auth()->check() && auth()->user()->hasPurchasedCoach? $coach->id : false;
+        $canSeePrivate = auth()->check() && method_exists(auth()->user(), "hasPurchasedCoach") && auth()->user()->hasPurchasedCoach( $coach->id);
         // Se non hai questo metodo, sostituisci la condizione con la tua regola di visibilità.
 
         if ($canSeePrivate) {
