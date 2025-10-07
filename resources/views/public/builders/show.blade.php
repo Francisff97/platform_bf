@@ -1,7 +1,7 @@
 <x-app-layout>
 <x-slot name="header"><h1 class="text-2xl font-bold">{{ $builder->name }}</h1></x-slot>
 
-<div>
+<div class="grid grid-cols-2">
       {{-- avatar/immagine --}}
       @if($builder->image_path)
         <img src="{{ Storage::url($builder->image_path) }}" class="rounded-xl object-cover w-full">
