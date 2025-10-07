@@ -8,6 +8,9 @@ use App\Support\FeatureFlags;
 // routes/web.php (o routes/admin.php se lo usi)
 use App\Http\Controllers\Admin\DiscordAddonsController;
 
+// Partner Controller //
+use App\Http\Controllers\Admin\PartnerController;
+
 // BOT
 
 use App\Http\Controllers\DiscordController;
