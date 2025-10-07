@@ -50,5 +50,6 @@ class Kernel extends HttpKernel
 
         'adminonly' => \App\Http\Middleware\AdminOnly::class,
         'feature' => \App\Http\Middleware\FeatureGate::class,
+    'verify.platform' => \App\Http\Middleware\VerifyPlatformSignature::class,
     ];
 }
