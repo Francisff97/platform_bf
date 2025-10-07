@@ -12,7 +12,6 @@ use App\Http\Controllers\Admin\DiscordAddonsController;
 use App\Http\Controllers\Admin\PartnerController;
 
 // BOT
-
 use App\Http\Controllers\DiscordController;
 
 use Illuminate\Support\Facades\Route;
@@ -87,8 +86,8 @@ Route::get('/coaches/{slug}', function ($slug) {
     $coach = Coach::where('slug',$slug)->firstOrFail();
     return view('public.coaches.show', compact('coach'));
 })->name('coaches.show');
-use App\Http\Controllers\DiscordFeedController;
 
+use App\Http\Controllers\DiscordFeedController;
 Route::get('/news', [DiscordFeedController::class,'news'])->name('discord.news');
 Route::get('/feedback', [DiscordFeedController::class,'feedback'])->name('discord.feedback');
 
@@ -115,6 +114,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', AdminOnly::class])
     ->prefix('admin')->name('admin.')
     ->group(function () {
+        // Add-on Discord (queste esistevano già: lasciate invariate)
         Route::prefix('addons')->name('addons.')->group(function () {
             Route::get('discord', [\App\Http\Controllers\Admin\DiscordAddonsController::class,'index'])
                 ->name('discord');
@@ -122,16 +122,18 @@ Route::middleware(['auth', AdminOnly::class])
                 ->name('discord.save');
             Route::get('discord/sync', [\App\Http\Controllers\Admin\DiscordAddonsController::class,'sync'])
                 ->name('discord.sync');
-            
         });
+
         // Admin > Analytics (GTM)
-Route::get('analytics', [\App\Http\Controllers\Admin\AnalyticsController::class, 'edit'])
-    ->name('analytics.edit');
-Route::post('analytics', [\App\Http\Controllers\Admin\AnalyticsController::class, 'update'])
-    ->name('analytics.update');
-       Route::resource('about', AboutSectionController::class)
-            ->parameters(['about' => 'about'])   // parametro {about}
+        Route::get('analytics', [\App\Http\Controllers\Admin\AnalyticsController::class, 'edit'])
+            ->name('analytics.edit');
+        Route::post('analytics', [\App\Http\Controllers\Admin\AnalyticsController::class, 'update'])
+            ->name('analytics.update');
+
+        Route::resource('about', AboutSectionController::class)
+            ->parameters(['about' => 'about'])
             ->names('about');
+
         Route::get('/', \App\Http\Controllers\Admin\DashboardController::class)->name('dashboard');
         Route::resource('partners', \App\Http\Controllers\Admin\PartnerController::class)->except(['show']);
         Route::resource('packs',    \App\Http\Controllers\Admin\PackController::class)->except(['show']);
@@ -142,81 +144,66 @@ Route::post('analytics', [\App\Http\Controllers\Admin\AnalyticsController::class
         Route::resource('slides',   \App\Http\Controllers\Admin\SlideController::class)->except(['show']);
         Route::get('appearance',  [\App\Http\Controllers\Admin\AppearanceController::class,'edit'])->name('appearance.edit');
         Route::post('appearance', [\App\Http\Controllers\Admin\AppearanceController::class,'update'])->name('appearance.update');
-    Route::resource('orders', \App\Http\Controllers\Admin\OrderController::class)
-    ->only(['index','show','destroy']);
 
-Route::post('orders/{order}/mark-paid', [
-    \App\Http\Controllers\Admin\OrderController::class,
-    'markPaid'
-])->name('orders.markPaid');
+        Route::resource('orders', \App\Http\Controllers\Admin\OrderController::class)
+            ->only(['index','show','destroy']);
 
-Route::post('orders/{order}/mark-canceled', [
-    \App\Http\Controllers\Admin\OrderController::class,
-    'markCanceled'
-])->name('orders.markCanceled');
+        Route::post('orders/{order}/mark-paid', [
+            \App\Http\Controllers\Admin\OrderController::class,
+            'markPaid'
+        ])->name('orders.markPaid');
+
+        Route::post('orders/{order}/mark-canceled', [
+            \App\Http\Controllers\Admin\OrderController::class,
+            'markCanceled'
+        ])->name('orders.markCanceled');
+
         Route::resource('categories', \App\Http\Controllers\CategoryController::class)->except(['show']);
-        // routes/web.php (nel gruppo admin esistente)
+
+        // Platform info
         Route::get('platform-info', [\App\Http\Controllers\Admin\PlatformInfoController::class, 'index'])
             ->name('platform.info');
-
         Route::post('platform-info/refresh', [\App\Http\Controllers\Admin\PlatformInfoController::class, 'refresh'])
             ->name('platform.info.refresh');
-    
-        // --- ADD-ON: Email Templates (gated) ---
 
-        // ...tutte le tue rotte admin già presenti...
+        // ------------------------------------------------------------------
+        // ADD-ONS: **sempre registrati**, accesso protetto da FeatureGate
+        // ------------------------------------------------------------------
 
-        // ADD-ON: Email Templates (registrato solo se attivo)
-        if (\App\Support\FeatureFlags::enabled('email_templates')) {
-            Route::prefix('addons')->group(function () {
-                   Route::get('/email-templates', [EmailTemplateController::class, 'index'])
-        ->name('addons.email-templates');
+        // EMAIL TEMPLATES
+        Route::prefix('addons')->middleware(FeatureGate::class.':addons,email_templates')->group(function () {
+            Route::get('/email-templates', [EmailTemplateController::class, 'index'])
+                ->name('addons.email-templates');
+            Route::get('/email-templates/create', [EmailTemplateController::class, 'create'])
+                ->name('addons.email-templates.create');
+            Route::post('/email-templates', [EmailTemplateController::class, 'store'])
+                ->name('addons.email-templates.store');
+            Route::get('/email-templates/{template}/edit', [EmailTemplateController::class, 'edit'])
+                ->name('addons.email-templates.edit');
+            Route::put('/email-templates/{template}', [EmailTemplateController::class, 'update'])
+                ->name('addons.email-templates.update');
+            Route::delete('/email-templates/{template}', [EmailTemplateController::class, 'destroy'])
+                ->name('addons.email-templates.destroy');
+        });
 
-    Route::get('/email-templates/create', [EmailTemplateController::class, 'create'])
-        ->name('addons.email-templates.create');
+        // TUTORIALS
+        Route::prefix('addons')->middleware(FeatureGate::class.':addons,tutorials')->name('addons.')->group(function () {
+            Route::get('tutorials', [\App\Http\Controllers\Admin\TutorialController::class,'index'])
+                ->name('tutorials');
+            Route::get('tutorials/create', [\App\Http\Controllers\Admin\TutorialController::class,'create'])
+                ->name('tutorials.create');
+            Route::post('tutorials', [\App\Http\Controllers\Admin\TutorialController::class,'store'])
+                ->name('tutorials.store');
+            Route::get('tutorials/{tutorial}/edit', [\App\Http\Controllers\Admin\TutorialController::class,'edit'])
+                ->name('tutorials.edit');
+            Route::put('tutorials/{tutorial}', [\App\Http\Controllers\Admin\TutorialController::class,'update'])
+                ->name('tutorials.update');
+            Route::delete('tutorials/{tutorial}', [\App\Http\Controllers\Admin\TutorialController::class,'destroy'])
+                ->name('tutorials.destroy');
+        });
 
-    Route::post('/email-templates', [EmailTemplateController::class, 'store'])
-        ->name('addons.email-templates.store');
-
-    Route::get('/email-templates/{template}/edit', [EmailTemplateController::class, 'edit'])
-        ->name('addons.email-templates.edit');
-
-    Route::put('/email-templates/{template}', [EmailTemplateController::class, 'update'])
-        ->name('addons.email-templates.update');
-
-    Route::delete('/email-templates/{template}', [EmailTemplateController::class, 'destroy'])
-        ->name('addons.email-templates.destroy');
-            });
-        }
-         // --- ADD-ON: Tutorials (solo se attivo)
-if (\App\Support\FeatureFlags::enabled('tutorials')) {
-    Route::prefix('addons')->name('addons.')->group(function () {
-        Route::get('tutorials', [\App\Http\Controllers\Admin\TutorialController::class,'index'])
-            ->name('tutorials');
-        Route::get('tutorials/create', [\App\Http\Controllers\Admin\TutorialController::class,'create'])
-            ->name('tutorials.create');
-        Route::post('tutorials', [\App\Http\Controllers\Admin\TutorialController::class,'store'])
-            ->name('tutorials.store');
-        Route::get('tutorials/{tutorial}/edit', [\App\Http\Controllers\Admin\TutorialController::class,'edit'])
-            ->name('tutorials.edit');
-        Route::put('tutorials/{tutorial}', [\App\Http\Controllers\Admin\TutorialController::class,'update'])
-            ->name('tutorials.update');
-        Route::delete('tutorials/{tutorial}', [\App\Http\Controllers\Admin\TutorialController::class,'destroy'])
-            ->name('tutorials.destroy');
+        // NOTA: blocco "discord_integration" condizionale rimosso (duplicava le rotte già definite sopra)
     });
-}
-if (\App\Support\FeatureFlags::enabled('discord_integration')) {
-    Route::prefix('addons')->name('addons.')->group(function () {
-        Route::get('discord', [\App\Http\Controllers\Admin\DiscordAddonController::class,'index'])
-            ->name('discord');
-        Route::post('discord', [\App\Http\Controllers\Admin\DiscordAddonController::class,'save'])
-            ->name('discord.save');
-        Route::get('discord/sync', [\App\Http\Controllers\Admin\DiscordAddonController::class,'sync'])
-            ->name('discord.sync');
-    });
-}
-    });
-   
 
 /*
 |--------------------------------------------------------------------------
@@ -233,7 +220,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/checkout',         [CheckoutController::class, 'checkout'])->name('checkout.index');
     Route::post('/checkout/paypal', [CheckoutController::class, 'createOrderFromCart'])->name('checkout.paypal');
     Route::get('/checkout/capture', [CheckoutController::class, 'captureCart'])->name('checkout.capture');
-    Route::get('/checkout/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
+    Route::get('/checkout/cancel',  [CheckoutController::class, 'cancel'])->name('checkout.cancel');
     Route::get('/checkout/success', fn () => view('checkout.success'))->name('checkout.success');
 });
 
@@ -253,38 +240,39 @@ Route::middleware('guest')->group(function () {
     Route::post('/create-admin', [RegisteredUserController::class, 'storeAdmin'])
         ->name('register.admin.store'); // 👈 nome esplicito per la POST
 });
+
 Route::get('/_debug/flags', function(App\Services\FlagsClient $fc){
     return response()->json($fc->get());
 });
 
-
+// Admin Addons index & update (restano come li avevi)
 Route::middleware(['auth']) // aggiungi tuo middleware admin se ce l’hai
     ->prefix('admin/addons')
     ->group(function () {
 
-    Route::get('/', function (FlagsClient $flags) {
-        $data = $flags->get(); // { features: [...] }
-        return view('admin.addons.index', [
-            'features' => $data['features'] ?? [],
-        ]);
-    })->name('admin.addons.index');
+        Route::get('/', function (FlagsClient $flags) {
+            $data = $flags->get(); // { features: [...] }
+            return view('admin.addons.index', [
+                'features' => $data['features'] ?? [],
+            ]);
+        })->name('admin.addons.index');
 
-    Route::post('/', function (Request $r, FlagsClient $flags) {
-        $payload = [
-            'addons'               => $r->boolean('addons'),
-            'email_templates'      => $r->boolean('email_templates'),
-            'discord_integration'  => $r->boolean('discord_integration'),
-            'tutorials'            => $r->boolean('tutorials'),
-            'announcements'        => $r->boolean('announcements'),
-        ];
+        Route::post('/', function (Request $r, FlagsClient $flags) {
+            $payload = [
+                'addons'               => $r->boolean('addons'),
+                'email_templates'      => $r->boolean('email_templates'),
+                'discord_integration'  => $r->boolean('discord_integration'),
+                'tutorials'            => $r->boolean('tutorials'),
+                'announcements'        => $r->boolean('announcements'),
+            ];
 
-        $ok = $flags->set($payload);
+            $ok = $flags->set($payload);
 
-        return back()->with('success', $ok
-            ? 'Flags aggiornati sul server.'
-            : 'Impossibile aggiornare i flag (server flags non raggiungibile).');
-    })->name('admin.addons.update');
-});
+            return back()->with('success', $ok
+                ? 'Flags aggiornati sul server.'
+                : 'Impossibile aggiornare i flag (server flags non raggiungibile).');
+        })->name('admin.addons.update');
+    });
 
 // DISCORD PUBLIC ANNOUNCMENTS & FEEDBACK //
 Route::middleware(FeatureGate::class.':addons,discord_integration')->group(function () {
@@ -292,11 +280,14 @@ Route::middleware(FeatureGate::class.':addons,discord_integration')->group(funct
         ->name('announcements');
     Route::get('/feedback', [DiscordPublicController::class, 'feedback'])
         ->name('feedback');
-});// routes/web.php (solo dev)
+});
+
+// routes/web.php (solo dev)
 Route::get('/_dev/force-success/{order}', function (\App\Models\Order $order) {
     $order->update(['status' => 'paid']);
     return redirect()->route('checkout.success', ['order' => $order->id]);
 });
+
 // routes/web.php (aiuto temporaneo)
 Route::get('/_debug/flags_nocache', function () {
     $base = rtrim(env('FLAGS_BASE_URL',''),'/');
@@ -320,6 +311,7 @@ Route::post('/api/flags/purge', function (Request $r) {
     Cache::forget("features.$slug");
     return ['ok' => true, 'purged' => $slug];
 });
+
 Route::get('/about', [AboutController::class, 'show'])->name('about');
 Route::get('/about-us', [AboutController::class, 'show']);
 
