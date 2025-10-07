@@ -220,6 +220,7 @@
     </div>
   </div>
 </section>
+    <x-partners-slider />
 
 
   {{-- Contact us --}}
