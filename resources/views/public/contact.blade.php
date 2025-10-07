@@ -4,49 +4,84 @@
   <h1 class="text-[3rem] my-[50px]">Contact us</h1>
 
   @if (session('success'))
-    <div class="mb-4 rounded border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-800">
+    <div class="mb-6 rounded-xl border border-green-300 bg-green-50/70 px-4 py-3 text-sm text-green-800">
       {{ session('success') }}
     </div>
   @endif
 
-  <form method="POST" action="{{ route('contacts.submit') }}" class="grid gap-3 max-w-6xl">
+  <form method="POST" action="{{ route('contacts.submit') }}"
+        class="mx-auto grid w-full max-w-5xl gap-4 rounded-2xl border border-[color:var(--accent)]/30 bg-white/60 p-6 backdrop-blur
+               dark:border-[color:var(--accent)]/30 dark:bg-black/40">
     @csrf
 
-    <input
-      name="name"
-      placeholder="Discord name or full name"
-      class="border p-2 rounded bg-white text-black placeholder:text-gray-500 dark:bg-white dark:text-black"
-      value="{{ old('name') }}"
-    >
+    <div class="grid gap-4 md:grid-cols-2">
+      {{-- Name --}}
+      <input
+        name="name"
+        placeholder="Discord name or full name"
+        value="{{ old('name') }}"
+        class="h-12 w-full rounded-xl border border-[color:var(--accent)] bg-white/90 px-4 text-black placeholder:text-gray-500 outline-none transition
+               focus:ring-2 focus:ring-[color:var(--accent)] focus:ring-offset-0
+               dark:bg-black/80 dark:text-white dark:placeholder:text-gray-400
+               @error('name') border-red-500 focus:ring-red-500 @enderror"
+        autocomplete="name"
+      />
 
-    <input
-      name="email"
-      type="email"
-      placeholder="Email"
-      class="border p-2 rounded bg-white text-black placeholder:text-gray-500 dark:bg-white dark:text-black"
-      value="{{ old('email') }}"
-    >
+      {{-- Email --}}
+      <input
+        name="email"
+        type="email"
+        placeholder="Email"
+        value="{{ old('email') }}"
+        class="h-12 w-full rounded-xl border border-[color:var(--accent)] bg-white/90 px-4 text-black placeholder:text-gray-500 outline-none transition
+               focus:ring-2 focus:ring-[color:var(--accent)] focus:ring-offset-0
+               dark:bg-black/80 dark:text-white dark:placeholder:text-gray-400
+               @error('email') border-red-500 focus:ring-red-500 @enderror"
+        autocomplete="email"
+      />
+    </div>
 
+    {{-- Subject --}}
     <input
       name="subject"
       placeholder="Object (optional)"
-      class="border p-2 rounded bg-white text-black placeholder:text-gray-500 dark:bg-white dark:text-black"
       value="{{ old('subject') }}"
-    >
+      class="h-12 w-full rounded-xl border border-[color:var(--accent)] bg-white/90 px-4 text-black placeholder:text-gray-500 outline-none transition
+             focus:ring-2 focus:ring-[color:var(--accent)] focus:ring-offset-0
+             dark:bg-black/80 dark:text-white dark:placeholder:text-gray-400"
+    />
 
+    {{-- Message --}}
     <textarea
       name="message"
-      placeholder="Message"
       rows="5"
-      class="border p-2 rounded bg-white text-black placeholder:text-gray-500 dark:bg-white dark:text-black"
+      placeholder="Message"
+      class="w-full rounded-xl border border-[color:var(--accent)] bg-white/90 p-4 text-black placeholder:text-gray-500 outline-none transition
+             focus:ring-2 focus:ring-[color:var(--accent)] focus:ring-offset-0
+             dark:bg-black/80 dark:text-white dark:placeholder:text-gray-400
+             @error('message') border-red-500 focus:ring-red-500 @enderror"
     >{{ old('message') }}</textarea>
 
-    <button class="rounded bg-[var(--accent)] px-4 py-2 text-white hover:bg-indigo-500">
-      Send request
-    </button>
+    {{-- Errors inline --}}
+    <div class="grid gap-1 text-sm">
+      @error('name')    <div class="text-red-600">{{ $message }}</div> @enderror
+      @error('email')   <div class="text-red-600">{{ $message }}</div> @enderror
+      @error('message') <div class="text-red-600">{{ $message }}</div> @enderror
+    </div>
 
-    @error('name')    <div class="text-red-600 text-sm">{{ $message }}</div> @enderror
-    @error('email')   <div class="text-red-600 text-sm">{{ $message }}</div> @enderror
-    @error('message') <div class="text-red-600 text-sm">{{ $message }}</div> @enderror
+    {{-- Actions --}}
+    <div class="mt-2 flex items-center justify-between gap-3">
+      <p class="text-xs text-gray-500 dark:text-gray-400">
+        We usually reply within 24–48h.
+      </p>
+
+      <button
+        class="inline-flex items-center justify-center rounded-xl bg-[color:var(--accent)] px-5 py-3 text-white transition
+               hover:opacity-90 active:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+        type="submit"
+      >
+        Send request
+      </button>
+    </div>
   </form>
 </x-app-layout>
