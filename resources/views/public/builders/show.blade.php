@@ -26,7 +26,7 @@
     </div>
 </div>
 
-  <h2 class="mb-3 text-lg font-semibold">Packs di {{ $builder->name }}</h2>
+  <h2 class="mb-3 mt-[50px] text-lg font-semibold">Packs di {{ $builder->name }}</h2>
   <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
     @foreach($packs as $p)
       <x-pack-card :pack="$p" :badgeColor="($p->category->color ?? 'indigo')" />
