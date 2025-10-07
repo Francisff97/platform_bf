@@ -3,6 +3,7 @@ return [
     'base_url' => env('FLAGS_BASE_URL', ''),
     'installation_slug'  => env('FLAGS_INSTALLATION_SLUG', ''),
     'slug'               => env('FLAGS_SLUG', ''),
+    'default_slug'      => env('FLAGS_DEFAULT_SLUG', 'demo'),
     'ttl'      => 60,
     // tieni il nome che già usi su FLAGS
     'signing_secret' => env('FLAGS_SIGNING_SECRET', ''),
