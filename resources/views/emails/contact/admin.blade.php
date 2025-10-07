@@ -1,6 +1,6 @@
 {{-- resources/views/emails/contact/admin.blade.php --}}
 @component('mail::message')
-# New contact request
+ New contact request
 
 **From:** {{ $data['name'] }} ({{ $data['email'] }})  
 **Subject:** {{ $data['subject'] ?? '—' }}
