@@ -1,4 +1,5 @@
 <?php
+
 use App\Http\Controllers\DiscordController;
 use App\Http\Controllers\DiscordWebhookController;
 use Illuminate\Support\Facades\Route;
@@ -12,24 +13,36 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Cache\RedisStore;
 use Illuminate\Cache\DatabaseStore;
 
+// -------------------------
+// Discord (lasciate invariate)
+// -------------------------
 Route::match(['GET','POST'], '/discord/config', [DiscordController::class, 'config']);
 Route::match(['GET','POST'], '/discord/incoming', [DiscordController::class, 'incoming']);
+
+// -------------------------
+// Flags refresh
+// -------------------------
+
+// POST: endpoint reale (firma HMAC, invalidate + warm)
 Route::post('/flags/refresh', function (Request $r) {
     // -------- 1) Signature (robusta) --------
-    $raw = $r->getContent() ?? '';                     // raw body EXACT
-    $sig = $r->header('X-Signature')
-        ?? $r->header('X-Platform-Signature')
-        ?? '';                                         // accetta entrambi gli header
-    $sig = strtolower(trim(str_replace('sha256=', '', $sig))); // tollera prefisso
+    $raw = $r->getContent() ?? ''; // raw body EXACT
 
-    // accetta chiave attuale + precedente (grace durante deploy)
+    // accetta entrambi gli header ed eventuale prefisso "sha256="
+    $sig = $r->header('X-Signature') ?? $r->header('X-Platform-Signature') ?? '';
+    $sig = strtolower(trim(str_replace('sha256=', '', $sig)));
+
+    // chiave attuale + chiave precedente (grace durante deploy)
     $current  = trim(Config::get('flags.signing_secret', env('FLAGS_SIGNING_SECRET', '')));
     $previous = trim(Config::get('flags.signing_secret_fallback', env('FLAGS_SIGNING_SECRET_PREV', '')));
 
     $calc     = $current  ? hash_hmac('sha256', $raw, $current)  : '';
     $calcPrev = $previous ? hash_hmac('sha256', $raw, $previous) : '';
 
-    $ok = $sig && ($calc && hash_equals($calc, $sig) || $calcPrev && hash_equals($calcPrev, $sig));
+    $ok = $sig && (
+        ($calc && hash_equals($calc, $sig)) ||
+        ($calcPrev && hash_equals($calcPrev, $sig))
+    );
 
     if (!$ok) {
         Log::warning('[flags-refresh] bad_signature', [
@@ -68,7 +81,7 @@ Route::post('/flags/refresh', function (Request $r) {
             $deleted['database'] += DB::table($table)->where('key', $k)->delete();
         }
         $deleted['database'] += DB::table($table)->where('key', $demoKey)->delete();
-        // opzionale: piazza pulita
+        // opzionale: pulizia totale
         // $deleted['database'] += DB::table($table)->where('key','like',$prefix.'features.remote.%')->delete();
     }
 
@@ -79,15 +92,15 @@ Route::post('/flags/refresh', function (Request $r) {
             $redis->del($prefix . 'features.remote.' . $s);
         }
         $redis->del($demoKey);
-        // opzionale wildcard (attenzione nei cluster!):
-        // foreach ($redis->keys($prefix.'features.remote.*') as $k) { $redis->del($k); $deleted['redis']++; }
+        // opzionale wildcard (attenzione nei cluster):
+        // foreach ($redis->keys($prefix.'features.remote.%') as $k) { $redis->del($k); $deleted['redis']++; }
     }
 
     // -------- 4) Warm immediato --------
     $warmed = [];
     foreach ($slugs as $s) {
         try {
-            $warmed[$s] = \App\Support\FeatureFlags::warm($s);
+            $warmed[$s] = FeatureFlags::warm($s);
         } catch (\Throwable $e) {
             Log::warning('[flags-refresh] warm error', ['slug' => $s, 'err' => $e->getMessage()]);
         }
@@ -98,9 +111,19 @@ Route::post('/flags/refresh', function (Request $r) {
     ]);
 
     return response()->json([
-        'ok'         => true,
-        'invalidated'=> $slugs,
-        'deleted'    => $deleted,
-        'values'     => $warmed,
+        'ok'          => true,
+        'invalidated' => $slugs,
+        'deleted'     => $deleted,
+        'values'      => $warmed,
     ]);
-})->middleware('throttle:20,1');  
+})->middleware('throttle:20,1');
+
+// GET: NO-OP per evitare 405 nei log (non fa invalidate)
+Route::get('/flags/refresh', function () {
+    return response()->noContent(); // 204
+})->middleware('throttle:30,1');
+
+// OPTIONS: preflight CORS
+Route::options('/flags/refresh', function () {
+    return response()->noContent(); // 204
+});
