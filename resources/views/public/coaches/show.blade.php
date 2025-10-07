@@ -35,7 +35,7 @@
           {!! nl2br(e($coach->description)) !!}
         </div>
       @else
-        <p class="text-gray-600 dark:text-gray-300">Caoch profile.</p>
+        <p class="text-gray-600 dark:text-gray-300">Coach profile.</p>
       @endif
 
       @auth
@@ -46,8 +46,8 @@
             <select name="price_id" class="w-full rounded border p-2 dark:text-gray-800">
               @foreach($coach->prices as $price)
                 <option value="{{ $price->id }}">
-  {{ $price->duration }} — @money($price->price_cents, $price->currency)
-</option>
+                  {{ $price->duration }} — @money($price->price_cents, $price->currency)
+                </option>
               @endforeach
             </select>
 
@@ -63,6 +63,53 @@
           Login to buy coaching
         </a>
       @endauth
+
+      {{-- === TUTORIALS come nei packs === --}}
+      @php
+        // se non hai fatto load() nel controller:
+        // $coach->loadMissing('tutorials');
+
+        $public  = $coach->tutorials()->where('is_public', true)->get();
+        $private = collect();
+
+        $canSeePrivate = auth()->check() && auth()->user()->hasPurchasedCoach? $coach->id : false;
+        // Se non hai questo metodo, sostituisci la condizione con la tua regola di visibilità.
+
+        if ($canSeePrivate) {
+          $private = $coach->tutorials()->where('is_public', false)->get();
+        }
+      @endphp
+
+      @if($public->count() || $private->count())
+        <div class="mt-10 rounded-2xl border p-5 dark:border-gray-800">
+          <h3 class="mb-4 font-semibold text-lg">Tutorials</h3>
+
+          {{-- PUBLIC --}}
+          @if($public->count())
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              @foreach($public as $t)
+                <x-tutorial-card :tutorial="$t" />
+              @endforeach
+            </div>
+          @endif
+
+          {{-- PRIVATE --}}
+          @if($private->count())
+            <div class="mt-8 border-t pt-4 dark:border-gray-800">
+              <div class="mb-3 text-sm text-gray-500">Exclusive for buyers</div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                @foreach($private as $t)
+                  <x-tutorial-card :tutorial="$t" />
+                @endforeach
+              </div>
+            </div>
+          @elseif($coach->tutorials()->where('is_public', false)->exists())
+            <div class="mt-8 rounded bg-amber-50 p-3 text-sm text-amber-800">
+              Some tutorials are available after purchase.
+            </div>
+          @endif
+        </div>
+      @endif
 
     </div>
   </div>
