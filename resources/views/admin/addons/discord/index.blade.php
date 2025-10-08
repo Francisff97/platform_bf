@@ -1,6 +1,6 @@
 <x-admin-layout title="Discord add-ons">
   <p class="mb-6 text-sm text-gray-600 dark:text-gray-300">
-    Inserisci gli ID di Discord: server e canali che il bot deve leggere.
+    Insert Discord server ID and the IDs of the announcement and customer feedbacks channels
   </p>
 
   @if (session('success'))
@@ -19,7 +19,7 @@
           <span class="text-sm font-medium text-gray-900 dark:text-gray-100">Discord Server ID</span>
           @if($s?->discord_server_id)
             <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-              attuale: {{ Str::limit($s->discord_server_id, 6, '…') }}
+              actual: {{ Str::limit($s->discord_server_id, 6, '…') }}
             </span>
           @endif
         </label>
@@ -37,10 +37,10 @@
             x-data
             @click="navigator.clipboard.writeText($el.previousElementSibling.value)"
             class="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
-            title="Copia valore"
+            title="Copy value"
           >Copy</button>
         </div>
-        <p class="mt-1 text-xs text-gray-500">ID “snowflake” del server (guild).</p>
+        <p class="mt-1 text-xs text-gray-500">ID “snowflake” of the server (guild).</p>
         @error('discord_server_id')
           <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
         @enderror
@@ -52,7 +52,7 @@
           <span class="text-sm font-medium text-gray-900 dark:text-gray-100">Announcements channel ID</span>
           @if($s?->discord_announcements_channel_id)
             <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-              attuale: {{ Str::limit($s->discord_announcements_channel_id, 6, '…') }}
+              actual: {{ Str::limit($s->discord_announcements_channel_id, 6, '…') }}
             </span>
           @endif
         </label>
@@ -70,11 +70,11 @@
             x-data
             @click="navigator.clipboard.writeText($el.previousElementSibling.value)"
             class="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
-            title="Copia valore"
+            title="Copy value"
           >Copy</button>
         </div>
         <div class="mt-1 text-xs text-gray-500">
-          Ultimi post importati: <span class="font-medium">{{ $annCount }}</span>
+          Last post imported: <span class="font-medium">{{ $annCount }}</span>
         </div>
         @error('discord_announcements_channel_id')
           <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -87,7 +87,7 @@
           <span class="text-sm font-medium text-gray-900 dark:text-gray-100">Feedback channel ID</span>
           @if($s?->discord_feedback_channel_id)
             <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-              attuale: {{ Str::limit($s->discord_feedback_channel_id, 6, '…') }}
+              actual: {{ Str::limit($s->discord_feedback_channel_id, 6, '…') }}
             </span>
           @endif
         </label>
@@ -105,11 +105,11 @@
             x-data
             @click="navigator.clipboard.writeText($el.previousElementSibling.value)"
             class="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
-            title="Copia valore"
+            title="Copy value"
           >Copy</button>
         </div>
         <div class="mt-1 text-xs text-gray-500">
-          Ultimi post importati: <span class="font-medium">{{ $fbkCount }}</span>
+          Last post imported: <span class="font-medium">{{ $fbkCount }}</span>
         </div>
         @error('discord_feedback_channel_id')
           <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
