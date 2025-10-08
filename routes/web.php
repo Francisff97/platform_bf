@@ -114,6 +114,21 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', AdminOnly::class])
     ->prefix('admin')->name('admin.')
     ->group(function () {
+        Route::prefix('seo')->name('seo.')->group(function () {
+        // Pages
+        Route::get('pages', [SeoPageController::class,'index'])->name('pages.index');
+        Route::get('pages/create', [SeoPageController::class,'create'])->name('pages.create');
+        Route::post('pages', [SeoPageController::class,'store'])->name('pages.store');
+        Route::get('pages/{seoPage}/edit', [SeoPageController::class,'edit'])->name('pages.edit');
+        Route::put('pages/{seoPage}', [SeoPageController::class,'update'])->name('pages.update');
+        Route::delete('pages/{seoPage}', [SeoPageController::class,'destroy'])->name('pages.destroy');
+
+        // Media
+        Route::get('media', [SeoMediaController::class,'index'])->name('media.index');
+        Route::get('media/{mediaAsset}/edit', [SeoMediaController::class,'edit'])->name('media.edit');
+        Route::put('media/{mediaAsset}', [SeoMediaController::class,'update'])->name('media.update');
+        Route::post('media/bulk', [SeoMediaController::class,'bulk'])->name('media.bulk');
+    });
         // Add-on Discord (queste esistevano già: lasciate invariate)
         Route::prefix('addons')->name('addons.')->group(function () {
             Route::get('discord', [\App\Http\Controllers\Admin\DiscordAddonController::class,'index'])
