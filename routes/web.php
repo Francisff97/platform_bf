@@ -1,5 +1,7 @@
 <?php
-
+// SEO //
+use App\Http\Controllers\Admin\SeoPageController;
+use App\Http\Controllers\Admin\SeoMediaController;
 // DISCORD PUBLIC //
 use App\Http\Controllers\DiscordPublicController;
 use App\Http\Middleware\FeatureGate;
