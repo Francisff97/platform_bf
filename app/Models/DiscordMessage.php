@@ -8,7 +8,7 @@ class DiscordMessage extends Model
 {
     protected $fillable = [
         'kind','guild_id','channel_id','channel_name',
-        'message_id','author_id','author_name','content',
+        'message_id','author_id','author_name','author_avatar','content',
         'attachments','posted_at',
     ];
 
