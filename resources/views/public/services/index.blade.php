@@ -20,9 +20,7 @@
         {{-- Image --}}
         @if($s->image_path)
           <div class="relative h-48 w-full overflow-hidden">
-            <img src="{{ Storage::url($s->image_path) }}"
-                 alt="{{ $s->title }}"
-                 class="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105">
+            <x-img :src="Storage::url($service->image_path)" class="rounded-lg w-full" />
             <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-0
                         transition-opacity duration-500 group-hover:opacity-80"></div>
           </div>
