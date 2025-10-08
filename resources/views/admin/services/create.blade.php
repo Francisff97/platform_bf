@@ -20,7 +20,7 @@
                     file:mr-3 file:rounded-lg file:border-0 file:bg-[color:var(--accent)] file:px-3 file:py-2 file:text-white
                     hover:border-[color:var(--accent)]/80 focus:ring-2 focus:ring-[color:var(--accent)]
                     dark:bg-black/80 dark:text-white" />
-      @error('image') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror>
+      @error('image') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
 
       {{-- preview live (opzionale; non influisce sul salvataggio) --}}
       <template x-if="preview">
