@@ -31,7 +31,7 @@ class PackController extends Controller
             'slug'         => 'nullable|alpha_dash|unique:packs,slug',
             'excerpt'      => 'nullable|max:255',
             'description'  => 'nullable',
-            'image'        => 'nullable|file|mimes:jpg,jpeg,png,webp|max:8192', // 8MB
+            'image'        => 'nullable|image|mimes:jpg,jpeg,png,webp,avif|max:8192',
             'price_cents'  => 'required|integer|min:0',
             'currency'     => 'required|string|size:3',
             'is_featured'  => 'sometimes|boolean',
@@ -45,7 +45,16 @@ class PackController extends Controller
         $data['is_featured'] = !empty($data['is_featured']);
 
         if ($r->hasFile('image')) {
-            $data['image_path'] = $r->file('image')->store('packs', 'public');
+            $path = $r->file('image')->store('packs', 'public');
+            $data['image_path'] = $path;
+
+            // Ingestion SEO Media
+            if (class_exists(\App\Support\MediaIngestor::class)) {
+                \App\Support\MediaIngestor::ingest('public', $path, [
+                    // opzionale: default ALT iniziale
+                    'alt' => $data['title'] ?? null,
+                ]);
+            }
         }
 
         Pack::create($data);
@@ -67,7 +76,7 @@ class PackController extends Controller
             'slug'         => "required|alpha_dash|unique:packs,slug,{$pack->id}",
             'excerpt'      => 'nullable|max:255',
             'description'  => 'nullable',
-            'image'        => 'nullable|file|mimes:jpg,jpeg,png,webp|max:8192', // 8MB
+            'image'        => 'nullable|image|mimes:jpg,jpeg,png,webp,avif|max:8192',
             'price_cents'  => 'required|integer|min:0',
             'currency'     => 'required|string|size:3',
             'is_featured'  => 'sometimes|boolean',
@@ -80,7 +89,14 @@ class PackController extends Controller
         $data['is_featured'] = !empty($data['is_featured']);
 
         if ($r->hasFile('image')) {
-            $data['image_path'] = $r->file('image')->store('packs', 'public');
+            $path = $r->file('image')->store('packs', 'public');
+            $data['image_path'] = $path;
+
+            if (class_exists(\App\Support\MediaIngestor::class)) {
+                \App\Support\MediaIngestor::ingest('public', $path, [
+                    'alt' => $data['title'] ?? $pack->title,
+                ]);
+            }
         }
 
         $pack->update($data);
