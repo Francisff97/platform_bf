@@ -15,7 +15,7 @@
         <div class="mt-1 text-sm text-gray-600 dark:text-gray-300">
           Team: <span class="font-medium">{{ $builder->team }}</span>
         </div>
-      @endif>
+      @endif
     </div>
   </section>
 
