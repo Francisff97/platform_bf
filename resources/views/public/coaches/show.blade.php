@@ -8,7 +8,7 @@
     <div class="md:col-span-1">
       <div class="overflow-hidden rounded-xl">
         @if($coach->image_path)
-          <img src="{{ Storage::url($coach->image_path) }}" class="w-full object-cover" alt="{{ $coach->name }}">
+          <x-img :src="Storage::url($coach->image_path)" class="w-full object-cover" />
         @else
           <div class="h-48 rounded-xl bg-gray-200 dark:bg-gray-800"></div>
         @endif
@@ -64,16 +64,14 @@
         </a>
       @endauth
 
-      {{-- === TUTORIALS come nei packs === --}}
+      {{-- Tutorials (come per i pack) --}}
       @php
-        // se non hai fatto load() nel controller:
-        // $coach->loadMissing('tutorials');
-
         $public  = $coach->tutorials()->where('is_public', true)->get();
         $private = collect();
 
-        $canSeePrivate = auth()->check() && method_exists(auth()->user(), "hasPurchasedCoach") && auth()->user()->hasPurchasedCoach( $coach->id);
-        // Se non hai questo metodo, sostituisci la condizione con la tua regola di visibilità.
+        $canSeePrivate = auth()->check()
+          && method_exists(auth()->user(), 'hasPurchasedCoach')
+          && auth()->user()->hasPurchasedCoach($coach->id);
 
         if ($canSeePrivate) {
           $private = $coach->tutorials()->where('is_public', false)->get();
@@ -82,11 +80,11 @@
 
       @if($public->count() || $private->count())
         <div class="mt-10 rounded-2xl border p-5 dark:border-gray-800">
-          <h3 class="mb-4 font-semibold text-lg">Tutorials</h3>
+          <h3 class="mb-4 text-lg font-semibold">Tutorials</h3>
 
           {{-- PUBLIC --}}
           @if($public->count())
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               @foreach($public as $t)
                 <x-tutorial-card :tutorial="$t" />
               @endforeach
@@ -97,7 +95,7 @@
           @if($private->count())
             <div class="mt-8 border-t pt-4 dark:border-gray-800">
               <div class="mb-3 text-sm text-gray-500">Exclusive for buyers</div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach($private as $t)
                   <x-tutorial-card :tutorial="$t" />
                 @endforeach
@@ -110,7 +108,6 @@
           @endif
         </div>
       @endif
-
     </div>
   </div>
 </x-app-layout>
