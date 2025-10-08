@@ -4,7 +4,7 @@
   </div>
   <div class="mb-4 flex items-center justify-between">
     <h2 class="text-lg font-semibold">Heroes</h2>
-    <a href="{{ route('admin.heroes.create') }}" class="rounded bg-[var(--accent)] px-3 py-1.5 text-white text-sm">Nuovo</a>
+    <a href="{{ route('admin.heroes.create') }}" class="rounded bg-[var(--accent)] px-3 py-1.5 text-white text-sm">Add new</a>
   </div>
 
   <div class="overflow-hidden rounded border dark:border-gray-800">
