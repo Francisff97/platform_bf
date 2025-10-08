@@ -4,15 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\SiteSetting;
-use App\Models\DiscordMessage; // <-- come il vecchio controller
+use App\Models\DiscordMessage;
 use Illuminate\Http\Request;
 
 class DiscordAddonController extends Controller
 {
-    /**
-     * Mostra la pagina Discord Add-on (stessa UX del vecchio controller "Addons")
-     * Route: GET /admin/addons/discord  -> name: admin.addons.discord
-     */
     public function index()
     {
         $s = SiteSetting::first();
@@ -20,18 +16,28 @@ class DiscordAddonController extends Controller
         $annChannel = $s->discord_announcements_channel_id ?? null;
         $fbkChannel = $s->discord_feedback_channel_id ?? null;
 
-        // Conteggi come nel vecchio controller: per channel_id su DiscordMessage
         $annCount = $annChannel ? DiscordMessage::where('channel_id', $annChannel)->count() : 0;
         $fbkCount = $fbkChannel ? DiscordMessage::where('channel_id', $fbkChannel)->count() : 0;
 
-        // View identica a prima (non .../index)
-        return view('admin.addons.discord', compact('s','annCount','fbkCount'));
+        // 👉 Fallback view: usa 'admin.addons.discord' se esiste,
+        //    altrimenti 'admin.addons.discord.index'
+        $view = view()->exists('admin.addons.discord')
+            ? 'admin.addons.discord'
+            : (view()->exists('admin.addons.discord.index') ? 'admin.addons.discord.index' : null);
+
+        if (!$view) {
+            // Ultima rete di sicurezza per evitare 500
+            return response()->view('errors.minimal', [
+                'message' => 'Discord Add-on view not found. Create either:
+                resources/views/admin/addons/discord.blade.php
+                or
+                resources/views/admin/addons/discord/index.blade.php',
+            ], 500);
+        }
+
+        return view($view, compact('s','annCount','fbkCount'));
     }
 
-    /**
-     * Salva le impostazioni Discord (3 campi, come prima)
-     * Route: POST /admin/addons/discord -> name: admin.addons.discord.save
-     */
     public function save(Request $request)
     {
         $data = $request->validate([
@@ -49,13 +55,8 @@ class DiscordAddonController extends Controller
         return back()->with('success', 'Discord settings salvati.');
     }
 
-    /**
-     * Placeholder sync (come prima)
-     * Route: GET /admin/addons/discord/sync -> name: admin.addons.discord.sync
-     */
     public function sync(Request $request)
     {
-        // (nessun job; manteniamo lo stesso comportamento del vecchio controller)
-        return back()->with('success', 'Sync avviata.');
+        return back()->with('success','Sync avviata.');
     }
 }
