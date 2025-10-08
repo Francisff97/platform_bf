@@ -56,8 +56,8 @@
 
     <input name="overlay" class="rounded border p-2" value="{{ old('overlay',$hero->overlay) }}">
     <label class="inline-flex items-center gap-2">
-      <input type="checkbox" name="is_active" value="1" {{ $hero->is_active ? 'checked':'' }}> Attivo
+      <input type="checkbox" name="is_active" value="1" {{ $hero->is_active ? 'checked':'' }}> Active
     </label>
-    <button class="rounded bg-[var(--accent)] px-4 py-2 text-white">Aggiorna</button>
+    <button class="rounded bg-[var(--accent)] px-4 py-2 text-white">Update</button>
   </form>
 </x-admin-layout>
