@@ -1,5 +1,4 @@
 <x-app-layout title="Customer Feedback">
-    <x-auto-hero />
   <section class="mx-auto max-w-6xl px-4 py-8">
     <header class="mb-6">
       <h1 class="text-4xl font-black tracking-tight">Customer Feedback</h1>
