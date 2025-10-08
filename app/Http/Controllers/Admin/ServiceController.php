@@ -5,9 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Service;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
-use App\Support\MediaIngestor;
 
 class ServiceController extends Controller
 {
@@ -28,26 +27,30 @@ class ServiceController extends Controller
             'name'    => ['required','max:160'],
             'slug'    => ['nullable','alpha_dash','unique:services,slug'],
             'excerpt' => ['nullable','max:255'],
-            'image'   => ['nullable','image','max:4096'],
             'body'    => ['nullable'],
-            'order'   => ['integer','min:0'],
+            'order'   => ['nullable','integer','min:0'],
             'status'  => ['required','in:draft,published'],
+            'image'   => ['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:4096'],
         ]);
 
         $data['slug'] = $data['slug'] ?? Str::slug($data['name']);
 
-        // Salva immagine (se caricata)
+        // Salva l'immagine (se caricata)
         if ($r->hasFile('image')) {
-            $path = $r->file('image')->store('services', 'public');
+            $path = $r->file('image')->store('services', 'public'); // -> storage/app/public/services/...
             $data['image_path'] = $path;
 
-            // Indica al SEO Media di tracciare ALT/Lazy centralizzati
-            MediaIngestor::ingest('public', $path);
+            // Ingestion SEO (alt/lazy registry)
+            if (class_exists(\App\Support\MediaIngestor::class)) {
+                \App\Support\MediaIngestor::ingest('public', $path);
+            }
         }
 
         Service::create($data);
 
-        return redirect()->route('admin.services.index')->with('success','Service creato.');
+        return redirect()
+            ->route('admin.services.index')
+            ->with('success', 'Service creato.');
     }
 
     public function edit(Service $service)
@@ -59,30 +62,43 @@ class ServiceController extends Controller
     {
         $data = $r->validate([
             'name'    => ['required','max:160'],
-            'slug'    => ['required','alpha_dash', Rule::unique('services','slug')->ignore($service->id)],
+            'slug'    => ["required",'alpha_dash',"unique:services,slug,{$service->id}"],
             'excerpt' => ['nullable','max:255'],
             'body'    => ['nullable'],
-            'image'   => ['nullable','image','max:4096'],
-            'order'   => ['integer','min:0'],
+            'order'   => ['nullable','integer','min:0'],
             'status'  => ['required','in:draft,published'],
+            'image'   => ['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:4096'],
         ]);
 
-        // Se arriva una nuova immagine: salva + ingest
+        // Salva nuova immagine se presente
         if ($r->hasFile('image')) {
             $path = $r->file('image')->store('services', 'public');
             $data['image_path'] = $path;
 
-            MediaIngestor::ingest('public', $path);
+            // (opzionale) rimuovi vecchia immagine se vuoi
+            // if ($service->image_path && Storage::disk('public')->exists($service->image_path)) {
+            //     Storage::disk('public')->delete($service->image_path);
+            // }
+
+            // ingestion SEO
+            if (class_exists(\App\Support\MediaIngestor::class)) {
+                \App\Support\MediaIngestor::ingest('public', $path);
+            }
         }
 
         $service->update($data);
 
-        return back()->with('success','Service aggiornato.');
+        return back()->with('success', 'Service aggiornato.');
     }
 
     public function destroy(Service $service)
     {
+        // (opzionale) elimina anche file
+        // if ($service->image_path && Storage::disk('public')->exists($service->image_path)) {
+        //     Storage::disk('public')->delete($service->image_path);
+        // }
+
         $service->delete();
-        return back()->with('success','Service eliminato.');
+        return back()->with('success', 'Service eliminato.');
     }
 }
