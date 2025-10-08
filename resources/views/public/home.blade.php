@@ -215,8 +215,10 @@
     @include('partials.about-section', ['s' => $aboutFeature])
   @endif
 
+    <div class="my-[30px]"></div>
+                      
   {{-- ====== PARTNER STRIP ====== --}}
-  <x-partners-slider class="my-[30px]"/>
+  <x-partners-slider />
 
   {{-- ====== CTA ====== --}}
   <section class="full-bleed mt-[90px] w-full bg-[var(--accent)] py-12 text-white">
