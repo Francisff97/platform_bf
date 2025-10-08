@@ -57,6 +57,9 @@ class ServiceController extends Controller
         
         if ($r->hasFile('image')) {
             $data['image_path'] = $r->file('image')->store('services', 'public');
+            $path = $request->file('image')->store('services','public');
+$model->image_path = $path;
+\App\Support\MediaIngestor::ingest('public', $path);
           }
         $service->update($data);
 
