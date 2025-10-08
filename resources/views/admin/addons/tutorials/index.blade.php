@@ -1,4 +1,4 @@
-<x-admin-layout title="Tutorials">
+<x-admin-layout title="Videos">
   @if (session('success'))
     <div class="mb-4 rounded border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-800">
       {{ session('success') }}
@@ -6,7 +6,7 @@
   @endif
 
   <div class="mb-4 flex items-center justify-between">
-    <h2 class="text-lg font-semibold">Tutorials</h2>
+    <h2 class="text-lg font-semibold">Videos</h2>
     <a href="{{ route('admin.addons.tutorials.create') }}"
        class="rounded bg-[var(--accent)] px-3 py-1.5 text-white text-sm">+ New</a>
   </div>
@@ -39,14 +39,14 @@
     <div class="rounded-xl border p-4 dark:border-gray-800 lg:col-span-1">
       <div class="mb-2 text-sm font-semibold">How it works</div>
       <p class="text-sm text-gray-600 dark:text-gray-400">
-        Aggiungi link YouTube/Vimeo ai Pack o ai Coach. Imposta
-        <em>Public</em> o <em>Solo acquirenti</em>.
+        Add the Youtube Link to Packs or coach. Set
+        <em>Public</em> or <em>Only buyers</em>.
       </p>
     </div>
   </div>
 
   <div class="mt-6 rounded-xl border p-4 dark:border-gray-800">
-    <div class="mb-3 text-sm font-semibold">Ultimi tutorial</div>
+    <div class="mb-3 text-sm font-semibold">Last Video</div>
     <div class="overflow-x-auto">
       <table class="min-w-full text-sm">
         <thead>
