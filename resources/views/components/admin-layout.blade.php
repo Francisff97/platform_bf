@@ -89,6 +89,7 @@
         ['label'=>'Hero Sections',   'route'=>'admin.heroes.index',     'match'=>['admin.heroes.*']],
         ['label'=>'Orders',          'route'=>'admin.orders.index',     'match'=>['admin.orders.*']],
         ['label'=>'Appearance',      'route'=>'admin.appearance.edit',  'match'=>['admin.appearance.*']],
+        ['label'=>'SEO', 'route'=>'admin.seo.pages.index', 'match'=>['admin.seo.*']],
         ['label'=>'Platform info',   'route'=>'admin.platform.info',    'match'=>['admin.platform.*']],
         ['label'=>'Google Analytics','route'=>'admin.analytics.edit',   'match'=>['admin.analytics.*']],
       ];
