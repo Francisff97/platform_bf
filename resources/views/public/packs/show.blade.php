@@ -44,7 +44,8 @@
 </x-slot>
 
 @if($pack->image_path)
-  <img src="{{ asset('storage/'.$pack->image_path) }}" class="mb-6 rounded-xl max-h-80 object-cover w-full">
+  <x-img :src="Storage::url($pack->image_path)"
+         class="mb-6 rounded-xl max-h-80 w-full object-cover" />
 @endif
 
 @php
