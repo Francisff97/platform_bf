@@ -215,7 +215,7 @@
     @include('partials.about-section', ['s' => $aboutFeature])
   @endif
 
-    <div class="my-[30px]"></div>
+    <div class="my-[50px]"></div>
                       
   {{-- ====== PARTNER STRIP ====== --}}
   <x-partners-slider />
