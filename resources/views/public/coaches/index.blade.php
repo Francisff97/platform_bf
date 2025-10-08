@@ -1,20 +1,70 @@
 <x-app-layout>
   <x-auto-hero />
 
-  <div class="mt-[100px] grid grid-cols-2 md:grid-cols-4 gap-6">
-    @foreach($coaches as $c)
-      <a href="{{ route('coaches.show',$c->slug) }}"
-         class="rounded-2xl border bg-white p-4 text-center shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <div class="mx-auto mb-2 h-[120px] w-[120px] overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
-          @if($c->image_path)
-            <x-img :src="Storage::url($c->image_path)" class="h-full w-full object-cover" />
-          @endif
-        </div>
-        <div class="font-semibold">{{ $c->name }}</div>
-        <div class="text-xs text-gray-500">{{ $c->team ?? '—' }}</div>
-      </a>
-    @endforeach
-  </div>
+  {{-- INTRO --}}
+  <section class="relative mx-auto mt-[60px] max-w-5xl text-center px-4">
+    <h2 class="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl">
+      Our Coaches
+    </h2>
+    <p class="mx-auto mt-4 max-w-2xl text-lg text-gray-600 dark:text-gray-300">
+      Meet the experts ready to guide you. Pick your coach, learn faster, level up.
+    </p>
+  </section>
 
-  <div class="mt-6">{{ $coaches->links() }}</div>
+  {{-- GRID COACHES --}}
+  <section class="mx-auto mt-12 max-w-6xl px-4">
+    <div class="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
+      @foreach($coaches as $c)
+        <a href="{{ route('coaches.show',$c->slug) }}"
+           class="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white/90 shadow-sm transition
+                  hover:-translate-y-1 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900/70">
+
+          {{-- Banner / Avatar --}}
+          <div class="relative h-40 w-full overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-br from-[var(--accent)]/15 to-transparent"></div>
+            <div class="absolute -bottom-10 left-1/2 z-10 -translate-x-1/2">
+              <div class="h-24 w-24 overflow-hidden rounded-full ring-4 ring-white/90 dark:ring-gray-900/80 shadow-lg">
+                @if($c->image_path)
+                  <x-img :src="Storage::url($c->image_path)" class="h-full w-full object-cover" :alt="$c->name" />
+                @else
+                  <div class="h-full w-full bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700"></div>
+                @endif
+              </div>
+            </div>
+          </div>
+
+          {{-- Testi --}}
+          <div class="px-5 pb-5 pt-14 text-center">
+            <h3 class="text-lg font-semibold text-gray-900 transition-colors group-hover:text-[color:var(--accent)] dark:text-white">
+              {{ $c->name }}
+            </h3>
+            <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $c->team ?? '—' }}</div>
+
+            {{-- Skills chips (scroll orizzontale se tante) --}}
+            @if(!empty($c->skills) && is_iterable($c->skills))
+              <div class="mt-3 -mx-2 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
+                <div class="flex gap-2 px-2">
+                  @foreach($c->skills as $s)
+                    <span class="whitespace-nowrap rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-medium
+                                 text-gray-700 ring-1 ring-gray-200 transition group-hover:ring-[color:var(--accent)]
+                                 dark:bg-gray-800 dark:text-gray-200 dark:ring-gray-700">
+                      {{ $s }}
+                    </span>
+                  @endforeach
+                </div>
+              </div>
+            @endif
+          </div>
+
+          {{-- Accent underline animata --}}
+          <div class="absolute bottom-0 left-0 h-1 w-0 bg-[color:var(--accent)] transition-all duration-500 group-hover:w-full"></div>
+        </a>
+      @endforeach
+    </div>
+
+    <div class="mt-8">{{ $coaches->links() }}</div>
+  </section>
+
+  {{-- sfondo soft --}}
+  <div class="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[360px] bg-gradient-to-b from-[color:var(--accent)]/8 to-transparent"></div>
 </x-app-layout>
