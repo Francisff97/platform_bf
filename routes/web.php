@@ -116,7 +116,7 @@ Route::middleware(['auth', AdminOnly::class])
     ->group(function () {
         // Add-on Discord (queste esistevano già: lasciate invariate)
         Route::prefix('addons')->name('addons.')->group(function () {
-            Route::get('discord', [\App\Http\Controllers\Admin\DiscordAddonsController::class,'index'])
+            Route::get('discord', [\App\Http\Controllers\Admin\DiscordAddonsController::class,'edit'])
                 ->name('discord');
             Route::post('discord', [\App\Http\Controllers\Admin\DiscordAddonsController::class,'save'])
                 ->name('discord.save');
