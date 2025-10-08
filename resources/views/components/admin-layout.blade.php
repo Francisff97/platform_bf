@@ -89,8 +89,6 @@
         ['label'=>'Hero Sections',   'route'=>'admin.heroes.index',     'match'=>['admin.heroes.*']],
         ['label'=>'Orders',          'route'=>'admin.orders.index',     'match'=>['admin.orders.*']],
         ['label'=>'Appearance',      'route'=>'admin.appearance.edit',  'match'=>['admin.appearance.*']],
-        ['label'=>'SEO Pages', 'route'=>'admin.seo.pages.index', 'match'=>['admin.seo.*']],
-      ['label'=>'SEO Media', 'route'=>'admin.seo.media.index', 'match'=>['admin.seo.*']],
         ['label'=>'Platform info',   'route'=>'admin.platform.info',    'match'=>['admin.platform.*']],
         ['label'=>'Google Analytics','route'=>'admin.analytics.edit',   'match'=>['admin.analytics.*']],
       ];
@@ -124,6 +122,31 @@
               {{ $it['label'] }}
             </a>
           @endforeach
+            {{-- SEO group --}}
+@php
+  $seoPagesActive = request()->routeIs('admin.seo.pages.*');
+  $seoMediaActive = request()->routeIs('admin.seo.media.*');
+  $seoAnyActive   = $seoPagesActive || $seoMediaActive;
+@endphp
+
+<div class="mt-3">
+  <div class="px-3 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">SEO</div>
+  <nav class="mt-1 space-y-1 px-2 text-sm">
+    <a href="{{ route('admin.seo.pages.index') }}"
+       class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
+              {{ $seoPagesActive ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
+      <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $seoPagesActive ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
+      Pages
+    </a>
+
+    <a href="{{ route('admin.seo.media.index') }}"
+       class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
+              {{ $seoMediaActive ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
+      <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $seoMediaActive ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
+      Media
+    </a>
+  </nav>
+</div>
         </nav>
 
         {{-- ADD-ONS --}}
