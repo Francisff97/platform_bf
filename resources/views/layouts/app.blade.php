@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
   <head>
+      @php $meta = \App\Support\SeoManager::pageMeta(); @endphp
+@if(\App\Support\SeoManager::enabled())
+  @if(!empty($meta['title']))       <title>{{ $meta['title'] }}</title> @endif
+  @if(!empty($meta['description'])) <meta name="description" content="{{ $meta['description'] }}"> @endif
+  @if(!empty($meta['og_image']))    <meta property="og:image" content="{{ $meta['og_image'] }}"> @endif
+@endif
     @php $gtm = optional(\App\Models\SiteSetting::first())->gtm_container_id; @endphp
 @if($gtm)
   <!-- Google Tag Manager -->
