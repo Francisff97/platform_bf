@@ -89,7 +89,7 @@
                 </div>
                 @if($latestPack->excerpt)
                   <p class="mt-1 line-clamp-2 text-sm text-gray-600 dark:text-gray-300">{{ $latestPack->excerpt }}</p>
-                @endif>
+                @endif
               </div>
             </a>
           </div>
@@ -216,7 +216,7 @@
   @endif
 
   {{-- ====== PARTNER STRIP ====== --}}
-  <x-partners-slider />
+  <x-partners-slider class="my-[30px]"/>
 
   {{-- ====== CTA ====== --}}
   <section class="full-bleed mt-[90px] w-full bg-[var(--accent)] py-12 text-white">
