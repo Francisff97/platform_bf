@@ -1,9 +1,18 @@
 @php
   use Illuminate\Support\Facades\Route;
 
+  /** @var \App\Models\SiteSetting|null $s */
   $s = \App\Models\SiteSetting::first();
-  $brand      = $s->brand_name ?? 'TAKE YOUR BASE';
-  $discordUrl = $s->discord_link ?? '#';
+
+  $brand = trim($s->brand_name ?? '') ?: 'TAKE YOUR BASE';
+
+  // ⚠️ FIX: usa il campo corretto salvato da Appearance => discord_url
+  $discordUrl = trim($s->discord_url ?? '');
+  // sanitize rapido: se non inizia con http, prova a prefissare
+  if ($discordUrl && !preg_match('~^https?://~i', $discordUrl)) {
+    $discordUrl = 'https://' . ltrim($discordUrl, '/');
+  }
+  if (!$discordUrl) $discordUrl = '#';
 
   $links = [
     ['label'=>'Home',     'route'=>'home',            'match'=>['home']],
@@ -16,7 +25,8 @@
   ];
 
   $cartCount = $cartCount ?? (\App\Support\Cart::count() ?? 0);
-  $isAdmin = auth()->check() && strtolower((string)(auth()->user()->role ?? '')) === 'admin';
+  $isAdmin   = auth()->check() && strtolower((string)(auth()->user()->role ?? '')) === 'admin';
+
   $ff = \App\Support\FeatureFlags::all();
   $showDiscordExtras = !empty($ff['discord_integration']);
 @endphp
@@ -28,9 +38,27 @@
   .actions-desktop { display: none !important; }
   .hamburger { display: inline-flex !important; }
 }
+/* Migliora light-mode: vetro + ring + shadow coerenti */
+.header-glass-light {
+  background: color-mix(in oklab, white 72%, transparent);
+  -webkit-backdrop-filter: saturate(140%) blur(10px);
+  backdrop-filter: saturate(140%) blur(10px);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, .06);
+}
+.drawer-glass-light {
+  background: color-mix(in oklab, white 86%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  backdrop-filter: blur(14px) saturate(150%);
+  box-shadow: 0 30px 60px rgba(2, 6, 23, .18);
+}
+.link-tile-light {
+  background: color-mix(in oklab, white 78%, transparent);
+  box-shadow: inset 0 0 0 1px rgba(2,6,23,.06);
+}
+.link-tile-light:hover { box-shadow: inset 0 0 0 1px rgba(2,6,23,.12); }
 </style>
 
-{{-- WRAPPER con stato Alpine (comprende header + overlay fuori dal header) --}}
+{{-- WRAPPER con stato Alpine --}}
 <div
   x-data="{
     dark: document.documentElement.classList.contains('dark'),
@@ -57,7 +85,7 @@
 >
 
   {{-- HEADER --}}
-  <header class="sticky top-0 z-50 border-b bg-white/80 backdrop-blur dark:bg-gray-900/70 dark:border-gray-800">
+  <header class="sticky top-0 z-50 border-b dark:border-gray-800 dark:bg-gray-900/70 dark:backdrop-blur header-glass-light">
     <div class="mx-auto flex h-auto max-w-7xl items-center justify-between py-3 px-3 sm:px-6 lg:px-8">
 
       {{-- brand --}}
@@ -75,7 +103,7 @@
         @foreach($links as $l)
           @php $active = request()->routeIs(...$l['match']); @endphp
           <a href="{{ route($l['route']) }}"
-             class="relative pb-0.5 hover:opacity-90 {{ $active ? 'text-[var(--accent)] font-medium' : '' }}">
+             class="relative pb-0.5 hover:opacity-90 {{ $active ? 'text-[var(--accent)] font-medium' : 'text-slate-700 dark:text-slate-200' }}">
             {{ $l['label'] }}
             @if($active)
               <span class="absolute -bottom-0.5 left-0 h-0.5 w-full rounded bg-[var(--accent)]"></span>
@@ -88,7 +116,7 @@
           <div class="relative" @mouseenter="moreOpen=true" @mouseleave="moreOpen=false">
             <button type="button"
                     @click="moreOpen = !moreOpen"
-                    class="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-black/5 dark:hover:bg-white/10">
+                    class="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-black/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200">
               More
               <svg xmlns="http://www.w3.org/2000/svg" class="h-[14px] w-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6"/></svg>
             </button>
@@ -110,13 +138,14 @@
 
       {{-- right actions (desktop) --}}
       <div class="hidden items-center gap-3 text-sm sm:flex actions-desktop">
-        @php $discordUrlBtn = $s->discord_url ?? '#'; @endphp
-        <a href="{{ $discordUrlBtn }}"
+        {{-- Server: pieno accent + white --}}
+        <a href="{{ $discordUrl }}"
            class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-white hover:opacity-90"
            style="background: var(--accent);">
            <span>Our server</span>
         </a>
 
+        {{-- Admin: pieno accent + white --}}
         @if($isAdmin && Route::has('admin.dashboard'))
           <a href="{{ route('admin.dashboard') }}"
              class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-white hover:opacity-90"
@@ -125,22 +154,28 @@
           </a>
         @endif
 
-        <a href="{{ route('cart.index') }}" class="relative inline-flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        {{-- Cart: transparent + text accent + ring accent --}}
+        <a href="{{ route('cart.index') }}"
+           class="relative inline-flex items-center gap-1 rounded-full px-3 py-1 ring-1"
+           style="color: var(--accent); border-color: var(--accent); --tw-ring-color: var(--accent); background: transparent;">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path d="M6 6h15l-1.5 9h-12L6 6z"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/>
           </svg>
+          <span>Cart</span>
           @if($cartCount > 0)
-            <span class="absolute -top-2 -right-2 rounded-full bg-[var(--accent)] px-1.5 text-[10px] leading-4 text-white">
+            <span class="ml-1 -mr-0.5 rounded-full px-1.5 text-[10px] leading-4 text-white" style="background: var(--accent);">
               {{ $cartCount }}
             </span>
           @endif
         </a>
 
+        {{-- Theme --}}
         <button @click="toggle" class="inline-flex items-center p-1.5 hover:opacity-80" title="Theme">
           <svg x-show="!dark" xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="4" stroke-width="1.6"/><path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.5 6.5-1.4-1.4M7.9 7.9 6.5 6.5m10 0-1.4 1.4M7.9 16.1l-1.4 1.4" stroke-width="1.6"/></svg>
           <svg x-show="dark" xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79Z" stroke-width="1.6"/></svg>
         </button>
 
+        {{-- Profile / Auth --}}
         @auth
           <a href="{{ route('profile.edit') }}" class="inline-flex items-center gap-1 hover:opacity-80">
             <img src="{{ auth()->user()->avatar_url ?? 'https://www.gravatar.com/avatar/'.md5(strtolower(trim(auth()->user()->email))).'?s=64&d=identicon' }}"
@@ -161,8 +196,9 @@
         :aria-expanded="open ? 'true' : 'false'"
         aria-controls="mobileNav"
         class="hamburger sm:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl
-               bg-white/5 ring-1 ring-black/5 hover:bg-white/10 transition
-               dark:bg-white/5 dark:ring-white/10"
+               ring-1 transition
+               bg-white/40 ring-black/10 hover:bg-white/60
+               dark:bg-white/5 dark:ring-white/10 dark:hover:bg-white/10"
         aria-label="Open menu">
         <svg x-show="!open" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path d="M3 6h18M3 12h18M3 18h18" stroke-width="1.8"/>
@@ -199,8 +235,8 @@
            x-transition:leave-end="translate-x-full opacity-0"
            class="absolute right-0 top-0 h-full min-h-full w-[86vw] max-w-sm
                   flex flex-col overflow-hidden
-                  border-l border-white/10 bg-white/10 backdrop-blur-xl
-                  shadow-2xl ring-1 ring-black/10
+                  border-l ring-1
+                  drawer-glass-light ring-black/10 border-black/10
                   dark:border-white/10 dark:bg-white/5 dark:ring-white/10">
 
       <!-- Header (safe-area) -->
@@ -214,15 +250,8 @@
           @endif
         </div>
         <div class="flex items-center gap-1.5">
-          <button @click="toggle" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 ring-1 ring-black/5 hover:bg-white/10 dark:ring-white/10" aria-label="Theme">
-            <svg x-show="!dark" xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="12" cy="12" r="4" stroke-width="1.6"/><path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.5 6.5-1.4-1.4M7.9 7.9 6.5 6.5m10 0-1.4 1.4M7.9 16.1l-1.4 1.4" stroke-width="1.6"/>
-            </svg>
-            <svg x-show="dark" xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79Z" stroke-width="1.6"/>
-            </svg>
-          </button>
-          <button @click="open=false" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 ring-1 ring-black/5 hover:bg-white/10 dark:ring-white/10" aria-label="Close">
+          <button @click="toggle" class="inline-flex h-9 w-9 items-center justify-center rounded-lg link-tile-light dark:bg-white/5 dark:ring-white/10" aria-label="Theme"></button>
+          <button @click="open=false" class="inline-flex h-9 w-9 items-center justify-center rounded-lg link-tile-light dark:bg-white/5 dark:ring-white/10" aria-label="Close">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path d="M18 6L6 18M6 6l12 12" stroke-width="1.8"/>
             </svg>
@@ -233,17 +262,33 @@
       <!-- Quick actions -->
       <div class="px-4 pb-3 shrink-0">
         <div class="grid grid-cols-3 gap-2">
-          <a href="{{ $discordUrl }}" class="rounded-xl bg-[var(--accent)]/90 px-3 py-2 text-center text-white ring-1 ring-white/10 hover:bg-[var(--accent)] transition" @click="open=false">Server</a>
-          <a href="{{ route('cart.index') }}" class="rounded-xl bg-white/10 px-3 py-2 text-center ring-1 ring-white/10 hover:bg-white/20 transition" @click="open=false">
+          {{-- Server: pieno accent --}}
+          <a href="{{ $discordUrl }}"
+             class="rounded-xl px-3 py-2 text-center text-white ring-1 ring-white/10 hover:opacity-90 transition"
+             style="background: var(--accent);" @click="open=false">Server</a>
+
+          {{-- Cart: transparent + text accent + ring accent --}}
+          <a href="{{ route('cart.index') }}"
+             class="rounded-xl px-3 py-2 text-center transition"
+             style="color: var(--accent); border: 1px solid var(--accent); background: transparent;"
+             @click="open=false">
             Cart
             @if($cartCount > 0)
-              <span class="ml-1 rounded-full bg-[var(--accent)] px-1.5 text-[10px] leading-4 text-white align-middle">{{ $cartCount }}</span>
+              <span class="ml-1 rounded-full px-1.5 text-[10px] leading-4 text-white" style="background: var(--accent);">
+                {{ $cartCount }}
+              </span>
             @endif
           </a>
+
+          {{-- Admin: pieno accent --}}
           @if($isAdmin && Route::has('admin.dashboard'))
-            <a href="{{ route('admin.dashboard') }}" class="rounded-xl bg-white/10 px-3 py-2 text-center ring-1 ring-white/10 hover:bg-white/20 transition" @click="open=false">Admin</a>
+            <a href="{{ route('admin.dashboard') }}"
+               class="rounded-xl px-3 py-2 text-center text-white ring-1 ring-white/10 hover:opacity-90 transition"
+               style="background: var(--accent);" @click="open=false">Admin</a>
           @else
-            <button disabled class="rounded-xl bg-white/5 px-3 py-2 text-center text-gray-400 ring-1 ring-white/10 cursor-default">Menu</button>
+            <button disabled class="rounded-xl link-tile-light px-3 py-2 text-center text-gray-500 dark:bg-white/5 dark:text-gray-300">
+              Menu
+            </button>
           @endif
         </div>
       </div>
@@ -253,10 +298,13 @@
         @foreach($links as $l)
           @php $active = request()->routeIs(...$l['match']); @endphp
           <a href="{{ route($l['route']) }}" @click="open=false"
-             class="group flex items-center justify-between rounded-xl px-3 py-3 ring-1 ring-white/10 bg-white/5 hover:bg-white/10 transition
-                    {{ $active ? 'text-[var(--accent)] font-medium ring-[var(--accent)]/40 bg-white/15' : '' }}">
+             class="group flex items-center justify-between rounded-xl px-3 py-3 transition
+                    link-tile-light dark:ring-1 dark:ring-white/10 dark:bg-white/5 dark:hover:bg-white/10
+                    {{ $active ? 'text-[var(--accent)] font-medium' : '' }}">
             <span class="text-[15px]">{{ $l['label'] }}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-60 group-hover:opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 6l6 6-6 6" stroke-width="1.8"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-60 group-hover:opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M9 6l6 6-6 6" stroke-width="1.8"/>
+            </svg>
           </a>
         @endforeach
 
@@ -264,21 +312,24 @@
           <div x-data="{ openMore:false }" class="pt-1">
             <button type="button"
                     @click="openMore = !openMore"
-                    class="group flex w-full items-center justify-between rounded-xl bg-white/5 px-3 py-3 ring-1 ring-white/10 hover:bg-white/10 transition">
+                    class="group flex w-full items-center justify-between rounded-xl px-3 py-3 transition
+                           link-tile-light dark:ring-1 dark:ring-white/10 dark:bg-white/5 dark:hover:bg-white/10">
               <span class="text-[15px]">More</span>
               <svg x-show="!openMore" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-70"><path d="M6 9l6 6 6-6" stroke="currentColor" fill="none"/></svg>
               <svg x-show="openMore"  xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-70"><path d="M18 15l-6-6-6 6" stroke="currentColor" fill="none"/></svg>
             </button>
             <div x-show="openMore" x-transition.scale.origin.top.left class="space-y-1 pl-1 pr-1">
-              <a href="{{ route('announcements') }}" @click="open=false" class="block rounded-lg bg-white/5 px-3 py-2 ring-1 ring-white/10 hover:bg-white/10">Announcements</a>
-              <a href="{{ route('feedback') }}" @click="open=false" class="block rounded-lg bg-white/5 px-3 py-2 ring-1 ring-white/10 hover:bg-white/10">Customer Feedback</a>
+              <a href="{{ route('announcements') }}" @click="open=false"
+                 class="block rounded-lg px-3 py-2 transition link-tile-light dark:ring-1 dark:ring-white/10 dark:bg-white/5 dark:hover:bg-white/10">Announcements</a>
+              <a href="{{ route('feedback') }}" @click="open=false"
+                 class="block rounded-lg px-3 py-2 transition link-tile-light dark:ring-1 dark:ring-white/10 dark:bg-white/5 dark:hover:bg-white/10">Customer Feedback</a>
             </div>
           </div>
         @endif
       </nav>
 
       <!-- Footer auth -->
-      <div class="border-t border-white/10 px-4 py-3 backdrop-blur shrink-0">
+      <div class="border-t border-black/10 px-4 py-3 backdrop-blur shrink-0 dark:border-white/10">
         @auth
           <div class="flex items-center gap-3">
             <img src="{{ auth()->user()->avatar_url ?? 'https://www.gravatar.com/avatar/'.md5(strtolower(trim(auth()->user()->email))).'?s=64&d=identicon' }}"
@@ -288,12 +339,15 @@
               <div class="truncate text-xs opacity-70">{{ auth()->user()->email }}</div>
             </div>
             <form method="POST" action="{{ route('logout') }}" class="ml-auto">@csrf
-              <button class="rounded-lg bg-white/10 px-3 py-1.5 text-sm ring-1 ring-white/10 hover:bg-white/20 transition">Logout</button>
+              <button class="rounded-lg px-3 py-1.5 text-sm transition link-tile-light dark:bg-white/5 dark:ring-1 dark:ring-white/10 dark:hover:bg-white/10">
+                Logout
+              </button>
             </form>
           </div>
         @else
           <a href="{{ route('login') }}" @click="open=false"
-             class="block w-full rounded-lg bg-[var(--accent)]/90 px-3 py-2 text-center text-white ring-1 ring-white/10 hover:bg-[var(--accent)] transition">
+             class="block w-full rounded-lg px-3 py-2 text-center text-white ring-1 ring-white/10 hover:opacity-90 transition"
+             style="background: var(--accent);">
             Login
           </a>
         @endauth
