@@ -24,7 +24,7 @@
       <tbody class="divide-y divide-gray-100">
         @foreach($services as $s)
           <tr class="hover:bg-gray-50">
-              <td class="px-4 py-3 font-medium text-gray-900"><img src={{ $s->image_path }}/></td>
+              <td class="px-4 py-3 font-medium text-gray-900"><img src="{{ $s->image_path }}"/></td>
             <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $s->name }}</td>
             <td class="px-4 py-3">
               <span class="rounded-full px-2.5 py-0.5 text-xs font-medium {{ $s->status==='published' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600' }}">
