@@ -22,7 +22,7 @@
     </div>
     <div>
       <button class="rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-500">Update</button>
-      <a href="{{ route('admin.services.index') }}" class="ml-3 text-gray-600 hover:underline">Cancel</a>
+      <a href="{{ route('admin.services.index') }}" class="ml-3 text-gray-600 hover:underline dark:text-white">Cancel</a>
     </div>
   </form>
 </x-admin-layout>
