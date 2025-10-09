@@ -18,32 +18,46 @@
     <!-- End Google Tag Manager -->
   @endif
 
-  {{-- 👉 Theme bootstrap PRIMA dei CSS --}}
-  <script>
-    (function() {
-      try {
-        const d = document.documentElement;
-        const cookieTheme = (document.cookie.match(/(?:^|;\s*)theme=([^;]+)/)?.[1] || '').toLowerCase();
-        const lsTheme = (localStorage.getItem('theme') || '').toLowerCase();
-        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        let mode = cookieTheme || lsTheme || 'system';
-        if (!['light','dark','system'].includes(mode)) mode = 'system';
-        d.classList.toggle('dark', mode === 'dark' || (mode === 'system' && prefersDark));
-        if (mode === 'system' && window.matchMedia) {
-          window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-            d.classList.toggle('dark', e.matches);
-          });
-        }
-        window.setTheme = function(next){
-          if (!['light','dark','system'].includes(next)) next = 'system';
-          localStorage.setItem('theme', next);
-          document.cookie = 'theme='+next+'; Path=/; Max-Age=31536000; SameSite=Lax';
-          const prefers = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-          d.classList.toggle('dark', next==='dark' || (next==='system' && prefers));
-        };
-      } catch(e){}
-    })();
-  </script>
+  <!-- THEME BOOTSTRAP (safe, no listeners) -->
+<script>
+(function () {
+  try {
+    var d = document.documentElement;
+
+    // leggi preferenza salvata
+    var cookieTheme = (document.cookie.match(/(?:^|;\s*)theme=([^;]+)/) || [,''])[1].toLowerCase();
+    var lsTheme = (localStorage.getItem('theme') || '').toLowerCase();
+
+    // normalizza
+    var mode = cookieTheme || lsTheme || 'system';
+    if (mode !== 'light' && mode !== 'dark' && mode !== 'system') mode = 'system';
+
+    // preferenza di sistema (senza addEventListener: massima compatibilità)
+    var prefersDark = false;
+    try { prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches; } catch(e){}
+
+    // applica
+    d.classList.toggle('dark', mode === 'dark' || (mode === 'system' && prefersDark));
+
+    // API globali
+    window.setTheme = function(next){
+      next = (next || 'system').toLowerCase();
+      if (next !== 'light' && next !== 'dark' && next !== 'system') next = 'system';
+      localStorage.setItem('theme', next);
+      document.cookie = 'theme='+next+'; Path=/; Max-Age=31536000; SameSite=Lax';
+      var prefers = false;
+      try { prefers = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches; } catch(e){}
+      d.classList.toggle('dark', next === 'dark' || (next === 'system' && prefers));
+    };
+
+    window.toggleTheme = function(){
+      var current = (localStorage.getItem('theme') || 'system').toLowerCase();
+      var next = current === 'dark' ? 'light' : 'dark';
+      setTheme(next);
+    };
+  } catch(e){}
+})();
+</script>
 
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
