@@ -11,12 +11,12 @@
 
   {{-- KPI / Stats --}}
   <div class="grid grid-cols-1 gap-5 md:grid-cols-3 dark:bg-gray-900 dark:text-white">
-    <x-stat label="Packs"    :value="$packsCount ?? 0" />
-    <x-stat label="Services" :value="$servicesCount ?? 0" />
-    <x-stat label="Builders" :value="$buildersCount ?? 0" />
-    <x-stat label="Heroes"   :value="$heroesCount ?? 0" />
-    <x-stat label="Slides"   :value="$slidesCount ?? 0" />
-    <x-stat label="Users"    :value="$usersCount ?? 0" />
+    <x-stat class="dark:bg-gray-900 dark:text-white" label="Packs"    :value="$packsCount ?? 0" />
+    <x-stat class="dark:bg-gray-900 dark:text-white" label="Services" :value="$servicesCount ?? 0" />
+    <x-stat class="dark:bg-gray-900 dark:text-white" label="Builders" :value="$buildersCount ?? 0" />
+    <x-stat class="dark:bg-gray-900 dark:text-white" label="Heroes"   :value="$heroesCount ?? 0" />
+    <x-stat class="dark:bg-gray-900 dark:text-white" label="Slides"   :value="$slidesCount ?? 0" />
+    <x-stat class="dark:bg-gray-900 dark:text-white" label="Users"    :value="$usersCount ?? 0" />
   </div>
 
   @php
