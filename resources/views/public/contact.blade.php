@@ -111,7 +111,7 @@
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <label class="fancy-check inline-flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
               <input type="checkbox" name="privacy" value="1" {{ old('privacy') ? 'checked' : '' }} required>
-              <span>I accept the <a href="{{ route('privacy') }}" class="underline">Privacy Policy</a></span>
+              <span>I accept the <a href="#" class="underline">Privacy Policy</a></span>
             </label>
 
             {{-- token reCAPTCHA v3 (popolato via JS quando attivi lo script) --}}
