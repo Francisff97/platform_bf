@@ -14,6 +14,7 @@
     <table class="min-w-full divide-y divide-gray-200">
       <thead class="bg-gray-50 text-left text-xs font-semibold uppercase text-gray-500">
         <tr>
+            <th class="px-4 py-3">Image</th>
           <th class="px-4 py-3">Name</th>
           <th class="px-4 py-3">Status</th>
           <th class="px-4 py-3">Order</th>
@@ -23,13 +24,14 @@
       <tbody class="divide-y divide-gray-100">
         @foreach($services as $s)
           <tr class="hover:bg-gray-50">
-            <td class="px-4 py-3 font-medium text-gray-900">{{ $s->name }}</td>
+              <td class="px-4 py-3 font-medium text-gray-900"><img src="{{ $s->image }}"/></td>
+            <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $s->name }}</td>
             <td class="px-4 py-3">
-              <span class="rounded-full px-2.5 py-0.5 text-xs font-medium {{ $s->status==='published' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600' }}">
+              <span class="dark:text-white rounded-full px-2.5 py-0.5 text-xs font-medium {{ $s->status==='published' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600' }}">
                 {{ $s->status }}
               </span>
             </td>
-            <td class="px-4 py-3 text-gray-700">{{ $s->order }}</td>
+            <td class="px-4 py-3 text-gray-700 dark:text-white">{{ $s->order }}</td>
             <td class="px-4 py-3 text-right">
               <a class="text-indigo-600 hover:underline mr-3" href="{{ route('admin.services.edit',$s) }}">Edit</a>
               <form class="inline" method="POST" action="{{ route('admin.services.destroy',$s) }}" onsubmit="return confirm('Eliminare?')">
