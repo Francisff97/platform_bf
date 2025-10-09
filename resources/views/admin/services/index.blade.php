@@ -1,9 +1,8 @@
 <x-admin-layout title="Services">
-  {{-- Intro box in stile "glass" --}}
-  <div class="mx-auto mb-6 max-w-5xl rounded-2xl border border-[color:var(--accent)]/30 bg-white/70 p-4 text-sm text-gray-700 shadow-sm backdrop-blur
-              dark:border-[color:var(--accent)]/30 dark:bg-gray-900/70 dark:text-gray-200">
+  {{-- ✅ Intro originale (non toccata) --}}
+  <div class="bg-gray-50 p-4 rounded border border-gray-200 dark:bg-gray-800 dark:border-gray-700 text-sm text-gray-600 dark:text-white mb-6">
     Welcome to the Services management page. Here you can create, edit, and delete services offered by your company.
-    Use the “New Service” button to add a new service, and click “Edit” next to an existing service to modify its details or status.
+    Use the "New Service" button to add a new service, and click "Edit" next to an existing service to modify its details or status.
   </div>
 
   {{-- Toolbar --}}
