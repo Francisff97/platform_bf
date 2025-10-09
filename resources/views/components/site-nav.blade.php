@@ -165,172 +165,174 @@
     </div>
 
     <!-- hamburger (mobile) -->
-<button
-  @click="open = !open"
-  :aria-expanded="open ? 'true' : 'false'"
-  aria-controls="mobileNav"
-  class="sm:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl
-         bg-white/5 ring-1 ring-black/5 hover:bg-white/10 transition
-         dark:bg-white/5 dark:ring-white/10"
-  aria-label="Open menu">
-  <svg x-show="!open" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-    <path d="M3 6h18M3 12h18M3 18h18" stroke-width="1.8"/>
-  </svg>
-  <svg x-show="open" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-    <path d="M18 6L6 18M6 6l12 12" stroke-width="1.8"/>
-  </svg>
-</button>
+    <!-- hamburger (mobile) -->
+    <button
+      @click="open = !open"
+      :aria-expanded="open ? 'true' : 'false'"
+      aria-controls="mobileNav"
+      class="hamburger sm:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl
+             bg-white/5 ring-1 ring-black/5 hover:bg-white/10 transition
+             dark:bg-white/5 dark:ring-white/10"
+      aria-label="Open menu">
+      <svg x-show="!open" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M3 6h18M3 12h18M3 18h18" stroke-width="1.8"/>
+      </svg>
+      <svg x-show="open" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M18 6L6 18M6 6l12 12" stroke-width="1.8"/>
+      </svg>
+    </button>
+  </div> <!-- ⟵ QUI chiudiamo il container della top-bar (.mx-auto ...) -->
 
-  {{-- mobile panel (drawer + backdrop) --}}
-<div
-  x-show="open"
-  x-transition.opacity
-  x-cloak
-  @keydown.escape.window="open=false"
-  x-effect="$nextTick(() => { document.body.style.overflow = open ? 'hidden' : '' })"
-  class="sm:hidden fixed inset-0 z-[60]"
-  role="dialog"
-  aria-modal="true">
+  {{-- mobile panel (drawer + backdrop) – deve stare FUORI dal container sopra --}}
+  <div
+    x-show="open"
+    x-transition.opacity
+    x-cloak
+    @keydown.escape.window="open=false"
+    x-effect="$nextTick(() => { document.body.style.overflow = open ? 'hidden' : '' })"
+    class="sm:hidden fixed inset-0 z-[60]"
+    role="dialog"
+    aria-modal="true">
 
-  <!-- Backdrop -->
-  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="open=false"></div>
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="open=false"></div>
 
-  <!-- Drawer -->
-  <aside id="mobileNav"
-         x-show="open"
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="translate-x-full opacity-0"
-         x-transition:enter-end="translate-x-0 opacity-100"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="translate-x-0 opacity-100"
-         x-transition:leave-end="translate-x-full opacity-0"
-         class="absolute right-0 top-0 h-full w-[86vw] max-w-sm
-                border-l border-white/10 bg-white/10 backdrop-blur-xl
-                shadow-2xl ring-1 ring-black/10
-                dark:border-white/10 dark:bg-white/5 dark:ring-white/10
-                flex flex-col">
+    <!-- Drawer -->
+    <aside id="mobileNav"
+           x-show="open"
+           x-transition:enter="transition ease-out duration-200"
+           x-transition:enter-start="translate-x-full opacity-0"
+           x-transition:enter-end="translate-x-0 opacity-100"
+           x-transition:leave="transition ease-in duration-150"
+           x-transition:leave-start="translate-x-0 opacity-100"
+           x-transition:leave-end="translate-x-full opacity-0"
+           class="absolute right-0 top-0 h-full w-[86vw] max-w-sm
+                  border-l border-white/10 bg-white/10 backdrop-blur-xl
+                  shadow-2xl ring-1 ring-black/10
+                  dark:border-white/10 dark:bg-white/5 dark:ring-white/10
+                  flex flex-col">
 
-    <!-- Drawer header -->
-    <div class="flex items-center justify-between px-4 py-3">
-      <div class="flex items-center gap-2">
-        @if($s?->logo_light_path || $s?->logo_dark_path)
-          <img src="{{ $s?->logo_light_path ? Storage::url($s->logo_light_path) : '' }}" class="h-7 w-auto dark:hidden" alt="Logo">
-          <img src="{{ $s?->logo_dark_path ? Storage::url($s->logo_dark_path) : '' }}" class="hidden h-7 w-auto dark:block" alt="Logo Dark">
-        @else
-          <span class="text-sm font-semibold tracking-wide">{{ $brand }}</span>
-        @endif
-      </div>
-      <div class="flex items-center gap-1.5">
-        <!-- Theme toggle mini -->
-        <button @click="toggle" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 ring-1 ring-black/5 hover:bg-white/10 dark:ring-white/10">
-          <svg x-show="!dark" xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <circle cx="12" cy="12" r="4" stroke-width="1.6"/><path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.5 6.5-1.4-1.4M7.9 7.9 6.5 6.5m10 0-1.4 1.4M7.9 16.1l-1.4 1.4" stroke-width="1.6"/>
-          </svg>
-          <svg x-show="dark" xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79Z" stroke-width="1.6"/>
-          </svg>
-        </button>
-        <!-- Close -->
-        <button @click="open=false" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 ring-1 ring-black/5 hover:bg-white/10 dark:ring-white/10" aria-label="Close">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M18 6L6 18M6 6l12 12" stroke-width="1.8"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- Quick actions row -->
-    <div class="px-4">
-      <div class="grid grid-cols-3 gap-2">
-        <a href="{{ $discordUrl }}"
-           class="group rounded-xl bg-[var(--accent)]/90 px-3 py-2 text-center text-white ring-1 ring-white/10 hover:bg-[var(--accent)]"
-           @click="open=false">Server</a>
-        <a href="{{ route('cart.index') }}"
-           class="group rounded-xl bg-white/10 px-3 py-2 text-center ring-1 ring-black/10 hover:bg-white/20 dark:ring-white/10"
-           @click="open=false">
-          Cart
-          @if($cartCount > 0)
-            <span class="ml-1 rounded-full bg-[var(--accent)] px-1.5 text-[10px] leading-4 text-white align-middle">{{ $cartCount }}</span>
+      <!-- Drawer header -->
+      <div class="flex items-center justify-between px-4 py-3">
+        <div class="flex items-center gap-2">
+          @if($s?->logo_light_path || $s?->logo_dark_path)
+            <img src="{{ $s?->logo_light_path ? Storage::url($s->logo_light_path) : '' }}" class="h-7 w-auto dark:hidden" alt="Logo">
+            <img src="{{ $s?->logo_dark_path ? Storage::url($s->logo_dark_path) : '' }}" class="hidden h-7 w-auto dark:block" alt="Logo Dark">
+          @else
+            <span class="text-sm font-semibold tracking-wide">{{ $brand }}</span>
           @endif
-        </a>
-        @if($isAdmin && Route::has('admin.dashboard'))
-          <a href="{{ route('admin.dashboard') }}"
-             class="group rounded-xl bg-white/10 px-3 py-2 text-center ring-1 ring-black/10 hover:bg-white/20 dark:ring-white/10"
-             @click="open=false">Admin</a>
-        @else
-          <button disabled class="rounded-xl bg-white/5 px-3 py-2 text-center text-gray-400 ring-1 ring-black/10 dark:ring-white/10 cursor-default">Menu</button>
-        @endif
-      </div>
-    </div>
-
-    <!-- Nav list -->
-    <nav class="mt-3 flex-1 overflow-y-auto px-2 pb-4">
-      @foreach($links as $l)
-        @php $active = request()->routeIs(...$l['match']); @endphp
-        <a href="{{ route($l['route']) }}"
-           @click="open=false"
-           class="group relative mb-1 flex items-center justify-between rounded-xl px-3 py-3
-                  ring-1 ring-black/5 hover:bg-white/10 hover:ring-black/10
-                  dark:ring-white/10 dark:hover:ring-white/20
-                  {{ $active ? 'bg-white/15 ring-black/10 dark:ring-white/20' : 'bg-white/5' }}">
-          <span class="text-[15px] {{ $active ? 'text-[var(--accent)] font-semibold' : '' }}">{{ $l['label'] }}</span>
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-60 group-hover:opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M9 6l6 6-6 6" stroke-width="1.8"/>
-          </svg>
-          @if($active)
-            <span class="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-full bg-[var(--accent)]"></span>
-          @endif
-        </a>
-      @endforeach
-
-      {{-- More (accordion) --}}
-      @if($showDiscordExtras)
-        <div x-data="{ openMore:false }" class="mt-2">
-          <button type="button"
-                  @click="openMore = !openMore"
-                  class="group relative mb-1 flex w-full items-center justify-between rounded-xl bg-white/5 px-3 py-3
-                         ring-1 ring-black/5 hover:bg-white/10 hover:ring-black/10 dark:ring-white/10 dark:hover:ring-white/20">
-            <span class="text-[15px]">More</span>
-            <svg x-show="!openMore" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6"/></svg>
-            <svg x-show="openMore"  xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 15l-6-6-6 6"/></svg>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <!-- Theme toggle mini -->
+          <button @click="toggle" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 ring-1 ring-black/5 hover:bg-white/10 dark:ring-white/10">
+            <svg x-show="!dark" xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="4" stroke-width="1.6"/><path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.5 6.5-1.4-1.4M7.9 7.9 6.5 6.5m10 0-1.4 1.4M7.9 16.1l-1.4 1.4" stroke-width="1.6"/>
+            </svg>
+            <svg x-show="dark" xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79Z" stroke-width="1.6"/>
+            </svg>
           </button>
-          <div x-show="openMore" x-transition.scale.origin.top.left class="space-y-1 pl-1 pr-1">
-            <a href="{{ route('announcements') }}"
-               @click="open=false"
-               class="block rounded-lg bg-white/5 px-3 py-2 ring-1 ring-black/5 hover:bg-white/10 dark:ring-white/10">Announcements</a>
-            <a href="{{ route('feedback') }}"
-               @click="open=false"
-               class="block rounded-lg bg-white/5 px-3 py-2 ring-1 ring-black/5 hover:bg-white/10 dark:ring-white/10">Customer Feedback</a>
-          </div>
+          <!-- Close -->
+          <button @click="open=false" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 ring-1 ring-black/5 hover:bg-white/10 dark:ring-white/10" aria-label="Close">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M18 6L6 18M6 6l12 12" stroke-width="1.8"/>
+            </svg>
+          </button>
         </div>
-      @endif
-    </nav>
+      </div>
 
-    <!-- Footer: auth -->
-    <div class="border-t border-white/10 px-4 py-3 backdrop-blur">
-      @auth
-        <div class="flex items-center gap-3">
-          <img src="{{ auth()->user()->avatar_url ?? 'https://www.gravatar.com/avatar/'.md5(strtolower(trim(auth()->user()->email))).'?s=64&d=identicon' }}"
-               class="h-8 w-8 rounded-full object-cover" alt="">
-          <div class="min-w-0">
-            <div class="truncate text-sm font-medium">{{ auth()->user()->name }}</div>
-            <div class="truncate text-xs opacity-70">{{ auth()->user()->email }}</div>
-          </div>
-          <form method="POST" action="{{ route('logout') }}" class="ml-auto">@csrf
-            <button class="rounded-lg bg-white/10 px-3 py-1.5 text-sm ring-1 ring-black/10 hover:bg-white/20 dark:ring-white/10">
-              Logout
+      <!-- Quick actions -->
+      <div class="px-4">
+        <div class="grid grid-cols-3 gap-2">
+          <a href="{{ $discordUrl }}"
+             class="group rounded-xl bg-[var(--accent)]/90 px-3 py-2 text-center text-white ring-1 ring-white/10 hover:bg-[var(--accent)]"
+             @click="open=false">Server</a>
+          <a href="{{ route('cart.index') }}"
+             class="group rounded-xl bg-white/10 px-3 py-2 text-center ring-1 ring-black/10 hover:bg-white/20 dark:ring-white/10"
+             @click="open=false">
+            Cart
+            @if($cartCount > 0)
+              <span class="ml-1 rounded-full bg-[var(--accent)] px-1.5 text-[10px] leading-4 text-white align-middle">{{ $cartCount }}</span>
+            @endif
+          </a>
+          @if($isAdmin && Route::has('admin.dashboard'))
+            <a href="{{ route('admin.dashboard') }}"
+               class="group rounded-xl bg-white/10 px-3 py-2 text-center ring-1 ring-black/10 hover:bg-white/20 dark:ring-white/10"
+               @click="open=false">Admin</a>
+          @else
+            <button disabled class="rounded-xl bg-white/5 px-3 py-2 text-center text-gray-400 ring-1 ring-black/10 dark:ring-white/10 cursor-default">Menu</button>
+          @endif
+        </div>
+      </div>
+
+      <!-- Nav list -->
+      <nav class="mt-3 flex-1 overflow-y-auto px-2 pb-4">
+        @foreach($links as $l)
+          @php $active = request()->routeIs(...$l['match']); @endphp
+          <a href="{{ route($l['route']) }}"
+             @click="open=false"
+             class="group relative mb-1 flex items-center justify-between rounded-xl px-3 py-3
+                    ring-1 ring-black/5 hover:bg-white/10 hover:ring-black/10
+                    dark:ring-white/10 dark:hover:ring-white/20
+                    {{ $active ? 'bg-white/15 ring-black/10 dark:ring-white/20' : 'bg-white/5' }}">
+            <span class="text-[15px] {{ $active ? 'text-[var(--accent)] font-semibold' : '' }}">{{ $l['label'] }}</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-60 group-hover:opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M9 6l6 6-6 6" stroke-width="1.8"/>
+            </svg>
+            @if($active)
+              <span class="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-full bg-[var(--accent)]"></span>
+            @endif
+          </a>
+        @endforeach
+
+        {{-- More (accordion) --}}
+        @if($showDiscordExtras)
+          <div x-data="{ openMore:false }" class="mt-2">
+            <button type="button"
+                    @click="openMore = !openMore"
+                    class="group relative mb-1 flex w-full items-center justify-between rounded-xl bg-white/5 px-3 py-3
+                           ring-1 ring-black/5 hover:bg-white/10 hover:ring-black/10 dark:ring-white/10 dark:hover:ring-white/20">
+              <span class="text-[15px]">More</span>
+              <svg x-show="!openMore" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-70"><path d="M6 9l6 6 6-6" stroke="currentColor" fill="none"/></svg>
+              <svg x-show="openMore"  xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-70"><path d="M18 15l-6-6-6 6" stroke="currentColor" fill="none"/></svg>
             </button>
-          </form>
-        </div>
-      @else
-        <a href="{{ route('login') }}"
-           @click="open=false"
-           class="block w-full rounded-lg bg-[var(--accent)]/90 px-3 py-2 text-center text-white ring-1 ring-white/10 hover:bg-[var(--accent)]">
-          Login
-        </a>
-      @endauth
-    </div>
+            <div x-show="openMore" x-transition.scale.origin.top.left class="space-y-1 pl-1 pr-1">
+              <a href="{{ route('announcements') }}"
+                 @click="open=false"
+                 class="block rounded-lg bg-white/5 px-3 py-2 ring-1 ring-black/5 hover:bg-white/10 dark:ring-white/10">Announcements</a>
+              <a href="{{ route('feedback') }}"
+                 @click="open=false"
+                 class="block rounded-lg bg-white/5 px-3 py-2 ring-1 ring-black/5 hover:bg-white/10 dark:ring-white/10">Customer Feedback</a>
+            </div>
+          </div>
+        @endif
+      </nav>
 
-  </aside>
-</div>
+      <!-- Footer: auth -->
+      <div class="border-t border-white/10 px-4 py-3 backdrop-blur">
+        @auth
+          <div class="flex items-center gap-3">
+            <img src="{{ auth()->user()->avatar_url ?? 'https://www.gravatar.com/avatar/'.md5(strtolower(trim(auth()->user()->email))).'?s=64&d=identicon' }}"
+                 class="h-8 w-8 rounded-full object-cover" alt="">
+            <div class="min-w-0">
+              <div class="truncate text-sm font-medium">{{ auth()->user()->name }}</div>
+              <div class="truncate text-xs opacity-70">{{ auth()->user()->email }}</div>
+            </div>
+            <form method="POST" action="{{ route('logout') }}" class="ml-auto">@csrf
+              <button class="rounded-lg bg-white/10 px-3 py-1.5 text-sm ring-1 ring-black/10 hover:bg-white/20 dark:ring-white/10">
+                Logout
+              </button>
+            </form>
+          </div>
+        @else
+          <a href="{{ route('login') }}"
+             @click="open=false"
+             class="block w-full rounded-lg bg-[var(--accent)]/90 px-3 py-2 text-center text-white ring-1 ring-white/10 hover:bg-[var(--accent)]">
+            Login
+          </a>
+        @endauth
+      </div>
+
+    </aside>
+  </div>
 </header>
