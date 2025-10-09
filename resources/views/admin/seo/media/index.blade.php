@@ -8,7 +8,7 @@
     <form method="POST" action="{{ route('admin.seo.media.sync') }}" class="ml-auto">
     @csrf
     <button class="rounded border px-3 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-800">
-      🔄 Sync
+      Sync
     </button>
   </form>
   
