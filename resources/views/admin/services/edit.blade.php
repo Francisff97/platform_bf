@@ -5,16 +5,16 @@
 
   <form method="POST" action="{{ route('admin.services.update',$service) }}" class="grid gap-4 max-w-2xl" enctype="multipart/form-data">
     @csrf @method('PUT')
-    <input type="file" name="image" accept="image/*" class="border p-2 rounded">
+    <input type="file" name="image" accept="image/*" class="border p-2 rounded dark:border-gray-600">
   @if(!empty($pack->image_path))
     <img src="{{ asset('storage/'.$service->image_path) }}" class="h-24 mt-2 rounded"/>
   @endif
-    <input name="name" class="border p-2 rounded" value="{{ old('name',$service->name) }}">
-    <input name="slug" class="border p-2 rounded" value="{{ old('slug',$service->slug) }}">
-    <input name="excerpt" class="border p-2 rounded" value="{{ old('excerpt',$service->excerpt) }}">
-    <textarea name="body" class="border p-2 rounded" rows="6">{{ old('body',$service->body) }}</textarea>
+    <input name="name" class="border p-2 rounded dark:border-gray-600 dark:bg-gray-900 dark:text-white" value="{{ old('name',$service->name) }}">
+    <input name="slug" class="border p-2 rounded dark:border-gray-600 dark:bg-gray-900 dark:text-white" value="{{ old('slug',$service->slug) }}">
+    <input name="excerpt" class="border p-2 rounded dark:border-gray-600 dark:bg-gray-900 dark:text-white" value="{{ old('excerpt',$service->excerpt) }}">
+    <textarea name="body" class="border p-2 rounded dark:border-gray-600 dark:bg-gray-900 dark:text-white" rows="6">{{ old('body',$service->body) }}</textarea>
     <div class="grid grid-cols-2 gap-3">
-      <input name="order" type="number" class="border p-2 rounded" value="{{ old('order',$service->order) }}">
+      <input name="order" type="number" class="border p-2 rounded dark:border-gray-600 dark:bg-gray-900 dark:text-white" value="{{ old('order',$service->order) }}">
       <select name="status" class="border p-2 rounded">
         <option value="draft" {{ $service->status==='draft'?'selected':'' }}>Draft</option>
         <option value="published" {{ $service->status==='published'?'selected':'' }}>Published</option>
