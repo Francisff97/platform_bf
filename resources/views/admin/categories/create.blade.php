@@ -1,33 +1,55 @@
 <x-admin-layout title="Nuova Categoria">
-  <form method="POST" action="{{ route('admin.categories.store') }}" class="grid max-w-xl gap-4">
+  <x-slot name="header"><h1 class="text-xl font-bold">New Category</h1></x-slot>
+
+  @if ($errors->any())
+    <div class="mb-4 rounded-xl border border-red-300 bg-red-50/80 px-4 py-3 text-sm text-red-700
+                dark:border-red-500/40 dark:bg-red-900/20 dark:text-red-200">
+      <div class="mb-2 font-semibold">Correct these errors:</div>
+      <ul class="list-disc pl-5">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
+    </div>
+  @endif
+
+  <form method="POST" action="{{ route('admin.categories.store') }}"
+        class="mx-auto grid w-full max-w-xl gap-5 rounded-2xl border border-[color:var(--accent)]/30 bg-white/70 p-6 shadow-sm backdrop-blur
+               dark:border-[color:var(--accent)]/30 dark:bg-gray-900/70">
     @csrf
-    <div>
-      <label class="block text-sm text-gray-600 dark:text-white">Name</label>
-      <input name="name" class="mt-1 w-full rounded border p-2 dark:text-black" required value="{{ old('name') }}">
-    </div>
-    <div>
-      <label class="block text-sm text-gray-600 dark:text-white">Slug (optional)</label>
-      <input name="slug" class="mt-1 w-full rounded border p-2 dark:text-black" value="{{ old('slug') }}">
-    </div>
-    <div>
-      <div class="mt-1 grid gap-2">
-        <label class="block text-sm font-medium">Color</label>
-<input type="text" name="color" value="{{ old('color', $category->color ?? '') }}"
-       class="mt-1 w-full rounded border px-3 py-2 dark:text-black"
-       placeholder="indigo  |  #4f46e5">
-<p class="mt-1 text-xs text-gray-500">
-  Use a palette name (indigo, emerald, …) or a HEX like <code>#4f46e5</code>.
-</p>
 
-    @if ($errors->any())
-      <div class="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">
-        <div class="font-semibold mb-2">Correct that errors:</div>
-        <ul class="list-disc pl-5">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
-      </div>
-    @endif
+    {{-- Name --}}
+    <div>
+      <label class="mb-1 block text-sm font-medium text-gray-800 dark:text-gray-200">Name</label>
+      <input name="name" value="{{ old('name') }}" required
+             class="h-11 w-full rounded-xl border border-[color:var(--accent)] bg-white/90 px-3 text-black placeholder:text-gray-500 outline-none transition
+                    hover:border-[color:var(--accent)]/80 focus:ring-2 focus:ring-[color:var(--accent)]
+                    dark:bg-black/80 dark:text-white dark:placeholder:text-gray-400" />
+    </div>
 
-    <div class="pt-2">
-      <button class="rounded bg-[var(--accent)] px-4 py-2 text-white hover:opacity-90">Save</button>
+    {{-- Slug --}}
+    <div>
+      <label class="mb-1 block text-sm font-medium text-gray-800 dark:text-gray-200">Slug (optional)</label>
+      <input name="slug" value="{{ old('slug') }}"
+             class="h-11 w-full rounded-xl border border-[color:var(--accent)] bg-white/90 px-3 text-black placeholder:text-gray-500 outline-none transition
+                    hover:border-[color:var(--accent)]/80 focus:ring-2 focus:ring-[color:var(--accent)]
+                    dark:bg-black/80 dark:text-white dark:placeholder:text-gray-400" />
+    </div>
+
+    {{-- Color --}}
+    <div>
+      <label class="mb-1 block text-sm font-medium text-gray-800 dark:text-gray-200">Color</label>
+      <input type="text" name="color" value="{{ old('color', $category->color ?? '') }}"
+             placeholder="indigo  |  #4f46e5"
+             class="h-11 w-full rounded-xl border border-[color:var(--accent)] bg-white/90 px-3 text-black placeholder:text-gray-500 outline-none transition
+                    hover:border-[color:var(--accent)]/80 focus:ring-2 focus:ring-[color:var(--accent)]
+                    dark:bg-black/80 dark:text-white dark:placeholder:text-gray-400" />
+      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        Use a palette name (indigo, emerald, …) or a HEX like <code>#4f46e5</code>.
+      </p>
+    </div>
+
+    <div class="mt-2">
+      <button class="inline-flex items-center justify-center rounded-xl bg-[color:var(--accent)] px-5 py-2.5 text-white transition hover:opacity-90">
+        Save
+      </button>
+      <a href="{{ route('admin.categories.index') }}" class="ml-3 text-sm text-gray-600 hover:underline dark:text-gray-300">Cancel</a>
     </div>
   </form>
 </x-admin-layout>
