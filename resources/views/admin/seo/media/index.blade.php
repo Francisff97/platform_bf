@@ -57,7 +57,7 @@
         class="rounded-2xl border bg-white/70 shadow-sm backdrop-blur dark:bg-gray-900/70 dark:border-gray-800 overflow-hidden">
     @csrf
 
-    {{-- Toolbar (NON sticky) --}}
+    {{-- Toolbar (NON  sticky) --}}
 <div class="flex flex-wrap items-center gap-2 border-b bg-white/80 p-3
             dark:border-gray-800 dark:bg-gray-900/70">
   <label class="inline-flex items-center gap-2 text-sm">
