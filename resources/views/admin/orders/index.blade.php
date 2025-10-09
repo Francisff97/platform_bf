@@ -1,7 +1,7 @@
 <x-admin-layout title="Orders">
   <h1 class="text-xl font-bold mb-4">Orders</h1>
   <table class="min-w-full border">
-    <thead class="bg-gray-100">
+    <thead class="bg-gray-100 dark:bg-gray-900 dark:text-white">
       <tr>
         <th class="px-3 py-2">#</th>
         <th class="px-3 py-2">Customer</th>
@@ -13,7 +13,7 @@
     </thead>
     <tbody>
       @foreach($orders as $o)
-        <tr class="border-t">
+        <tr class="border-t dark:border-gray-600">
           <td class="px-3 py-2">{{ $o->id }}</td>
           <td class="px-3 py-2">{{ $o->meta['customer']['full_name'] ?? '-' }}</td>
           <td class="px-3 py-2">{{ number_format($o->amount_cents/100,2,',','.') }} {{ $o->currency }}</td>
