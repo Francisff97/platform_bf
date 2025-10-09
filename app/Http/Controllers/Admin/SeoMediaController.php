@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+// app/Http/Controllers/Admin/SeoMediaController.php
+use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\Controller;
 use App\Models\MediaAsset;
 use Illuminate\Http\Request;
@@ -56,11 +58,14 @@ class SeoMediaController extends Controller
 
         return back()->with('success','Bulk applied.');
     }
-    public function sync()
-{
-    \App\Jobs\Seo\BackfillMedia::dispatch();
-    // oppure: \Artisan::call('seo:media-backfill');
+    
 
-    return back()->with('success','Media sync started.');
+public function sync()
+{
+    // puoi anche passare opzioni al comando:
+    // Artisan::call('seo:media-backfill', ['--no-prune' => true]);
+    Artisan::call('seo:media-backfill');
+
+    return back()->with('success', 'Media synchronized successfully!');
 }
 }
