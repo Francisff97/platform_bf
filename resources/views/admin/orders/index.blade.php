@@ -1,6 +1,6 @@
 <x-admin-layout title="Orders">
   <h1 class="text-xl font-bold mb-4">Orders</h1>
-  <table class="min-w-full border">
+  <table class="min-w-full border dark:border-gray-600">
     <thead class="bg-gray-100 dark:bg-gray-900 dark:text-white">
       <tr>
         <th class="px-3 py-2">#</th>
