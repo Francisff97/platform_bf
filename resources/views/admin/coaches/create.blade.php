@@ -1,63 +1,89 @@
 <x-admin-layout title="Add Coach">
-  <form class="max-w-xl grid gap-4" method="POST" action="{{ route('admin.coaches.store') }}" enctype="multipart/form-data">
+  <x-slot name="header">
+    <h1 class="text-xl font-bold">New Coach</h1>
+  </x-slot>
+
+  @if ($errors->any())
+    <div class="mb-4 rounded-xl border border-red-300 bg-red-50/80 px-4 py-3 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-900/20 dark:text-red-200">
+      <div class="mb-2 font-semibold">Please fix these errors:</div>
+      <ul class="list-disc pl-5">
+        @foreach ($errors->all() as $e) <li>{{ $e }}</li> @endforeach
+      </ul>
+    </div>
+  @endif
+
+  <form method="POST"
+        action="{{ route('admin.coaches.store') }}"
+        enctype="multipart/form-data"
+        class="mx-auto grid w-full max-w-2xl gap-5 rounded-2xl border border-[color:var(--accent)]/30 bg-white/70 p-6 shadow-sm backdrop-blur
+               dark:border-[color:var(--accent)]/30 dark:bg-gray-900/70">
+
     @csrf
-    <input name="name" class="border p-2 rounded" placeholder="Name" value="{{ old('name') }}" required>
-    <input name="slug" class="border p-2 rounded" placeholder="Slug (optional)" value="{{ old('slug') }}">
-    <input name="team" class="border p-2 rounded" placeholder="Team" value="{{ old('team') }}">
-    <input type="file" name="image" accept="image/*" class="border p-2 rounded">
-    <input name="skills" class="border p-2 rounded" placeholder="Skills (separate with)" value="{{ old('skills') }}">
 
-    <h3 class="text-lg font-semibold mt-6">Prices</h3>
-    <div id="prices-wrapper">
-      @php
-        $siteCurrency = \App\Support\Currency::site()['code'];
-      @endphp
+    {{-- Image + preview --}}
+    <div x-data="{preview:null}">
+      <label class="mb-1 block text-sm font-medium text-gray-800 dark:text-gray-200">Image</label>
+      <input type="file" name="image" accept="image/*"
+             @change="preview = $event.target.files?.[0] ? URL.createObjectURL($event.target.files[0]) : null"
+             class="w-full rounded-xl border border-[color:var(--accent)] bg-white/90 p-2 text-sm text-black outline-none transition
+                    file:mr-3 file:rounded-lg file:border-0 file:bg-[color:var(--accent)] file:px-3 file:py-2 file:text-white
+                    hover:border-[color:var(--accent)]/80 focus:ring-2 focus:ring-[color:var(--accent)]
+                    dark:bg-black/80 dark:text-white" />
+      @error('image') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
 
-      @foreach(old('prices', $coach->prices ?? []) as $i => $p)
-        <div class="flex gap-2 mb-2">
-          <input type="text" name="prices[{{ $i }}][duration]" 
-                 value="{{ $p['duration'] ?? $p->duration ?? '' }}" 
-                 placeholder="Duration (ex: 30 mins)" 
-                 class="border p-2 rounded w-1/2">
+      <template x-if="preview">
+        <img :src="preview" alt="Preview"
+             class="mt-3 h-36 w-full rounded-lg object-cover ring-1 ring-black/5 dark:ring-white/10" />
+      </template>
+    </div>
 
-          <input type="number" name="prices[{{ $i }}][price_cents]" 
-                 value="{{ $p['price_cents'] ?? $p->price_cents ?? '' }}" 
-                 placeholder="Price in cents (ex: 50 USD is 5000)" 
-                 class="border p-2 rounded w-1/3">
+    <x-input name="name"    label="Name" required placeholder="Coach name" :value="old('name')" />
+    <x-input name="slug"    label="Slug (optional)" placeholder="auto or custom" :value="old('slug')" />
+    <x-input name="team"    label="Team" placeholder="Team or org" :value="old('team')" />
+    <x-input name="skills"  label="Skills" placeholder="Comma separated (e.g. QW, ACQ, Root Riders)" :value="old('skills')" />
 
-          <input type="text" name="prices[{{ $i }}][currency]" 
-                 value="{{ $p['currency'] ?? $p->currency ?? $siteCurrency }}" 
-                 class="border p-2 rounded w-1/6">
+    {{-- Prices repeater --}}
+    <div x-data="pricesRepeater(@json(old('prices', [])), @json(\App\Support\Currency::site()['code']))" class="mt-2">
+      <div class="mb-1 text-sm font-medium text-gray-800 dark:text-gray-200">Prices</div>
+
+      <template x-for="(row, i) in rows" :key="i">
+        <div class="mb-2 grid grid-cols-12 gap-2">
+          <input class="col-span-6 h-11 rounded-xl border border-[color:var(--accent)] bg-white/90 px-3 text-sm dark:bg-black/80 dark:text-white"
+                 type="text" :name="`prices[${i}][duration]`" x-model="row.duration" placeholder="Duration (ex: 30 mins)">
+          <input class="col-span-4 h-11 rounded-xl border border-[color:var(--accent)] bg-white/90 px-3 text-sm dark:bg-black/80 dark:text-white"
+                 type="number" :name="`prices[${i}][price_cents]`" x-model.number="row.price_cents" placeholder="Price in cents">
+          <input class="col-span-2 h-11 rounded-xl border border-[color:var(--accent)] bg-white/90 px-3 text-sm uppercase dark:bg-black/80 dark:text-white"
+                 type="text" :name="`prices[${i}][currency]`" x-model="row.currency">
         </div>
-      @endforeach
+      </template>
 
-      <button type="button" onclick="addPriceRow()" class="mt-2 rounded bg-indigo-600 px-3 py-1.5 text-white">
-        + Add price
-      </button>
+      <div class="flex gap-2">
+        <button type="button" @click="add()"
+                class="rounded-xl bg-[var(--accent)] px-3 py-2 text-sm text-white hover:opacity-90">+ Add price</button>
+        <button type="button" @click="rows=[]"
+                class="rounded-xl border px-3 py-2 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">Clear</button>
+      </div>
     </div>
 
     <script>
-      const platformCurrency = @json(\App\Support\Currency::site()['code']); // valuta di default
-      let priceIndex = {{ isset($coach) ? $coach->prices->count() : 0 }};
-      function addPriceRow(){
-        const wrapper=document.getElementById('prices-wrapper');
-        wrapper.insertAdjacentHTML('beforeend',`
-          <div class="flex gap-2 mb-2">
-            <input type="text" name="prices[${priceIndex}][duration]" placeholder="Duration (ex: 30 mins)" class="border p-2 rounded w-1/2">
-            <input type="number" name="prices[${priceIndex}][price_cents]" placeholder="Price in cents (ex: 50 USD is 5000)" class="border p-2 rounded w-1/3">
-            <input type="text" name="prices[${priceIndex}][currency]" value="${platformCurrency}" class="border p-2 rounded w-1/6">
-          </div>
-        `);
-        priceIndex++;
+      function pricesRepeater(initial, defCurrency){
+        const norm = (x)=>({duration: x?.duration ?? '', price_cents: x?.price_cents ?? '', currency: x?.currency ?? defCurrency});
+        const rows = (Array.isArray(initial) ? initial : []).map(norm);
+        if(rows.length===0) rows.push(norm({}));
+        return {
+          rows,
+          add(){ this.rows.push(norm({})) }
+        }
       }
     </script>
 
-    <div>
-      <button class="rounded bg-[var(--accent)] px-4 py-2 text-white">Save</button>
-      <a href="{{ route('admin.coaches.index') }}" class="ml-3 underline">Cancel</a>
+    {{-- Actions --}}
+    <div class="mt-2 flex items-center gap-3">
+      <button class="inline-flex items-center justify-center rounded-xl bg-[color:var(--accent)] px-5 py-2.5 text-white transition
+                     hover:opacity-90 active:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
+        Save
+      </button>
+      <a href="{{ route('admin.coaches.index') }}" class="text-gray-600 hover:underline dark:text-gray-300">Cancel</a>
     </div>
-
-    @error('name')<p class="text-red-600 text-sm">{{ $message }}</p>@enderror
-    @error('image')<p class="text-red-600 text-sm">{{ $message }}</p>@enderror
   </form>
 </x-admin-layout>
