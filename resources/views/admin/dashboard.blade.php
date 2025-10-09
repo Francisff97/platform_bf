@@ -51,7 +51,7 @@
 
     {{-- Quick cards (glass + gradient border) --}}
     <x-card class="group relative overflow-hidden transition hover:-translate-y-0.5 hover:shadow-lg">
-      <div class="pointer-events-none absolute inset-0 rounded-2xl opacity-60" style="background: radial-gradient(600px 200px at 100% -20%, color-mix(in oklab, var(--accent) 28%, transparent) 0%, transparent 60%);"></div>
+      <div class="pointer-events-none absolute inset-0 rounded-2xl opacity-60 dark:bg-gray-900" style="background: radial-gradient(600px 200px at 100% -20%, color-mix(in oklab, var(--accent) 28%, transparent) 0%, transparent 60%);"></div>
       <div class="flex items-center justify-between">
         <h3 class="font-semibold">Manage Packs</h3>
         <a href="{{ route('admin.packs.create') }}" class="rounded-xl bg-[color:var(--accent)] px-3 py-1.5 text-white text-sm transition hover:opacity-90">New Pack</a>
