@@ -250,7 +250,20 @@
           @endif
         </div>
         <div class="flex items-center gap-1.5">
-          <button @click="toggle" class="inline-flex h-9 w-9 items-center justify-center rounded-lg link-tile-light dark:bg-white/5 dark:ring-white/10" aria-label="Theme"></button>
+          <!-- Theme toggle mini (MOBILE DRAWER HEADER) -->
+<button @click="toggle"
+        class="inline-flex h-9 w-9 items-center justify-center rounded-lg link-tile-light dark:bg-white/5 dark:ring-white/10"
+        aria-label="Theme">
+  {{-- Sun (light) --}}
+  <svg x-show="!dark" xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <circle cx="12" cy="12" r="4" stroke-width="1.6"/>
+    <path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.5 6.5-1.4-1.4M7.9 7.9 6.5 6.5m10 0-1.4 1.4M7.9 16.1l-1.4 1.4" stroke-width="1.6"/>
+  </svg>
+  {{-- Moon (dark) --}}
+  <svg x-show="dark" xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79Z" stroke-width="1.6"/>
+  </svg>
+</button>
           <button @click="open=false" class="inline-flex h-9 w-9 items-center justify-center rounded-lg link-tile-light dark:bg-white/5 dark:ring-white/10" aria-label="Close">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path d="M18 6L6 18M6 6l12 12" stroke-width="1.8"/>
