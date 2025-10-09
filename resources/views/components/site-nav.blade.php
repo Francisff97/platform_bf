@@ -33,14 +33,28 @@
 }
 </style>
 <header
-  x-data="{
-    dark: document.documentElement.classList.contains('dark') || localStorage.getItem('theme')==='dark',
+ x-data="{
+    dark: document.documentElement.classList.contains('dark'),
     open: false,
     moreOpen: false,
-    toggleTheme(){
-      this.dark = !this.dark;
-      document.documentElement.classList.toggle('dark', this.dark);
-      localStorage.setItem('theme', this.dark ? 'dark' : 'light');
+    init(){
+      // sync quando cambia il tema altrove (altra tab)
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'theme') this.dark = document.documentElement.classList.contains('dark');
+      });
+      // sync ai cambi OS se utente è in 'system'
+      if (window.matchMedia) {
+        const mq = window.matchMedia('(prefers-color-scheme: dark)');
+        mq.addEventListener('change', () => {
+          const m = (localStorage.getItem('theme') || 'system').toLowerCase();
+          if (m === 'system') this.dark = document.documentElement.classList.contains('dark');
+        });
+      }
+    },
+    set(t){ setTheme(t); this.dark = document.documentElement.classList.contains('dark'); },
+    toggle(){
+      const cur = (localStorage.getItem('theme') || 'system').toLowerCase();
+      this.set(cur === 'dark' ? 'light' : 'dark');
     }
   }"
   class="sticky top-0 z-50 border-b bg-white/80 backdrop-blur dark:bg-gray-900/70 dark:border-gray-800"
@@ -130,7 +144,7 @@
       </a>
 
       {{-- Theme --}}
-      <button @click="toggleTheme" class="inline-flex items-center p-1.5 hover:opacity-80" title="Theme">
+      <button @click="toggle" class="inline-flex items-center p-1.5 hover:opacity-80" title="Theme">
         <svg x-show="!dark" xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="4" stroke-width="1.6"/><path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.5 6.5-1.4-1.4M7.9 7.9 6.5 6.5m10 0-1.4 1.4M7.9 16.1l-1.4 1.4" stroke-width="1.6"/></svg>
         <svg x-show="dark" xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79Z" stroke-width="1.6"/></svg>
       </button>
@@ -223,7 +237,7 @@
           @endif
         </a>
 
-        <button class="inline-flex items-center justify-center gap-2 rounded border px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800" @click="toggleTheme">
+        <button class="inline-flex items-center justify-center gap-2 rounded border px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800" @click="toggle">
           Theme
         </button>
 
