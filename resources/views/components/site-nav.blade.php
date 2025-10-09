@@ -17,32 +17,30 @@
 
   $cartCount = $cartCount ?? (\App\Support\Cart::count() ?? 0);
 
-  // flag admin sicuro (auth + role case-insensitive)
   $isAdmin = auth()->check() && strtolower((string)(auth()->user()->role ?? '')) === 'admin';
 
-  // feature flags (per Announcements / Feedback)
   $ff = \App\Support\FeatureFlags::all();
   $showDiscordExtras = !empty($ff['discord_integration']);
 @endphp
+
 <style>
-/* Forza layout "mobile" tra 768px e 900px */
-@media (min-width: 500px) and (max-width: 1100px) {
-  .nav-desktop,
-  .actions-desktop { display: none !important; }
-  .hamburger { display: inline-flex !important; }
-}
+  [x-cloak]{display:none!important}
+  /* Forza layout "mobile" in range personalizzato */
+  @media (min-width: 500px) and (max-width: 1100px) {
+    .nav-desktop, .actions-desktop { display: none !important; }
+    .hamburger { display: inline-flex !important; }
+  }
 </style>
+
 <header
- x-data="{
+  x-data="{
     dark: document.documentElement.classList.contains('dark'),
     open: false,
     moreOpen: false,
     init(){
-      // sync quando cambia il tema altrove (altra tab)
       window.addEventListener('storage', (e) => {
         if (e.key === 'theme') this.dark = document.documentElement.classList.contains('dark');
       });
-      // sync ai cambi OS se utente è in 'system'
       if (window.matchMedia) {
         const mq = window.matchMedia('(prefers-color-scheme: dark)');
         mq.addEventListener('change', () => {
@@ -59,9 +57,11 @@
   }"
   class="sticky top-0 z-50 border-b bg-white/80 backdrop-blur dark:bg-gray-900/70 dark:border-gray-800"
 >
+
+  <!-- TOP BAR -->
   <div class="mx-auto flex h-auto max-w-7xl items-center justify-between py-3 px-3 sm:px-6 lg:px-8">
 
-    {{-- brand --}}
+    {{-- Brand --}}
     <a href="{{ route('home') }}" class="flex items-center gap-2 font-semibold tracking-wide">
       @if($s?->logo_light_path || $s?->logo_dark_path)
         <img src="{{ $s?->logo_light_path ? Storage::url($s->logo_light_path) : '' }}" class="h-[60px] w-auto dark:hidden" alt="Logo">
@@ -71,7 +71,7 @@
       @endif
     </a>
 
-    {{-- center links (desktop) --}}
+    {{-- Center links (desktop) --}}
     <nav class="hidden items-center gap-5 text-sm sm:flex nav-desktop">
       @foreach($links as $l)
         @php $active = request()->routeIs(...$l['match']); @endphp
@@ -84,7 +84,7 @@
         </a>
       @endforeach
 
-      {{-- More (desktop dropdown) --}}
+      {{-- More (desktop) --}}
       @if($showDiscordExtras)
         <div class="relative" @mouseenter="moreOpen=true" @mouseleave="moreOpen=false">
           <button type="button"
@@ -109,20 +109,18 @@
       @endif
     </nav>
 
-    {{-- right actions (desktop) --}}
+    {{-- Right actions (desktop) --}}
     <div class="hidden items-center gap-3 text-sm sm:flex actions-desktop">
 
-      {{-- Our server --}}
-      @php
-        $discordUrlBtn = $s->discord_url ?? '#';
-      @endphp
+      {{-- Server --}}
+      @php $discordUrlBtn = $s->discord_url ?? '#'; @endphp
       <a href="{{ $discordUrlBtn }}"
          class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-white hover:opacity-90"
          style="background: var(--accent);">
          <span>Our server</span>
       </a>
 
-      {{-- Admin (solo admin) --}}
+      {{-- Admin --}}
       @if($isAdmin && Route::has('admin.dashboard'))
         <a href="{{ route('admin.dashboard') }}"
            class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-white hover:opacity-90"
@@ -164,8 +162,7 @@
       @endauth
     </div>
 
-    <!-- hamburger (mobile) -->
-    <!-- hamburger (mobile) -->
+    {{-- Hamburger (mobile) --}}
     <button
       @click="open = !open"
       :aria-expanded="open ? 'true' : 'false'"
@@ -181,9 +178,10 @@
         <path d="M18 6L6 18M6 6l12 12" stroke-width="1.8"/>
       </svg>
     </button>
-  </div> <!-- ⟵ QUI chiudiamo il container della top-bar (.mx-auto ...) -->
+  </div>
+  <!-- /TOP BAR -->
 
-  {{-- mobile panel (drawer + backdrop) – deve stare FUORI dal container sopra --}}
+  {{-- MOBILE PANEL (drawer + backdrop) --}}
   <div
     x-show="open"
     x-transition.opacity
@@ -223,8 +221,7 @@
           @endif
         </div>
         <div class="flex items-center gap-1.5">
-          <!-- Theme toggle mini -->
-          <button @click="toggle" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 ring-1 ring-black/5 hover:bg-white/10 dark:ring-white/10">
+          <button @click="toggle" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 ring-1 ring-black/5 hover:bg-white/10 dark:ring-white/10" aria-label="Theme">
             <svg x-show="!dark" xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <circle cx="12" cy="12" r="4" stroke-width="1.6"/><path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.5 6.5-1.4-1.4M7.9 7.9 6.5 6.5m10 0-1.4 1.4M7.9 16.1l-1.4 1.4" stroke-width="1.6"/>
             </svg>
@@ -232,7 +229,6 @@
               <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79Z" stroke-width="1.6"/>
             </svg>
           </button>
-          <!-- Close -->
           <button @click="open=false" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 ring-1 ring-black/5 hover:bg-white/10 dark:ring-white/10" aria-label="Close">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path d="M18 6L6 18M6 6l12 12" stroke-width="1.8"/>
@@ -285,7 +281,7 @@
           </a>
         @endforeach
 
-        {{-- More (accordion) --}}
+        {{-- More --}}
         @if($showDiscordExtras)
           <div x-data="{ openMore:false }" class="mt-2">
             <button type="button"
@@ -293,8 +289,8 @@
                     class="group relative mb-1 flex w-full items-center justify-between rounded-xl bg-white/5 px-3 py-3
                            ring-1 ring-black/5 hover:bg-white/10 hover:ring-black/10 dark:ring-white/10 dark:hover:ring-white/20">
               <span class="text-[15px]">More</span>
-              <svg x-show="!openMore" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-70"><path d="M6 9l6 6 6-6" stroke="currentColor" fill="none"/></svg>
-              <svg x-show="openMore"  xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-70"><path d="M18 15l-6-6-6 6" stroke="currentColor" fill="none"/></svg>
+              <svg x-show="!openMore" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6"/></svg>
+              <svg x-show="openMore"  xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 15l-6-6-6 6"/></svg>
             </button>
             <div x-show="openMore" x-transition.scale.origin.top.left class="space-y-1 pl-1 pr-1">
               <a href="{{ route('announcements') }}"
@@ -308,7 +304,7 @@
         @endif
       </nav>
 
-      <!-- Footer: auth -->
+      <!-- Footer auth -->
       <div class="border-t border-white/10 px-4 py-3 backdrop-blur">
         @auth
           <div class="flex items-center gap-3">
