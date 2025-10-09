@@ -56,4 +56,11 @@ class SeoMediaController extends Controller
 
         return back()->with('success','Bulk applied.');
     }
+    public function sync()
+{
+    \App\Jobs\Seo\BackfillMedia::dispatch();
+    // oppure: \Artisan::call('seo:media-backfill');
+
+    return back()->with('success','Media sync started.');
+}
 }
