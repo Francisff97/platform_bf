@@ -15,7 +15,7 @@
     <textarea name="body" class="border p-2 rounded dark:border-gray-600 dark:bg-gray-900 dark:text-white" rows="6">{{ old('body',$service->body) }}</textarea>
     <div class="grid grid-cols-2 gap-3">
       <input name="order" type="number" class="border p-2 rounded dark:border-gray-600 dark:bg-gray-900 dark:text-white" value="{{ old('order',$service->order) }}">
-      <select name="status" class="border p-2 rounded">
+      <select name="status" class="border p-2 rounded dark:border-gray-600 dark:bg-gray-900 dark:text-white">
         <option value="draft" {{ $service->status==='draft'?'selected':'' }}>Draft</option>
         <option value="published" {{ $service->status==='published'?'selected':'' }}>Published</option>
       </select>
