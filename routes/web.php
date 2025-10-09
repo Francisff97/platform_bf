@@ -116,6 +116,12 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', AdminOnly::class])
     ->prefix('admin')->name('admin.')
     ->group(function () {
+        // routes/web.php (admin group, auth middleware)
+Route::post('/admin/seo/pages/sync', [\App\Http\Controllers\Admin\SeoPageController::class,'sync'])
+    ->name('admin.seo.pages.sync');
+Route::post('/admin/seo/media/sync', [\App\Http\Controllers\Admin\SeoMediaController::class,'sync'])
+    ->name('admin.seo.media.sync');
+        
         Route::prefix('seo')->name('seo.')->group(function () {
         // Pages
         Route::get('pages', [SeoPageController::class,'index'])->name('pages.index');
