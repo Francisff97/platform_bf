@@ -35,7 +35,7 @@
       </div>
       @error('gtm_container_id')
         <div class="mt-2 text-xs text-red-600">{{ $message }}</div>
-      @enderror>
+      @enderror
 
       <p class="mt-3 text-xs text-gray-500">
         Tip: you can quickly disable analytics by leaving this field empty and saving.
