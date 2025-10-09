@@ -7,7 +7,7 @@
     <form method="POST" action="{{ route('admin.seo.pages.sync') }}">
       @csrf
       <button class="rounded border px-3 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-800">
-        🔄 Sync
+        Sync
       </button>
     </form>
   </div>
