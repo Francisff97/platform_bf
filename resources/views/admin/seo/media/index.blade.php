@@ -1,36 +1,39 @@
 <x-admin-layout title="SEO Media">
-  {{-- Search --}}
-  <form method="GET" class="mb-4 flex items-center gap-2">
-    <input name="search" value="{{ request('search') }}" placeholder="Search path…"
-           class="h-10 w-full max-w-md rounded-xl border border-[color:var(--accent)]/40 px-3
-                  dark:bg-gray-900 dark:text-white dark:border-gray-800" />
-    <button class="h-10 rounded-xl bg-[var(--accent)] px-4 text-white hover:opacity-90">Search</button>
-    <form method="POST" action="{{ route('admin.seo.media.sync') }}" class="ml-auto">
-    @csrf
-    <button class="rounded border px-3 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-800">
-      Sync
-    </button>
-  </form>
-  
-   </form>
- 
+  {{-- Top actions: SEARCH + SYNC (no form annidati) --}}
+  <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+    <form method="GET" class="flex w-full max-w-xl items-center gap-2">
+      <input name="search" value="{{ request('search') }}" placeholder="Search path…"
+             class="h-10 w-full rounded-xl border border-[color:var(--accent)]/40 px-3
+                    dark:bg-gray-900 dark:text-white dark:border-gray-800" />
+      <button class="h-10 rounded-xl bg-[var(--accent)] px-4 text-white hover:opacity-90">
+        Search
+      </button>
+    </form>
 
+    <form method="POST" action="{{ route('admin.seo.media.sync') }}" class="sm:ml-auto">
+      @csrf
+      <button class="h-10 rounded-xl border px-4 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 dark:border-gray-800">
+        Sync
+      </button>
+    </form>
+  </div>
 
   <form method="POST" action="{{ route('admin.seo.media.bulk') }}"
         class="rounded-2xl border bg-white/70 shadow-sm backdrop-blur dark:bg-gray-900/70 dark:border-gray-800 overflow-hidden">
     @csrf
 
-    {{-- Toolbar (vale per mobile e desktop) --}}
-    <div class="flex flex-wrap items-center gap-2 border-b p-3 dark:border-gray-800">
+    {{-- Toolbar (sticky su mobile così non la perdi mentre scorri) --}}
+    <div class="sticky top-14 z-10 flex flex-wrap items-center gap-2 border-b bg-white/80 p-3 backdrop-blur
+                dark:border-gray-800 dark:bg-gray-900/70">
       <label class="inline-flex items-center gap-2 text-sm">
         <input id="checkAll" type="checkbox"
                class="h-4 w-4 rounded border-gray-300 dark:border-gray-700">
         <span>Select all</span>
       </label>
 
-      <div class="ml-auto flex items-center gap-2">
+      <div class="ml-auto flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
         <input type="text" name="alt_text" placeholder="Set ALT for selected…"
-               class="h-10 w-56 rounded-xl border border-[color:var(--accent)]/40 px-3
+               class="h-10 w-full sm:w-56 rounded-xl border border-[color:var(--accent)]/40 px-3
                       dark:bg-gray-900 dark:text-white dark:border-gray-800" />
         <label class="inline-flex items-center gap-2 text-sm">
           <input type="checkbox" name="is_lazy" value="1"
@@ -87,7 +90,7 @@
       <table class="w-full text-sm">
         <thead class="bg-gray-50 text-left dark:bg-gray-900">
           <tr>
-            <th class="px-3 py-2"><!-- lo switch è sopra nella toolbar --></th>
+            <th class="px-3 py-2"></th>
             <th class="px-3 py-2">Preview</th>
             <th class="px-3 py-2">Path</th>
             <th class="px-3 py-2">Alt</th>
@@ -120,11 +123,30 @@
       </table>
     </div>
 
-    {{-- Footer bulk actions (duplicato già nella toolbar, qui lasciamo solo bordo per chiusura) --}}
     <div class="border-t dark:border-gray-800"></div>
   </form>
 
-  <div class="mt-4">{{ $assets->links() }}</div>
+  {{-- Pagination: prev/next a SINISTRA, compatti --}}
+  @php
+    $prev = $assets->previousPageUrl();
+    $next = $assets->nextPageUrl();
+  @endphp
+  <div class="mt-4 flex items-center gap-2">
+    <a href="{{ $prev ?: '#' }}"
+       class="inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm
+              {{ $prev ? 'hover:bg-gray-50 dark:hover:bg-gray-800 dark:border-gray-800' : 'pointer-events-none opacity-50 dark:border-gray-800' }}">
+      ‹ Prev
+    </a>
+    <a href="{{ $next ?: '#' }}"
+       class="inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm
+              {{ $next ? 'hover:bg-gray-50 dark:hover:bg-gray-800 dark:border-gray-800' : 'pointer-events-none opacity-50 dark:border-gray-800' }}">
+      Next ›
+    </a>
+    {{-- (opzionale) anche le pagine numeriche a destra: --}}
+    <div class="ml-auto hidden sm:block">
+      {{ $assets->links() }}
+    </div>
+  </div>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
