@@ -4,12 +4,6 @@
   <div class="flex items-center gap-2">
     {{-- opzionale: crea --}}
     {{-- <a href="{{ route('admin.seo.pages.create') }}" class="rounded bg-[var(--accent)] px-3 py-1.5 text-white">New</a> --}}
-    <form method="POST" action="{{ route('admin.seo.pages.sync') }}">
-      @csrf
-      <button class="rounded border px-3 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-800">
-        Sync
-      </button>
-    </form>
   </div>
 </div>
 
