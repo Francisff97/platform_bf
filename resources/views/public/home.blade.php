@@ -321,23 +321,51 @@
   <x-partners-slider />
 
   {{-- ====== CTA ====== --}}
-  <section class="full-bleed mt-[90px] w-full bg-[var(--accent)] py-12 text-white">
-    <div class="mx-auto grid max-w-6xl items-center gap-8 px-4 md:grid-cols-2">
-      <div>
-        <h2 class="mb-3 text-2xl font-semibold">Let’s build something great</h2>
-        <p class="text-white/90">
-          Tell us your goal. We’ll turn it into a repeatable engine.
-        </p>
-      </div>
-      <div class="flex flex-col gap-3 sm:flex-row">
-        <a class="w-fit rounded bg-white px-6 py-3 text-black" href="{{ route('contacts') }}">Contact us</a>
-        @php $s = \App\Models\SiteSetting::first(); $discord = $s?->discord_url ?? $s?->discord_link ?? '#'; @endphp
-        <a href="{{ $discord }}" class="w-fit rounded px-6 py-3 text-white hover:opacity-90" style="background:#212121;">
-          Join our Discord
-        </a>
-      </div>
+<section class="full-bleed relative mt-[90px] w-full overflow-hidden py-14 text-white"
+         style="background: var(--accent)">
+  {{-- decor sottili (safe) --}}
+  <div class="pointer-events-none absolute inset-0 opacity-20">
+    <div class="absolute -top-24 -left-24 h-72 w-72 rounded-full blur-3xl"
+         style="background: rgba(255,255,255,.25)"></div>
+    <div class="absolute -bottom-24 -right-24 h-72 w-72 rounded-full blur-3xl"
+         style="background: rgba(0,0,0,.25)"></div>
+  </div>
+
+  <div class="relative mx-auto grid max-w-6xl items-center gap-8 px-4 md:grid-cols-2">
+    <div>
+      <h2 class="font-orbitron text-3xl sm:text-4xl">Let’s build something great</h2>
+      <p class="mt-3 text-white/90 text-sm sm:text-base">
+        Tell us your goal. We’ll turn it into a repeatable engine.
+      </p>
     </div>
-  </section>
+
+    <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+      <a href="{{ route('contacts') }}"
+         class="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 text-black shadow-lg ring-1 ring-black/5 transition
+                hover:translate-y-[-1px] hover:shadow-xl active:translate-y-0">
+        Contact us
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
+
+      @php
+        $s = \App\Models\SiteSetting::first();
+        $discord = $s?->discord_url ?? $s?->discord_link ?? '#';
+      @endphp
+      <a href="{{ $discord }}" target="_blank" rel="noopener"
+         class="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-white shadow-lg ring-1 ring-white/20 transition
+                hover:translate-y-[-1px] hover:shadow-xl active:translate-y-0"
+         style="background:#1f2937;">
+        {{-- icona discord minimal --}}
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M20 4.4a18 18 0 0 0-4.5-1.4l-.2.5a16 16 0 0 1 3.8 1.3c-3.4-1.6-7.1-1.6-10.5 0A16 16 0 0 1 12.9 3l-.2-.5C8.4 3 6 4 6 4s-5 7.3-5 13.1C3.7 19.7 6.2 20 6.2 20l1.1-1.6c-.6-.2-1.2-.5-1.8-.8l.4-.3c3.6 1.7 7.8 1.7 11.4 0l.4.3c-.6.3-1.2.6-1.8.8L17.8 20s2.5-.3 5.2-2.9C25 11.3 20 4.4 20 4.4Zm-9.5 9.2c-.9 0-1.6-.8-1.6-1.7 0-.9.7-1.6 1.6-1.6.9 0 1.7.7 1.7 1.6 0 .9-.8 1.7-1.7 1.7Zm6 0c-.9 0-1.6-.8-1.6-1.7 0-.9.7-1.6 1.6-1.6s1.7.7 1.7 1.6c0 .9-.8 1.7-1.7 1.7Z"/>
+        </svg>
+        Join our Discord
+      </a>
+    </div>
+  </div>
+</section>
 
   {{-- ====== SWIPER INIT ====== --}}
   <script>
