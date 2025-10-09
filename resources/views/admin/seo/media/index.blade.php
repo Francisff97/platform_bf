@@ -57,29 +57,29 @@
         class="rounded-2xl border bg-white/70 shadow-sm backdrop-blur dark:bg-gray-900/70 dark:border-gray-800 overflow-hidden">
     @csrf
 
-    {{-- Toolbar (sticky SOLO su mobile) --}}
-    <div class="sticky top-14 sm:static sm:top-auto z-10 flex flex-wrap items-center gap-2 border-b bg-white/80 p-3 backdrop-blur
-                dark:border-gray-800 dark:bg-gray-900/70">
-      <label class="inline-flex items-center gap-2 text-sm">
-        <input id="checkAll" type="checkbox"
-               class="h-4 w-4 rounded border-gray-300 dark:border-gray-700">
-        <span>Select all</span>
-      </label>
+    {{-- Toolbar (NON sticky) --}}
+<div class="flex flex-wrap items-center gap-2 border-b bg-white/80 p-3
+            dark:border-gray-800 dark:bg-gray-900/70">
+  <label class="inline-flex items-center gap-2 text-sm">
+    <input id="checkAll" type="checkbox"
+           class="h-4 w-4 rounded border-gray-300 dark:border-gray-700">
+    <span>Select all</span>
+  </label>
 
-      <div class="ml-auto flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-        <input type="text" name="alt_text" placeholder="Set ALT for selected…"
-               class="h-10 w-full sm:w-56 rounded-xl border border-[color:var(--accent)]/40 px-3
-                      dark:bg-gray-900 dark:text-white dark:border-gray-800" />
-        <label class="inline-flex items-center gap-2 text-sm">
-          <input type="checkbox" name="is_lazy" value="1"
-                 class="h-4 w-4 rounded border-gray-300 dark:border-gray-700">
-          <span>Lazy ON</span>
-        </label>
-        <button class="h-10 rounded-xl bg-[var(--accent)] px-4 text-white hover:opacity-90">
-          Apply to selected
-        </button>
-      </div>
-    </div>
+  <div class="ml-auto flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+    <input type="text" name="alt_text" placeholder="Set ALT for selected…"
+           class="h-10 w-full sm:w-56 rounded-xl border border-[color:var(--accent)]/40 px-3
+                  dark:bg-gray-900 dark:text-white dark:border-gray-800" />
+    <label class="inline-flex items-center gap-2 text-sm">
+      <input type="checkbox" name="is_lazy" value="1"
+             class="h-4 w-4 rounded border-gray-300 dark:border-gray-700">
+      <span>Lazy ON</span>
+    </label>
+    <button class="h-10 rounded-xl bg-[var(--accent)] px-4 text-white hover:opacity-90">
+      Apply to selected
+    </button>
+  </div>
+</div>
 
     {{-- Cards (mobile) --}}
     <div class="grid gap-4 p-4 sm:hidden">
