@@ -29,7 +29,7 @@
     </div>
 
     {{-- Barra filtri (collassabile solo su mobile) --}}
-    <div id="filtersBar" class="flex flex-col gap-2 sm:flex-row sm:items-center">
+    <div id="filtersBar" class="hidden sm:flex sm:flex-row sm:items-center flex-col gap-2">
       <form method="GET" class="flex w-full max-w-xl items-center gap-2">
         <input name="search" value="{{ request('search') }}" placeholder="Search path…"
                class="h-10 w-full rounded-xl border border-[color:var(--accent)]/40 px-3
@@ -57,8 +57,8 @@
         class="rounded-2xl border bg-white/70 shadow-sm backdrop-blur dark:bg-gray-900/70 dark:border-gray-800 overflow-hidden">
     @csrf
 
-    {{-- Toolbar (sticky) --}}
-    <div class="sticky top-14 z-10 flex flex-wrap items-center gap-2 border-b bg-white/80 p-3 backdrop-blur
+    {{-- Toolbar (sticky SOLO su mobile) --}}
+    <div class="sticky top-14 sm:static sm:top-auto z-10 flex flex-wrap items-center gap-2 border-b bg-white/80 p-3 backdrop-blur
                 dark:border-gray-800 dark:bg-gray-900/70">
       <label class="inline-flex items-center gap-2 text-sm">
         <input id="checkAll" type="checkbox"
