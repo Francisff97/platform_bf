@@ -10,7 +10,7 @@
   </div>
 
   {{-- KPI / Stats --}}
-  <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+  <div class="grid grid-cols-1 gap-5 md:grid-cols-3 dark:bg-gray-900 dark:text-white">
     <x-stat label="Packs"    :value="$packsCount ?? 0" />
     <x-stat label="Services" :value="$servicesCount ?? 0" />
     <x-stat label="Builders" :value="$buildersCount ?? 0" />
@@ -47,7 +47,7 @@
   @endphp
 
   {{-- Actions + charts --}}
-  <div class="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
+  <div class="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-3 dark:bg-gray-900 dark:text-white">
 
     {{-- Quick cards (glass + gradient border) --}}
     <x-card class="group relative overflow-hidden transition hover:-translate-y-0.5 hover:shadow-lg dark:bg-gray-900 dark:text-white">
@@ -62,7 +62,7 @@
       </a>
     </x-card>
 
-    <x-card class="transition hover:-translate-y-0.5 hover:shadow-lg">
+    <x-card class="transition hover:-translate-y-0.5 hover:shadow-lg dark:bg-gray-900 dark:text-white">
       <div class="flex items-center justify-between">
         <h3 class="font-semibold">Manage Services</h3>
         <a href="{{ route('admin.services.create') }}" class="rounded-xl bg-[color:var(--accent)] px-3 py-1.5 text-white text-sm transition hover:opacity-90">New</a>
@@ -73,7 +73,7 @@
       </a>
     </x-card>
 
-    <x-card class="transition hover:-translate-y-0.5 hover:shadow-lg">
+    <x-card class="transition hover:-translate-y-0.5 hover:shadow-lg dark:bg-gray-900 dark:text-white">
       <div class="flex items-center justify-between">
         <h3 class="font-semibold">Manage Builders</h3>
         <a href="{{ route('admin.builders.create') }}" class="rounded-xl bg-[color:var(--accent)] px-3 py-1.5 text-white text-sm transition hover:opacity-90">New</a>
@@ -84,7 +84,7 @@
       </a>
     </x-card>
 
-    <x-card class="transition hover:-translate-y-0.5 hover:shadow-lg">
+    <x-card class="transition hover:-translate-y-0.5 hover:shadow-lg dark:bg-gray-900 dark:text-white">
       <div class="flex items-center justify-between">
         <h3 class="font-semibold">Manage Heroes</h3>
         <a href="{{ route('admin.heroes.create') }}" class="rounded-xl bg-[color:var(--accent)] px-3 py-1.5 text-white text-sm transition hover:opacity-90">New</a>
@@ -95,7 +95,7 @@
       </a>
     </x-card>
 
-    <x-card class="transition hover:-translate-y-0.5 hover:shadow-lg">
+    <x-card class="transition hover:-translate-y-0.5 hover:shadow-lg dark:bg-gray-900 dark:text-white">
       <div class="flex items-center justify-between">
         <h3 class="font-semibold">Manage Slides</h3>
         <a href="{{ route('admin.slides.create') }}" class="rounded-xl bg-[color:var(--accent)] px-3 py-1.5 text-white text-sm transition hover:opacity-90">New</a>
@@ -124,7 +124,7 @@
     </div>
 
     {{-- Orders last 7 days (animated bars) --}}
-    <x-card class="lg:col-span-2">
+    <x-card class="lg:col-span-2 dark:bg-gray-900 dark:text-white">
       <div class="flex items-center justify-between">
         <h3 class="font-semibold">Orders — last 7 days</h3>
         <span class="text-xs text-gray-500 dark:text-gray-400">Auto-scaled</span>
@@ -155,7 +155,7 @@
     </x-card>
 
     {{-- Content mix: donut + legend --}}
-    <x-card class="lg:col-span-1">
+    <x-card class="lg:col-span-1 dark:bg-gray-900 dark:text-white">
       <div class="flex items-center justify-between">
         <h3 class="font-semibold">Content mix</h3>
         <span class="text-xs text-gray-500 dark:text-gray-400">Share by type</span>
