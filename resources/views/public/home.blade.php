@@ -208,16 +208,12 @@
     </div>
   </section>
 
-  {{-- ====== BUILDERS (neo cards + tilt) ====== --}}
-<section class="mx-auto my-[70px] max-w-6xl px-4">
-  <div class="mb-5 flex items-end justify-between gap-3">
+  {{-- ====== BUILDERS ====== --}}
+<section class="mx-auto my-[90px] max-w-6xl px-4">
+  <div class="mb-6 flex items-end justify-between gap-3">
     <div>
       <h3 class="font-orbitron text-2xl sm:text-3xl">Our Builders</h3>
-      <p class="text-sm text-gray-500 dark:text-gray-400">Makers behind the best setups.</p>
-    </div>
-    <div class="hidden sm:flex items-center gap-2">
-      <button id="buildersPrev" class="rounded-full border px-3 py-1.5 dark:border-gray-700">Prev</button>
-      <button id="buildersNext" class="rounded-full border px-3 py-1.5 dark:border-gray-700">Next</button>
+      <p class="text-sm text-gray-500 dark:text-gray-400">Meet the makers shaping the meta.</p>
     </div>
   </div>
 
@@ -226,46 +222,45 @@
       @foreach($builders as $b)
         <div class="swiper-slide">
           <a href="{{ route('builders.show',$b->slug) }}"
-             class="neo-tilt neo-ring block p-[1px] rounded-[24px] transition-transform">
-            <div class="neo-card rounded-[22px] p-5 text-center">
-              <div class="avatar-wrap mx-auto mb-3 h-20 w-20 overflow-hidden rounded-full ring-4 ring-white/70 dark:ring-gray-900/60 relative z-10">
-                @if($b->image_path)
-                  <x-img :src="Storage::url($b->image_path)" class="h-full w-full object-cover" :alt="$b->name" />
-                @endif
-              </div>
-              <div class="font-semibold">{{ $b->name }}</div>
-              <div class="text-xs text-gray-500">{{ $b->team ?? '—' }}</div>
+             class="group relative flex flex-col items-center justify-between overflow-hidden rounded-[22px] border border-transparent 
+                    bg-gradient-to-b from-white/90 to-white/70 p-5 shadow-sm backdrop-blur-md transition hover:-translate-y-1 hover:shadow-lg
+                    dark:from-gray-900/70 dark:to-gray-800/70">
+            
+            <div class="absolute inset-0 bg-gradient-to-br from-[color:var(--accent)]/10 to-transparent opacity-0 transition group-hover:opacity-100"></div>
 
-              @if($b->skills)
-                <div class="chips mx-auto mt-3 max-w-[90%]">
-                  @foreach($b->skills as $s)
-                    <span class="chip">{{ $s }}</span>
-                  @endforeach
-                </div>
+            <div class="relative mb-4 h-20 w-20 overflow-hidden rounded-full ring-4 ring-white/60 dark:ring-gray-900/60">
+              @if($b->image_path)
+                <x-img :src="Storage::url($b->image_path)" class="h-full w-full object-cover" :alt="$b->name" />
               @endif
             </div>
+
+            <h4 class="text-base font-semibold text-gray-900 dark:text-white">{{ $b->name }}</h4>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $b->team ?? '—' }}</p>
+
+            @if($b->skills)
+              <div class="mt-3 flex flex-wrap justify-center gap-2">
+                @foreach($b->skills as $s)
+                  <span class="rounded-full bg-[color:var(--accent)]/10 px-3 py-1 text-[11px] font-medium text-[color:var(--accent)]
+                                 ring-1 ring-[color:var(--accent)]/20 backdrop-blur-sm">
+                    {{ $s }}
+                  </span>
+                @endforeach
+              </div>
+            @endif
           </a>
         </div>
       @endforeach
     </div>
-    <div class="mt-3 flex items-center justify-end gap-2 sm:hidden">
-      <button id="buildersPrev" class="rounded-full border px-3 py-1.5 dark:border-gray-700">Prev</button>
-      <button id="buildersNext" class="rounded-full border px-3 py-1.5 dark:border-gray-700">Next</button>
-    </div>
   </div>
 </section>
 
-  {{-- ====== COACHES (neo cards + CTA) ====== --}}
+{{-- ====== COACHES ====== --}}
 @if($coaches->isNotEmpty())
-<section class="mx-auto my-[70px] max-w-6xl px-4">
-  <div class="mb-5 flex items-end justify-between gap-3">
+<section class="mx-auto my-[90px] max-w-6xl px-4">
+  <div class="mb-6 flex items-end justify-between gap-3">
     <div>
       <h3 class="font-orbitron text-2xl sm:text-3xl">Our Coaches</h3>
       <p class="text-sm text-gray-500 dark:text-gray-400">Learn faster with 1:1 guidance.</p>
-    </div>
-    <div class="hidden sm:flex items-center gap-2">
-      <button id="coachesPrev" class="rounded-full border px-3 py-1.5 dark:border-gray-700">Prev</button>
-      <button id="coachesNext" class="rounded-full border px-3 py-1.5 dark:border-gray-700">Next</button>
     </div>
   </div>
 
@@ -274,39 +269,39 @@
       @foreach($coaches as $c)
         <div class="swiper-slide">
           <a href="{{ route('coaches.show',$c->slug) }}"
-             class="neo-tilt neo-ring block p-[1px] rounded-[24px] transition-transform">
-            <div class="neo-card rounded-[22px] p-5 text-center">
-              <div class="avatar-wrap mx-auto mb-3 h-20 w-20 overflow-hidden rounded-full ring-4 ring-white/70 dark:ring-gray-900/60 relative z-10">
-                @if($c->image_path)
-                  <x-img :src="Storage::url($c->image_path)" class="h-full w-full object-cover" :alt="$c->name" />
-                @endif
-              </div>
+             class="group relative flex flex-col items-center justify-between overflow-hidden rounded-[22px] border border-transparent
+                    bg-gradient-to-b from-white/90 to-white/70 p-5 shadow-sm backdrop-blur-md transition hover:-translate-y-1 hover:shadow-lg
+                    dark:from-gray-900/70 dark:to-gray-800/70">
+            
+            <div class="absolute inset-0 bg-gradient-to-br from-[color:var(--accent)]/10 to-transparent opacity-0 transition group-hover:opacity-100"></div>
 
-              <div class="font-semibold">{{ $c->name }}</div>
-              <div class="text-xs text-gray-500">{{ $c->team ?? '—' }}</div>
-
-              @if(!empty($c->skills) && is_iterable($c->skills))
-                <div class="chips mx-auto mt-3 max-w-[90%]">
-                  @foreach($c->skills as $s)
-                    <span class="chip">{{ $s }}</span>
-                  @endforeach
-                </div>
+            <div class="relative mb-4 h-20 w-20 overflow-hidden rounded-full ring-4 ring-white/60 dark:ring-gray-900/60">
+              @if($c->image_path)
+                <x-img :src="Storage::url($c->image_path)" class="h-full w-full object-cover" :alt="$c->name" />
               @endif
+            </div>
 
-              <div class="mt-4">
-                <span class="inline-flex items-center gap-2 rounded-full bg-[color:var(--accent)]/90 px-3 py-1.5 text-xs font-semibold text-white">
-                  Book session
-                  <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </span>
+            <h4 class="text-base font-semibold text-gray-900 dark:text-white">{{ $c->name }}</h4>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $c->team ?? '—' }}</p>
+
+            @if($c->skills)
+              <div class="mt-3 flex flex-wrap justify-center gap-2">
+                @foreach($c->skills as $s)
+                  <span class="rounded-full bg-[color:var(--accent)]/10 px-3 py-1 text-[11px] font-medium text-[color:var(--accent)]
+                                 ring-1 ring-[color:var(--accent)]/20 backdrop-blur-sm">
+                    {{ $s }}
+                  </span>
+                @endforeach
               </div>
+            @endif
+
+            <div class="mt-4 inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--accent)] transition group-hover:translate-x-1">
+              Book session
+              <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </div>
           </a>
         </div>
       @endforeach
-    </div>
-    <div class="mt-3 flex items-center justify-end gap-2 sm:hidden">
-      <button id="coachesPrev" class="rounded-full border px-3 py-1.5 dark:border-gray-700">Prev</button>
-      <button id="coachesNext" class="rounded-full border px-3 py-1.5 dark:border-gray-700">Next</button>
     </div>
   </div>
 </section>
