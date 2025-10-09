@@ -8,7 +8,7 @@
         <th class="px-3 py-2">Total</th>
         <th class="px-3 py-2">Status</th>
         <th class="px-3 py-2">Created</th>
-        <th class="px-3 py-2"></th>
+        <th class="px-3 py-2">Actions</th>
       </tr>
     </thead>
     <tbody>
