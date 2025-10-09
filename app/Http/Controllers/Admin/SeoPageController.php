@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+   // app/Http/Controllers/Admin/SeoPageController.php
+use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\Controller;
 use App\Models\SeoPage;
 use Illuminate\Http\Request;
@@ -84,16 +86,12 @@ class SeoPageController extends Controller
         $seoPage->delete();
         return back()->with('success','Deleted.');
     }
-    public function sync()
-    {
-        // scegli una delle due: Job async oppure Artisan sincrono.
-    
-        // 1) Async job (consigliato)
-        \App\Jobs\Seo\BackfillPages::dispatch();
-    
-        // 2) Oppure sync via Artisan (se non hai queue)
-        // \Artisan::call('seo:pages-backfill'); // crea un comando se non esiste
-    
-        return back()->with('success','Pages sync started.');
-    }
+ 
+
+public function sync()
+{
+    Artisan::call('seo:pages-backfill');
+
+    return back()->with('success', 'Pages synchronized successfully!');
+}
 }
