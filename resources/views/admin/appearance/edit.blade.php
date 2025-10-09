@@ -1,110 +1,232 @@
-{{-- resources/views/admin/appearance/edit.blade.php --}}
 <x-admin-layout title="Appearance">
   @php
     $s = $s ?? \App\Models\SiteSetting::first() ?? new \App\Models\SiteSetting();
+    $light = old('color_light_bg', $s->color_light_bg ?? '#f8fafc');
+    $dark  = old('color_dark_bg',  $s->color_dark_bg  ?? '#0b0f1a');
+    $acc   = old('color_accent',   $s->color_accent   ?? '#4f46e5');
   @endphp
 
+  {{-- Alerts --}}
   @if ($errors->any())
-    <div class="mb-4 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
+    <div class="mb-4 rounded-xl border border-red-300 bg-red-50/80 px-3 py-2 text-sm text-red-700">
       <div class="font-semibold mb-1">Please fix the following errors:</div>
       <ul class="list-disc pl-5">@foreach ($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
     </div>
   @endif
-
   @if (session('success'))
-    <div class="mb-4 rounded border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-800">
+    <div class="mb-4 rounded-xl border border-green-300 bg-green-50/80 px-3 py-2 text-sm text-green-800">
       {{ session('success') }}
     </div>
   @endif
 
-  <form method="POST" action="{{ route('admin.appearance.update') }}" enctype="multipart/form-data" class="grid max-w-4xl gap-6">
+  <form method="POST" action="{{ route('admin.appearance.update') }}" enctype="multipart/form-data" class="grid gap-6">
     @csrf
 
-    <div class="bg-gray-50 p-4 rounded border border-gray-200 dark:bg-gray-800 dark:border-gray-700 text-sm text-gray-600 dark:text-white">
-      Customize your site look & feel, currency, and server link.
+    {{-- Intro / Tips --}}
+    <div class="rounded-2xl border bg-white/70 p-4 text-sm text-gray-700 shadow-sm dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-100">
+      Customize your brand: upload logos, pick your colors and set currency & server link.
     </div>
 
-    {{-- Logos --}}
-    <div class="grid md:grid-cols-2 gap-6">
-      <div>
-        <label class="block text-sm mb-1">Light Logo</label>
-        <input type="file" name="logo_light" accept="image/*" class="w-full rounded border p-2 dark:border-gray-600">
-        @if(!empty($s->logo_light_path))
-          <img src="{{ Storage::url($s->logo_light_path) }}" class="mt-2 h-12" alt="Light Logo">
-        @endif
-      </div>
-      <div>
-        <label class="block text-sm mb-1">Dark Logo</label>
-        <input type="file" name="logo_dark" accept="image/*" class="w-full rounded border dark:border-gray-600 p-2">
-        @if(!empty($s->logo_dark_path))
-          <div class="mt-2 rounded bg-black p-2 inline-block">
-            <img src="{{ Storage::url($s->logo_dark_path) }}" class="h-12" alt="Dark Logo">
+    {{-- Header: live preview + theme controls (stacked on mobile) --}}
+    <div class="grid items-start gap-6 lg:grid-cols-2">
+
+      {{-- LIVE PREVIEW CARD --}}
+      <div class="rounded-2xl border bg-white/80 p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900/60">
+        <div class="mb-4 flex items-center justify-between">
+          <div class="text-sm font-semibold">Live Preview</div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500">Light</span>
+            <label class="relative inline-flex cursor-pointer items-center">
+              <input id="previewMode" type="checkbox" class="peer sr-only">
+              <div class="h-5 w-10 rounded-full bg-gray-300 peer-checked:bg-gray-600"></div>
+              <span class="absolute left-1 top-1 h-3.5 w-3.5 rounded-full bg-white transition peer-checked:translate-x-5"></span>
+            </label>
+            <span class="text-xs text-gray-500">Dark</span>
           </div>
-        @endif
+        </div>
+
+        <div id="previewSurface" class="rounded-xl border p-4 transition-colors dark:border-gray-800"
+             style="background: {{ $light }};">
+
+          {{-- top bar preview --}}
+          <div id="previewTopbar"
+               class="mb-4 flex items-center justify-between rounded-lg border px-3 py-2"
+               style="background: #ffffff; border-color: rgba(0,0,0,.08);">
+            <div class="flex items-center gap-2">
+              @if($s?->logo_light_path)
+                <img src="{{ Storage::url($s->logo_light_path) }}" class="h-6 w-auto" alt="">
+              @else
+                <div class="h-6 w-20 rounded bg-gray-200"></div>
+              @endif
+              <span class="hidden text-xs text-gray-500 sm:inline">Navbar</span>
+            </div>
+            <button id="previewCta" type="button" class="rounded px-3 py-1.5 text-white text-xs"
+                    style="background: {{ $acc }};">Call to action</button>
+          </div>
+
+          {{-- content preview --}}
+          <div id="previewCard" class="rounded-xl p-4 shadow-sm"
+               style="background:#ffffff;border:1px solid rgba(0,0,0,.08);">
+            <div class="mb-2 h-4 w-28 rounded" id="previewTitle" style="background: {{ $acc }};"></div>
+            <div class="space-y-1">
+              <div class="h-2 w-full rounded bg-gray-200/90"></div>
+              <div class="h-2 w-5/6 rounded bg-gray-200/90"></div>
+              <div class="h-2 w-4/6 rounded bg-gray-200/90"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {{-- THEME CONTROLS --}}
+      <div class="grid gap-6">
+        {{-- Logos uploader --}}
+        <div class="rounded-2xl border bg-white/80 p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900/60">
+          <div class="mb-3 text-sm font-semibold">Logos</div>
+          <div class="grid gap-5 sm:grid-cols-2">
+            <label class="block">
+              <div class="mb-1 text-xs font-medium uppercase tracking-wide">Light logo</div>
+              <div class="flex items-center gap-3">
+                <div class="h-12 w-28 overflow-hidden rounded-lg ring-1 ring-black/5 dark:ring-white/10 bg-white">
+                  <img id="logoLightPreview"
+                       src="{{ $s->logo_light_path ? Storage::url($s->logo_light_path) : '' }}"
+                       class="h-full w-full object-contain {{ $s->logo_light_path ? '' : 'hidden' }}">
+                </div>
+                <label class="inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
+                  Upload
+                  <input id="logoLightInput" type="file" name="logo_light" accept="image/*" class="hidden">
+                </label>
+              </div>
+            </label>
+
+            <label class="block">
+              <div class="mb-1 text-xs font-medium uppercase tracking-wide">Dark logo</div>
+              <div class="flex items-center gap-3">
+                <div class="h-12 w-28 overflow-hidden rounded-lg ring-1 ring-black/5 dark:ring-white/10" style="background:#0b0f1a">
+                  <img id="logoDarkPreview"
+                       src="{{ $s->logo_dark_path ? Storage::url($s->logo_dark_path) : '' }}"
+                       class="h-full w-full object-contain {{ $s->logo_dark_path ? '' : 'hidden' }}">
+                </div>
+                <label class="inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
+                  Upload
+                  <input id="logoDarkInput" type="file" name="logo_dark" accept="image/*" class="hidden">
+                </label>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        {{-- Colors --}}
+        <div class="rounded-2xl border bg-white/80 p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900/60">
+          <div class="mb-3 text-sm font-semibold">Colors</div>
+          <div class="grid gap-4 sm:grid-cols-3">
+            <label class="block">
+              <div class="mb-1 text-xs uppercase tracking-wide text-gray-500">Light background</div>
+              <input id="colorLight" type="color" name="color_light_bg" value="{{ $light }}"
+                     class="h-11 w-full rounded-lg border dark:border-gray-700">
+            </label>
+            <label class="block">
+              <div class="mb-1 text-xs uppercase tracking-wide text-gray-500">Dark background</div>
+              <input id="colorDark" type="color" name="color_dark_bg" value="{{ $dark }}"
+                     class="h-11 w-full rounded-lg border dark:border-gray-700">
+            </label>
+            <label class="block">
+              <div class="mb-1 text-xs uppercase tracking-wide text-gray-500">Accent</div>
+              <input id="colorAcc" type="color" name="color_accent" value="{{ $acc }}"
+                     class="h-11 w-full rounded-lg border dark:border-gray-700">
+            </label>
+          </div>
+          <div class="mt-3 flex items-center gap-3 text-xs text-gray-500">
+            <span class="inline-flex items-center gap-2"><span class="h-4 w-4 rounded" style="background: {{ $light }}"></span>Light</span>
+            <span class="inline-flex items-center gap-2"><span class="h-4 w-4 rounded" style="background: {{ $dark }}"></span>Dark</span>
+            <span class="inline-flex items-center gap-2"><span class="h-4 w-4 rounded" style="background: {{ $acc }}"></span>Accent</span>
+          </div>
+        </div>
       </div>
     </div>
 
-    {{-- Colors --}}
-    <div class="grid md:grid-cols-3 gap-6">
-      <div>
-        <label class="block text-sm mb-1">Light Background</label>
-        <input type="color" name="color_light_bg" value="{{ old('color_light_bg',$s->color_light_bg ?? '#f8fafc') }}" class="h-10 w-full rounded border dark:border-gray-600">
-      </div>
-      <div>
-        <label class="block text-sm mb-1">Dark Background</label>
-        <input type="color" name="color_dark_bg" value="{{ old('color_dark_bg',$s->color_dark_bg ?? '#0b0f1a') }}" class="h-10 w-full rounded border dark:border-gray-600">
-      </div>
-      <div>
-        <label class="block text-sm mb-1">Accent Color</label>
-        <input type="color" name="color_accent" value="{{ old('color_accent',$s->color_accent ?? '#4f46e5') }}" class="h-10 w-full rounded border dark:border-gray-600">
-      </div>
+    {{-- Server Link --}}
+    <div class="rounded-2xl border bg-white/80 p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900/60">
+      <div class="mb-3 text-sm font-semibold">Server Link</div>
+      <label class="block">
+        <input type="url" name="discord_url"
+               value="{{ old('discord_url', $s?->discord_url) }}"
+               placeholder="https://discord.gg/xxxxxx"
+               class="w-full rounded-lg border px-3 py-2 dark:bg-gray-900 dark:border-gray-700">
+      </label>
+      <p class="mt-1 text-xs text-gray-500">Full URL (e.g. https://discord.gg/xxxxxx)</p>
     </div>
 
-    <div class="rounded border p-4 dark:border-gray-800">
-      <div class="text-sm mb-2 font-medium">Quick Preview</div>
-      <div class="flex items-center gap-3">
-        <span class="h-8 w-8 rounded" style="background: {{ $s->color_light_bg ?? '#f8fafc' }}"></span>
-        <span class="h-8 w-8 rounded" style="background: {{ $s->color_dark_bg ?? '#0b0f1a' }}"></span>
-        <span class="h-8 w-8 rounded" style="background: {{ $s->color_accent ?? '#4f46e5' }}"></span>
-        <button type="button" class="ml-4 rounded px-3 py-1.5 text-white" style="background: {{ $s->color_accent ?? '#4f46e5' }}">Button</button>
-      </div>
-    </div>
-
-    {{-- Server link (Discord/Web) --}}
-    <div>
-      <label class="block text-sm text-gray-600 dark:text-white">Server Link</label>
-      <input type="url" name="discord_url" class="mt-1 w-full rounded border p-2 dark:bg-gray-900 dark:border-gray-600 dark:text-white"
-             value="{{ old('discord_url', $s?->discord_url) }}">
-      <p class="mt-1 text-xs text-gray-500 dark:text-white">Full URL (e.g. https://discord.gg/xxxxxx)</p>
-    </div>
-
-    {{-- Currency & FX --}}
-    <div class="rounded border p-4 dark:border-gray-800">
-      <h3 class="mb-3 text-sm font-semibold uppercase text-gray-500">Currency</h3>
-
+    {{-- Currency --}}
+    <div class="rounded-2xl border bg-white/80 p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900/60">
+      <div class="mb-3 text-sm font-semibold">Currency & FX</div>
       <div class="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label class="block text-sm font-medium mb-1">Store Currency</label>
+        <label class="block">
+          <div class="mb-1 text-xs uppercase tracking-wide text-gray-500">Store currency</div>
           @php $curr = old('currency', $s->currency ?? 'EUR'); @endphp
-          <select name="currency" class="w-full rounded border px-3 py-2 dark:bg-gray-900">
+          <select name="currency" class="w-full rounded-lg border px-3 py-2 dark:bg-gray-900 dark:border-gray-700">
             <option value="EUR" @selected($curr==='EUR')>EUR</option>
             <option value="USD" @selected($curr==='USD')>USD</option>
           </select>
-          <p class="mt-1 text-xs text-gray-500">Currency used to display prices and create PayPal orders.</p>
-        </div>
+          <p class="mt-1 text-xs text-gray-500">Used for prices & PayPal orders.</p>
+        </label>
 
-        <div>
-          <label class="block text-sm font-medium mb-1">USD per 1 EUR (FX)</label>
+        <label class="block">
+          <div class="mb-1 text-xs uppercase tracking-wide text-gray-500">USD per 1 EUR</div>
           <input type="number" step="0.000001" min="0.000001" name="fx_usd_per_eur"
                  value="{{ old('fx_usd_per_eur', $s->fx_usd_per_eur ?? 1.08) }}"
-                 class="w-full rounded border px-3 py-2 dark:bg-gray-900" />
-          <p class="mt-1 text-xs text-gray-500">Example: 1.08 means €1 = $1.08</p>
-        </div>
+                 class="w-full rounded-lg border px-3 py-2 dark:bg-gray-900 dark:border-gray-700" />
+          <p class="mt-1 text-xs text-gray-500">Example: 1.08 → €1 = $1.08</p>
+        </label>
       </div>
     </div>
 
-    <div>
-      <button class="rounded bg-[var(--accent)] px-4 py-2 text-white">Save</button>
+    <div class="flex items-center gap-3">
+      <button class="rounded-lg bg-[var(--accent)] px-4 py-2 text-white hover:opacity-90">Save</button>
+      <a href="{{ route('admin.dashboard') }}" class="text-sm underline">Cancel</a>
     </div>
   </form>
+
+  {{-- Tiny JS: previews live (no dipendenze) --}}
+  <script>
+    (function () {
+      const el = (id)=>document.getElementById(id);
+
+      // Color bindings
+      const light = el('colorLight'), dark = el('colorDark'), acc = el('colorAcc');
+      const surface = el('previewSurface'), topbar = el('previewTopbar'), cta = el('previewCta'), title = el('previewTitle');
+      const mode = el('previewMode');
+
+      function apply() {
+        const isDark = mode?.checked;
+        const bg = isDark ? (dark?.value || '{{ $dark }}') : (light?.value || '{{ $light }}');
+        surface && (surface.style.background = bg);
+        cta && (cta.style.background = (acc?.value || '{{ $acc }}'));
+        title && (title.style.background = (acc?.value || '{{ $acc }}'));
+        // topbar contrast
+        if (isDark) {
+          topbar && (topbar.style.background = '#111827', topbar.style.borderColor = 'rgba(255,255,255,.08)');
+        } else {
+          topbar && (topbar.style.background = '#ffffff', topbar.style.borderColor = 'rgba(0,0,0,.08)');
+        }
+      }
+      [light, dark, acc, mode].forEach(i => i && i.addEventListener('input', apply));
+      apply();
+
+      // Logo previews
+      const lightInput = document.getElementById('logoLightInput');
+      const darkInput  = document.getElementById('logoDarkInput');
+      const lightPrev  = document.getElementById('logoLightPreview');
+      const darkPrev   = document.getElementById('logoDarkPreview');
+
+      function preview(input, img) {
+        const [file] = input.files || [];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        img.src = url;
+        img.classList.remove('hidden');
+      }
+      lightInput?.addEventListener('change', ()=>preview(lightInput, lightPrev));
+      darkInput?.addEventListener('change', ()=>preview(darkInput, darkPrev));
+    })();
+  </script>
 </x-admin-layout>
