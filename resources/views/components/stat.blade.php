@@ -1,6 +1,6 @@
 @props(['label','value', 'icon' => null, 'muted' => null])
 
-<div class="rounded-xl border bg-white p-5 shadow-sm class="dark:bg-gray-900 dark:text-white"">
+<div class="rounded-xl border bg-white p-5 shadow-sm dark:bg-gray-900 dark:text-white">
   <div class="flex items-center gap-3">
     @if($icon)
       <div class="rounded-lg bg-indigo-50 p-2 text-indigo-600">
