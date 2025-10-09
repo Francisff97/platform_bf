@@ -12,6 +12,63 @@
     .card-ghost{ box-shadow: 0 8px 24px rgba(0,0,0,.08); }
     .ring-soft{ box-shadow: 0 1px 0 rgba(0,0,0,.04), inset 0 0 0 1px rgba(0,0,0,.06); }
   </style>
+    <style>
+  /* —— CARD FX —— */
+  .neo-card{
+    position: relative; overflow: hidden; border-radius: 22px;
+    background: linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.75));
+    box-shadow: 0 12px 40px rgba(0,0,0,.10);
+  }
+  .dark .neo-card{
+    background: linear-gradient(180deg, rgba(17,24,39,.75), rgba(17,24,39,.65));
+    box-shadow: 0 12px 40px rgba(0,0,0,.35);
+  }
+  .neo-ring{
+    position: relative;
+  }
+  .neo-ring::before{
+    content:""; position:absolute; inset:-1px; border-radius: 24px;
+    padding:1px;
+    background:
+      radial-gradient(1200px 1200px at var(--mx,50%) var(--my,50%),
+        color-mix(in oklab, var(--accent), white 20%) 0,
+        transparent 45%),
+      linear-gradient(90deg,
+        color-mix(in oklab, var(--accent), white 25%),
+        color-mix(in oklab, var(--accent), black 25%));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    pointer-events:none;
+  }
+  .neo-tilt{ transform-style: preserve-3d; will-change: transform }
+  .neo-tilt:hover{ transition: transform .08s ease-out }
+
+  /* —— AVATAR HALO —— */
+  .avatar-wrap{ position: relative }
+  .avatar-wrap::after{
+    content:""; position:absolute; inset:-8px; border-radius: 9999px; z-index:0;
+    background: radial-gradient(120px 120px at 50% 40%, var(--accent) 0, transparent 70%);
+    opacity:.25; filter: blur(12px);
+  }
+
+  /* —— CHIPS SCROLLER —— */
+  .chips{
+    display:flex; gap:.5rem; overflow:auto; scrollbar-width: none; -ms-overflow-style: none;
+  }
+  .chips::-webkit-scrollbar{ display:none }
+  .chip{
+    white-space:nowrap; font-size:11px; padding:.35rem .6rem; border-radius:9999px;
+    background: color-mix(in oklab, var(--accent), white 85%);
+    color: color-mix(in oklab, var(--accent), black 10%);
+    border: 1px solid color-mix(in oklab, var(--accent), black 20%);
+  }
+  .dark .chip{
+    background: color-mix(in oklab, var(--accent), black 85%);
+    color: color-mix(in oklab, var(--accent), white 15%);
+    border-color: color-mix(in oklab, var(--accent), black 40%);
+  }
+</style>
 
   <section class="full-bleed">
     <div id="homeHero" class="swiper w-full">
@@ -151,61 +208,109 @@
     </div>
   </section>
 
-  {{-- ====== BUILDERS ====== --}}
-  <section class="mx-auto my-[70px] max-w-6xl px-4">
-    <h3 class="mb-5 font-orbitron text-2xl sm:text-3xl">Our Builders</h3>
-    <div class="swiper" id="buildersSwiper">
-      <div class="swiper-wrapper">
-        @foreach($builders as $b)
-          <div class="swiper-slide">
-            <a href="{{ route('builders.show',$b->slug) }}"
-               class="block rounded-3xl bg-white p-4 text-center ring-1 ring-black/5 transition hover:shadow-lg dark:bg-gray-900">
-              <div class="mx-auto mb-2 h-16 w-16 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
+  {{-- ====== BUILDERS (neo cards + tilt) ====== --}}
+<section class="mx-auto my-[70px] max-w-6xl px-4">
+  <div class="mb-5 flex items-end justify-between gap-3">
+    <div>
+      <h3 class="font-orbitron text-2xl sm:text-3xl">Our Builders</h3>
+      <p class="text-sm text-gray-500 dark:text-gray-400">Makers behind the best setups.</p>
+    </div>
+    <div class="hidden sm:flex items-center gap-2">
+      <button id="buildersPrev" class="rounded-full border px-3 py-1.5 dark:border-gray-700">Prev</button>
+      <button id="buildersNext" class="rounded-full border px-3 py-1.5 dark:border-gray-700">Next</button>
+    </div>
+  </div>
+
+  <div class="swiper" id="buildersSwiper">
+    <div class="swiper-wrapper">
+      @foreach($builders as $b)
+        <div class="swiper-slide">
+          <a href="{{ route('builders.show',$b->slug) }}"
+             class="neo-tilt neo-ring block p-[1px] rounded-[24px] transition-transform">
+            <div class="neo-card rounded-[22px] p-5 text-center">
+              <div class="avatar-wrap mx-auto mb-3 h-20 w-20 overflow-hidden rounded-full ring-4 ring-white/70 dark:ring-gray-900/60 relative z-10">
                 @if($b->image_path)
                   <x-img :src="Storage::url($b->image_path)" class="h-full w-full object-cover" :alt="$b->name" />
                 @endif
               </div>
-              <div class="font-semibold line-clamp-1">{{ $b->name }}</div>
-              <div class="text-xs text-gray-500 line-clamp-1">{{ $b->team ?? '—' }}</div>
-            </a>
-          </div>
-        @endforeach
-      </div>
-      <div class="mt-3 flex items-center justify-end gap-2">
-        <button id="buildersPrev" class="rounded-full border px-3 py-1.5 dark:border-gray-700">Prev</button>
-        <button id="buildersNext" class="rounded-full border px-3 py-1.5 dark:border-gray-700">Next</button>
-      </div>
-    </div>
-  </section>
+              <div class="font-semibold">{{ $b->name }}</div>
+              <div class="text-xs text-gray-500">{{ $b->team ?? '—' }}</div>
 
-  {{-- ====== COACHES ====== --}}
-  @if($coaches->isNotEmpty())
-  <section class="mx-auto my-[70px] max-w-6xl px-4">
-    <h3 class="mb-5 font-orbitron text-2xl sm:text-3xl">Our Coaches</h3>
-    <div class="swiper" id="coachesSwiper">
-      <div class="swiper-wrapper">
-        @foreach($coaches as $c)
-          <div class="swiper-slide">
-            <a href="{{ route('coaches.show',$c->slug) }}"
-               class="block rounded-3xl bg-white p-4 text-center ring-1 ring-black/5 transition hover:shadow-lg dark:bg-gray-900">
-              <div class="mx-auto mb-2 h-16 w-16 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
+              @if($b->skills)
+                <div class="chips mx-auto mt-3 max-w-[90%]">
+                  @foreach($b->skills as $s)
+                    <span class="chip">{{ $s }}</span>
+                  @endforeach
+                </div>
+              @endif
+            </div>
+          </a>
+        </div>
+      @endforeach
+    </div>
+    <div class="mt-3 flex items-center justify-end gap-2 sm:hidden">
+      <button id="buildersPrev" class="rounded-full border px-3 py-1.5 dark:border-gray-700">Prev</button>
+      <button id="buildersNext" class="rounded-full border px-3 py-1.5 dark:border-gray-700">Next</button>
+    </div>
+  </div>
+</section>
+
+  {{-- ====== COACHES (neo cards + CTA) ====== --}}
+@if($coaches->isNotEmpty())
+<section class="mx-auto my-[70px] max-w-6xl px-4">
+  <div class="mb-5 flex items-end justify-between gap-3">
+    <div>
+      <h3 class="font-orbitron text-2xl sm:text-3xl">Our Coaches</h3>
+      <p class="text-sm text-gray-500 dark:text-gray-400">Learn faster with 1:1 guidance.</p>
+    </div>
+    <div class="hidden sm:flex items-center gap-2">
+      <button id="coachesPrev" class="rounded-full border px-3 py-1.5 dark:border-gray-700">Prev</button>
+      <button id="coachesNext" class="rounded-full border px-3 py-1.5 dark:border-gray-700">Next</button>
+    </div>
+  </div>
+
+  <div class="swiper" id="coachesSwiper">
+    <div class="swiper-wrapper">
+      @foreach($coaches as $c)
+        <div class="swiper-slide">
+          <a href="{{ route('coaches.show',$c->slug) }}"
+             class="neo-tilt neo-ring block p-[1px] rounded-[24px] transition-transform">
+            <div class="neo-card rounded-[22px] p-5 text-center">
+              <div class="avatar-wrap mx-auto mb-3 h-20 w-20 overflow-hidden rounded-full ring-4 ring-white/70 dark:ring-gray-900/60 relative z-10">
                 @if($c->image_path)
                   <x-img :src="Storage::url($c->image_path)" class="h-full w-full object-cover" :alt="$c->name" />
                 @endif
               </div>
-              <div class="font-semibold line-clamp-1">{{ $c->name }}</div>
-              <div class="text-xs text-gray-500 line-clamp-1">{{ $c->team ?? '—' }}</div>
-            </a>
-          </div>
-        @endforeach
-      </div>
-      <div class="mt-3 flex items-center justify-end gap-2">
-        <button id="coachesPrev" class="rounded-full border px-3 py-1.5 dark:border-gray-700">Prev</button>
-        <button id="coachesNext" class="rounded-full border px-3 py-1.5 dark:border-gray-700">Next</button>
-      </div>
+
+              <div class="font-semibold">{{ $c->name }}</div>
+              <div class="text-xs text-gray-500">{{ $c->team ?? '—' }}</div>
+
+              @if(!empty($c->skills) && is_iterable($c->skills))
+                <div class="chips mx-auto mt-3 max-w-[90%]">
+                  @foreach($c->skills as $s)
+                    <span class="chip">{{ $s }}</span>
+                  @endforeach
+                </div>
+              @endif
+
+              <div class="mt-4">
+                <span class="inline-flex items-center gap-2 rounded-full bg-[color:var(--accent)]/90 px-3 py-1.5 text-xs font-semibold text-white">
+                  Book session
+                  <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </span>
+              </div>
+            </div>
+          </a>
+        </div>
+      @endforeach
     </div>
-  </section>
-  @endif
+    <div class="mt-3 flex items-center justify-end gap-2 sm:hidden">
+      <button id="coachesPrev" class="rounded-full border px-3 py-1.5 dark:border-gray-700">Prev</button>
+      <button id="coachesNext" class="rounded-full border px-3 py-1.5 dark:border-gray-700">Next</button>
+    </div>
+  </div>
+</section>
+@endif
 
   {{-- ====== ABOUT FEATURE (opzionale) ====== --}}
   @php
@@ -282,5 +387,46 @@
         watchOverflow: true,
       });
     });
+      function attachTilt(root){
+    root.querySelectorAll('.neo-tilt').forEach(card => {
+      const ringHost = card; // ha ::before con il gradient ring
+      const inner = card.querySelector('.neo-card');
+      let raf = 0;
+
+      function onMove(e){
+        const r = card.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width;
+        const y = (e.clientY - r.top)  / r.height;
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => {
+          const rx = (y - .5) * -10;
+          const ry = (x - .5) *  10;
+          inner.style.transform = `perspective(800px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(0)`;
+          ringHost.style.setProperty('--mx', `${x*100}%`);
+          ringHost.style.setProperty('--my', `${y*100}%`);
+        });
+      }
+      function reset(){
+        cancelAnimationFrame(raf);
+        inner.style.transform = `perspective(800px) rotateX(0deg) rotateY(0deg)`;
+      }
+      card.addEventListener('mousemove', onMove, {passive:true});
+      card.addEventListener('mouseleave', reset);
+      card.addEventListener('touchend', reset);
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // attacca tilt alle slide renderizzate all’avvio
+    attachTilt(document);
+
+    // quando Swiper cambia, ri-attacca (le slide sono clonate)
+    ['buildersSwiper','coachesSwiper'].forEach(id => {
+      const swEl = document.getElementById(id);
+      if (!swEl || !swEl.swiper) return;
+      swEl.swiper.on('slideChangeTransitionEnd', () => attachTilt(swEl));
+      swEl.swiper.on('resize', () => attachTilt(swEl));
+    });
+  });
   </script>
 </x-app-layout>
