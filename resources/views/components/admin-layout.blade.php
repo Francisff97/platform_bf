@@ -147,123 +147,124 @@
     @endphp
 
     <!-- Aggiungo solo un id per pilotare la sidebar da JS -->
-    <aside id="adminSidebar" class="flex w-64 shrink-0 flex-col justify-between border-r bg-white/80 backdrop-blur dark:bg-gray-900/70 dark:border-gray-800">
-      <div>
-        <div class="px-5 py-4 text-sm font-semibold">Admin Nav</div>
+    <aside id="adminSidebar"
+       class="sticky top-[3.5rem] max-h-[calc(100vh-3.5rem)] overflow-y-auto
+              flex w-64 shrink-0 flex-col justify-between border-r bg-white/80 backdrop-blur
+              dark:bg-gray-900/70 dark:border-gray-800">
+  <div>
+    <div class="px-5 py-4 text-sm font-semibold">Admin Nav</div>
 
-        {{-- Menu principale --}}
-        <nav class="px-2 space-y-1 text-sm">
-          @foreach($items as $it)
-            @php $active = request()->routeIs(...$it['match']); @endphp
-            <a href="{{ route($it['route']) }}"
+    {{-- Menu principale --}}
+    <nav class="px-2 space-y-1 text-sm">
+      @foreach($items as $it)
+        @php $active = request()->routeIs(...$it['match']); @endphp
+        <a href="{{ route($it['route']) }}"
+           class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
+                  {{ $active ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
+          <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $active ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
+          {{ $it['label'] }}
+        </a>
+      @endforeach
+
+      {{-- SEO group (compattato) --}}
+      @php
+        $seoPagesActive = request()->routeIs('admin.seo.pages.*');
+        $seoMediaActive = request()->routeIs('admin.seo.media.*');
+        $seoAnyActive   = $seoPagesActive || $seoMediaActive;
+      @endphp
+      <details class="mt-3" {{ $seoAnyActive ? 'open' : '' }}>
+        <summary class="cursor-pointer select-none px-3 py-2 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          SEO
+        </summary>
+        <div class="mt-1 space-y-1 px-2">
+          <a href="{{ route('admin.seo.pages.index') }}"
+             class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
+                    {{ $seoPagesActive ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
+            <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $seoPagesActive ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
+            Pages
+          </a>
+          <a href="{{ route('admin.seo.media.index') }}"
+             class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
+                    {{ $seoMediaActive ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
+            <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $seoMediaActive ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
+            Media
+          </a>
+        </div>
+      </details>
+    </nav>
+
+    {{-- ADD-ONS (compattato, ma sempre scrollabile) --}}
+    @php
+      $hasEmailTemplates = \Illuminate\Support\Facades\Route::has('admin.addons.email-templates');
+      $hasDiscord        = \Illuminate\Support\Facades\Route::has('admin.addons.discord');
+      $hasTutorials      = \Illuminate\Support\Facades\Route::has('admin.addons.tutorials');
+      $addonsOpen        = request()->routeIs('admin.addons.*');
+    @endphp
+
+    @if(!empty($features['addons']))
+      <details class="mx-4 my-4 rounded-[10px] bg-gray-100 p-[10px] dark:bg-gray-800" {{ $addonsOpen ? 'open' : '' }}>
+        <summary class="cursor-pointer select-none px-2 pt-1 text-xs uppercase text-gray-500">
+          Add-ons
+        </summary>
+        <nav class="px-2 space-y-1 text-sm mt-1">
+          @if(!empty($features['email_templates']) && $hasEmailTemplates)
+            @php $active = request()->routeIs('admin.addons.email-templates*'); @endphp
+            <a href="{{ route('admin.addons.email-templates') }}"
                class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
                       {{ $active ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
               <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $active ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
-              {{ $it['label'] }}
+              Email templates
             </a>
-          @endforeach
-            {{-- SEO group --}}
-@php
-  $seoPagesActive = request()->routeIs('admin.seo.pages.*');
-  $seoMediaActive = request()->routeIs('admin.seo.media.*');
-  $seoAnyActive   = $seoPagesActive || $seoMediaActive;
-@endphp
+          @endif
 
-<div class="mt-3">
-  <div class="px-3 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">SEO</div>
-  <nav class="mt-1 space-y-1 px-2 text-sm">
-    <a href="{{ route('admin.seo.pages.index') }}"
-       class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
-              {{ $seoPagesActive ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
-      <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $seoPagesActive ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
-      Pages
-    </a>
+          @if(!empty($features['discord_integration']) && $hasDiscord)
+            @php $active = request()->routeIs('admin.addons.discord*'); @endphp
+            <a href="{{ route('admin.addons.discord') }}"
+               class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
+                      {{ $active ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
+              <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $active ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
+              Discord integration
+            </a>
+          @endif
 
-    <a href="{{ route('admin.seo.media.index') }}"
-       class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
-              {{ $seoMediaActive ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
-      <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $seoMediaActive ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
-      Media
-    </a>
-  </nav>
-</div>
+          @if(!empty($features['tutorials']) && $hasTutorials)
+            @php $active = request()->routeIs('admin.addons.tutorials*'); @endphp
+            <a href="{{ route('admin.addons.tutorials') }}"
+               class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
+                      {{ $active ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
+              <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $active ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
+              Videos
+            </a>
+          @endif
         </nav>
-
-        {{-- ADD-ONS --}}
-@php
-  // feature flags già calcolati sopra in $features
-  $hasEmailTemplates = \Illuminate\Support\Facades\Route::has('admin.addons.email-templates');
-  $hasDiscord        = \Illuminate\Support\Facades\Route::has('admin.addons.discord');
-  $hasTutorials      = \Illuminate\Support\Facades\Route::has('admin.addons.tutorials');
-@endphp
-
-@if(!empty($features['addons']))
-  <div class="bg-gray-100 dark:bg-gray-800 my-4 mx-4 rounded-[10px] p-[10px]">
-    <div class="px-3 pt-2 text-xs uppercase text-gray-500">Add-ons</div>
-
-    <nav class="px-2 space-y-1 text-sm mt-1">
-      {{-- Email Templates --}}
-      @if(!empty($features['email_templates']) && $hasEmailTemplates)
-        @php $active = request()->routeIs('admin.addons.email-templates*'); @endphp
-        <a href="{{ route('admin.addons.email-templates') }}"
-           class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
-                  {{ $active ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
-          <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $active ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
-          Email templates
-        </a>
-      @endif
-
-      {{-- Discord --}}
-      @if(!empty($features['discord_integration']) && $hasDiscord)
-        @php $active = request()->routeIs('admin.addons.discord*'); @endphp
-        <a href="{{ route('admin.addons.discord') }}"
-           class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
-                  {{ $active ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
-          <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $active ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
-          Discord integration
-        </a>
-      @endif
-
-      {{-- Tutorials --}}
-      @if(!empty($features['tutorials']) && $hasTutorials)
-        @php $active = request()->routeIs('admin.addons.tutorials*'); @endphp
-        <a href="{{ route('admin.addons.tutorials') }}"
-           class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
-                  {{ $active ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
-          <span class="absolute left-0 top-0 h-full w-0.5 rounded-r {{ $active ? 'bg-[var(--accent)]' : 'bg-transparent' }}"></span>
-          Videos
-        </a>
-      @endif
-    </nav>
+      </details>
+    @endif
   </div>
-@endif
 
-      </div>
-
-      {{-- PROFILE CARD --}}
-      @auth
-        @php $u = auth()->user(); @endphp
-        <div class="m-3 rounded-xl border p-3 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60">
-          <div class="flex items-center gap-3">
-            <img
-              src="{{ $u->avatar_url ?? 'https://www.gravatar.com/avatar/'.md5(strtolower(trim($u->email))).'?s=128&d=identicon' }}"
-              class="h-10 w-10 rounded-full object-cover"
-              alt="{{ $u->name }}"
-            >
-            <div class="min-w-0">
-              <div class="truncate text-sm font-medium">{{ $u->name }}</div>
-              <div class="truncate text-xs text-gray-500">{{ $u->email }}</div>
-            </div>
-          </div>
-          <div class="mt-3 flex items-center justify-between">
-            <a href="{{ route('profile.edit') }}" class="text-xs underline">Edit profile</a>
-            <form method="POST" action="{{ route('logout') }}">@csrf
-              <button class="text-xs text-red-600 hover:underline">Logout</button>
-            </form>
-          </div>
+  {{-- PROFILE CARD (rimane in fondo, ma la sidebar ora scrolla) --}}
+  @auth
+    @php $u = auth()->user(); @endphp
+    <div class="m-3 rounded-xl border p-3 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60">
+      <div class="flex items-center gap-3">
+        <img
+          src="{{ $u->avatar_url ?? 'https://www.gravatar.com/avatar/'.md5(strtolower(trim($u->email))).'?s=128&d=identicon' }}"
+          class="h-10 w-10 rounded-full object-cover"
+          alt="{{ $u->name }}"
+        >
+        <div class="min-w-0">
+          <div class="truncate text-sm font-medium">{{ $u->name }}</div>
+          <div class="truncate text-xs text-gray-500">{{ $u->email }}</div>
         </div>
-      @endauth
-    </aside>
+      </div>
+      <div class="mt-3 flex items-center justify-between">
+        <a href="{{ route('profile.edit') }}" class="text-xs underline">Edit profile</a>
+        <form method="POST" action="{{ route('logout') }}">@csrf
+          <button class="text-xs text-red-600 hover:underline">Logout</button>
+        </form>
+      </div>
+    </div>
+  @endauth
+</aside>
 
     {{-- MAIN --}}
     <main class="flex-1">
