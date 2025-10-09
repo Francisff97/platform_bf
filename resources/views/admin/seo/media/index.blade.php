@@ -5,7 +5,16 @@
            class="h-10 w-full max-w-md rounded-xl border border-[color:var(--accent)]/40 px-3
                   dark:bg-gray-900 dark:text-white dark:border-gray-800" />
     <button class="h-10 rounded-xl bg-[var(--accent)] px-4 text-white hover:opacity-90">Search</button>
+    <form method="POST" action="{{ route('admin.seo.media.sync') }}" class="ml-auto">
+    @csrf
+    <button class="rounded border px-3 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-800">
+      🔄 Sync
+    </button>
   </form>
+  
+   </form>
+ 
+
 
   <form method="POST" action="{{ route('admin.seo.media.bulk') }}"
         class="rounded-2xl border bg-white/70 shadow-sm backdrop-blur dark:bg-gray-900/70 dark:border-gray-800 overflow-hidden">
