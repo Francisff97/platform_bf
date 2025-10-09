@@ -223,6 +223,7 @@
 
     {{-- MOBILE: gruppi a fisarmonica --}}
     <div class="px-2 space-y-3 sm:hidden">
+      ['label'=>'Dashboard',       'route'=>'admin.dashboard',        'match'=>['admin.dashboard']],
       @php
         $groups = [
           [
