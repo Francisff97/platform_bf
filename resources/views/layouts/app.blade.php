@@ -45,7 +45,7 @@
 </style>
 
   </head>
-  <body class="min-h-screen bg-[var(--bg-light)] dark:bg-[var(--bg-dark)] text-gray-900 dark:text-gray-100">
+  <body class="min-h-screen bg-[var(--bg-light)] dark:bg-[var(--bg-dark)] text-gray-900 dark:text-gray-100 fon-orbitron">
 
 @if($gtm)
   <!-- Google Tag Manager (noscript) -->
