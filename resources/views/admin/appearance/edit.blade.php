@@ -28,14 +28,14 @@
     <div class="grid md:grid-cols-2 gap-6">
       <div>
         <label class="block text-sm mb-1">Light Logo</label>
-        <input type="file" name="logo_light" accept="image/*" class="w-full rounded border p-2">
+        <input type="file" name="logo_light" accept="image/*" class="w-full rounded border p-2 dark:border-gray-600">
         @if(!empty($s->logo_light_path))
           <img src="{{ Storage::url($s->logo_light_path) }}" class="mt-2 h-12" alt="Light Logo">
         @endif
       </div>
       <div>
         <label class="block text-sm mb-1">Dark Logo</label>
-        <input type="file" name="logo_dark" accept="image/*" class="w-full rounded border p-2">
+        <input type="file" name="logo_dark" accept="image/*" class="w-full rounded border dark:border-gray-600 p-2">
         @if(!empty($s->logo_dark_path))
           <div class="mt-2 rounded bg-black p-2 inline-block">
             <img src="{{ Storage::url($s->logo_dark_path) }}" class="h-12" alt="Dark Logo">
@@ -48,15 +48,15 @@
     <div class="grid md:grid-cols-3 gap-6">
       <div>
         <label class="block text-sm mb-1">Light Background</label>
-        <input type="color" name="color_light_bg" value="{{ old('color_light_bg',$s->color_light_bg ?? '#f8fafc') }}" class="h-10 w-full rounded border">
+        <input type="color" name="color_light_bg" value="{{ old('color_light_bg',$s->color_light_bg ?? '#f8fafc') }}" class="h-10 w-full rounded border dark:border-gray-600">
       </div>
       <div>
         <label class="block text-sm mb-1">Dark Background</label>
-        <input type="color" name="color_dark_bg" value="{{ old('color_dark_bg',$s->color_dark_bg ?? '#0b0f1a') }}" class="h-10 w-full rounded border">
+        <input type="color" name="color_dark_bg" value="{{ old('color_dark_bg',$s->color_dark_bg ?? '#0b0f1a') }}" class="h-10 w-full rounded border dark:border-gray-600">
       </div>
       <div>
         <label class="block text-sm mb-1">Accent Color</label>
-        <input type="color" name="color_accent" value="{{ old('color_accent',$s->color_accent ?? '#4f46e5') }}" class="h-10 w-full rounded border">
+        <input type="color" name="color_accent" value="{{ old('color_accent',$s->color_accent ?? '#4f46e5') }}" class="h-10 w-full rounded border dark:border-gray-600">
       </div>
     </div>
 
