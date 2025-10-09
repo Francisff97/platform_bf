@@ -13,7 +13,8 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                orbitron: ['Orbitron', 'sans-serif'],
+        sans: ['Orbitron', 'sans-serif'], // opzionale: sovrascrive TUTTO il sans
             },
         },
     },
