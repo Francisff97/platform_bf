@@ -21,9 +21,9 @@
           <th class="px-4 py-3 text-right">Actions</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-100">
+      <tbody class="divide-y divide-gray-100 dark:divide-gray-600">
         @foreach($services as $s)
-          <tr class="hover:bg-gray-50">
+          <tr class="hover:bg-gray-50 dark:hover:bg-gray-400">
               @if($s->image_path)
                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">
                 <img src="{{ Storage::url($s->image_path) }}" class="h-12 w-20 rounded object-cover">
