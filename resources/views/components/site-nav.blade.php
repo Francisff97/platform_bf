@@ -8,10 +8,10 @@
   $links = [
     ['label'=>'Home',     'route'=>'home',            'match'=>['home']],
     ['label'=>'About',    'route'=>'about',           'match'=>['about']],
+    ['label'=>'Packs',    'route'=>'packs.public',    'match'=>['packs.*']],
     ['label'=>'Services', 'route'=>'services.public', 'match'=>['services.public']],
     ['label'=>'Builders', 'route'=>'builders.index',  'match'=>['builders.index','builders.show']],
     ['label'=>'Coaches',  'route'=>'coaches.index',   'match'=>['coaches.index','coaches.show']],
-    ['label'=>'Packs',    'route'=>'packs.public',    'match'=>['packs.*']],
     ['label'=>'Contacts', 'route'=>'contacts',        'match'=>['contacts']],
   ];
 
