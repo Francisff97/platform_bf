@@ -72,10 +72,10 @@
 
     {{-- Server link (Discord/Web) --}}
     <div>
-      <label class="block text-sm text-gray-600">Server Link</label>
-      <input type="url" name="discord_url" class="mt-1 w-full rounded border p-2"
+      <label class="block text-sm text-gray-600 dark:text-white">Server Link</label>
+      <input type="url" name="discord_url" class="mt-1 w-full rounded border p-2 dark:bg-gray-900 dark:border-gray-600 dark:text-white"
              value="{{ old('discord_url', $s?->discord_url) }}">
-      <p class="mt-1 text-xs text-gray-500">Full URL (e.g. https://discord.gg/xxxxxx)</p>
+      <p class="mt-1 text-xs text-gray-500 dark:text-white">Full URL (e.g. https://discord.gg/xxxxxx)</p>
     </div>
 
     {{-- Currency & FX --}}
