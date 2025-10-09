@@ -85,15 +85,15 @@ class SeoPageController extends Controller
         return back()->with('success','Deleted.');
     }
     public function sync()
-{
-    // scegli una delle due: Job async oppure Artisan sincrono.
-
-    // 1) Async job (consigliato)
-    \App\Jobs\Seo\BackfillPages::dispatch();
-
-    // 2) Oppure sync via Artisan (se non hai queue)
-    // \Artisan::call('seo:pages-backfill'); // crea un comando se non esiste
-
-    return back()->with('success','Pages sync started.');
-}
+    {
+        // scegli una delle due: Job async oppure Artisan sincrono.
+    
+        // 1) Async job (consigliato)
+        \App\Jobs\Seo\BackfillPages::dispatch();
+    
+        // 2) Oppure sync via Artisan (se non hai queue)
+        // \Artisan::call('seo:pages-backfill'); // crea un comando se non esiste
+    
+        return back()->with('success','Pages sync started.');
+    }
 }
