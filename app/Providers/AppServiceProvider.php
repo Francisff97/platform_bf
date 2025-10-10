@@ -24,6 +24,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        
+        View::composer('*', function ($view) {
+        static $privacy = null;
+        if ($privacy === null) $privacy = PrivacySetting::first();
+        $view->with('privacySettings', $privacy);
+    });
         // Condivido cartCount con tutte le view (se ti serve)
         View::composer('*', function ($view) {
             try {
