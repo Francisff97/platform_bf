@@ -1,22 +1,26 @@
 <?php
-// app/Support/MediaIngestor.php
 
 namespace App\Support;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+
+// Intervention Image v3
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 
 class MediaIngestor
 {
     /**
-     * @param  UploadedFile|string       $file   UploadedFile dal form OPPURE un path/URL relativo
-     * @param  string                    $destRelativePath  es. 'packs/foo/bar.png'
-     * @param  string|array|null         $alt
-     * @return string  percorso relativo salvato nel disk 'public' (es. 'packs/foo/bar.png')
+     * Ingest di un file (UploadedFile OPPURE path stringa già esistente).
+     *
+     * @param  UploadedFile|string $file  UploadedFile dal form OPPURE 'packs/foo.png' / '/storage/packs/foo.png'
+     * @param  string|null         $destRelativePath  es. 'packs/foo/bar.png' (se null viene generato)
+     * @param  string|array|null   $alt
+     * @param  string              $disk  default 'public'
+     * @return string              percorso relativo salvato nel disk (es. 'packs/foo/bar.png')
      */
-    public static function ingest(UploadedFile|string $file, string $destRelativePath, string|array|null $alt = null): string
+    public static function ingest(UploadedFile|string $file, ?string $destRelativePath = null, string|array|null $alt = null, string $disk = 'public'): string
     {
         // --- normalizza ALT ---
         if (is_array($alt)) {
@@ -27,56 +31,91 @@ class MediaIngestor
             if ($alt === '') $alt = null;
         }
 
-        $disk = 'public';
-        $stored = $destRelativePath;
+        // --- genera nome se non passato ---
+        if ($destRelativePath === null) {
+            $base = 'uploads/'.date('Y/m');
+            $name = uniqid().self::extensionFrom($file);
+            $destRelativePath = $base.'/'.$name;
+        }
 
-        // --- salvataggio file ---
+        // assicura directory
+        Storage::disk($disk)->makeDirectory(dirname($destRelativePath));
+
+        // --- salva il file ---
         if ($file instanceof UploadedFile) {
             Storage::disk($disk)->putFileAs(
                 dirname($destRelativePath),
                 $file,
                 basename($destRelativePath)
             );
+            $stored = $destRelativePath;
         } else {
-            // È una stringa: path tipo '/storage/...' o 'packs/..../foo.png'
+            // è una stringa: può essere '/storage/...' oppure 'packs/...' ecc.
             $candidate = ltrim(preg_replace('~^/?storage/~', '', $file), '/');
 
             if (Storage::disk($disk)->exists($candidate)) {
-                $stored = $candidate; // già sul disk 'public'
+                // già nel disk
+                $stored = $candidate;
             } elseif (is_file(public_path($file))) {
-                // Copia da public path al disk 'public' nella destinazione richiesta
+                // file dentro public: copialo nel disk alla destinazione richiesta
                 Storage::disk($disk)->put($destRelativePath, file_get_contents(public_path($file)));
                 $stored = $destRelativePath;
             } else {
-                // fallback: crea dir e usa comunque destRelativePath (se poi non esiste, almeno non crasha)
-                Storage::disk($disk)->makeDirectory(dirname($destRelativePath));
-                $stored = $destRelativePath;
+                // fallback: se la stringa è un path leggibile dal FS assoluto
+                if (is_file($file)) {
+                    Storage::disk($disk)->put($destRelativePath, file_get_contents($file));
+                    $stored = $destRelativePath;
+                } else {
+                    // ultima spiaggia: crea un file vuoto per non far esplodere il flusso
+                    Storage::disk($disk)->put($destRelativePath, '');
+                    $stored = $destRelativePath;
+                }
             }
         }
 
-        // --- genera .webp accanto (se PNG/JPG) ---
-        if (preg_match('/\.(png|jpe?g)$/i', $stored)) {
-            try {
-                $abs = Storage::disk($disk)->path($stored);
-                $webpRel = preg_replace('/\.(png|jpe?g)$/i', '.webp', $stored);
+        // --- genera WEBP accanto se PNG/JPG ---
+        self::tryMakeWebp($disk, $stored, quality: 75);
 
-                $manager = new ImageManager(new Driver());
-                $img = $manager->read($abs);
-
-                Storage::disk($disk)->put($webpRel, (string) $img->toWebp(75));
-            } catch (\Throwable $e) {
-                // silenzioso: non bloccare il flow se manca GD/Intervention
-            }
-        }
-
-        // --- salva alt opzionale in tabella media_assets (se esiste) ---
+        // --- metadati ALT su tabella media_assets se esiste ---
         if (class_exists(\App\Models\MediaAsset::class)) {
-            \App\Models\MediaAsset::updateOrCreate(
-                ['path' => $stored],
-                ['alt'  => $alt]
-            );
+            \App\Models\MediaAsset::updateOrCreate(['path' => $stored], ['alt' => $alt]);
         }
 
         return $stored;
+    }
+
+    /** Prova a generare il .webp accanto all’originale (silenziosa se fallisce). */
+    public static function tryMakeWebp(string $disk, string $relativePath, int $quality = 75): void
+    {
+        if (!preg_match('/\.(png|jpe?g)$/i', $relativePath)) return;
+
+        try {
+            $abs = Storage::disk($disk)->path($relativePath);
+            if (!is_file($abs)) return;
+
+            $webpRel = preg_replace('/\.(png|jpe?g)$/i', '.webp', $relativePath);
+            // se già esiste, esci
+            if (Storage::disk($disk)->exists($webpRel)) return;
+
+            $manager = new ImageManager(new Driver()); // GD
+            $img = $manager->read($abs);
+
+            Storage::disk($disk)->put($webpRel, (string) $img->toWebp($quality));
+        } catch (\Throwable $e) {
+            // niente throw: non bloccare il flusso di salvataggio
+        }
+    }
+
+    /** Ritorna estensione coerente dal tipo input (UploadedFile|string), default .bin */
+    protected static function extensionFrom(UploadedFile|string $file): string
+    {
+        if ($file instanceof UploadedFile) {
+            $ext = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'bin');
+            return '.'.$ext;
+        }
+        if (is_string($file) && preg_match('/\.[a-z0-9]{2,5}$/i', $file, $m)) {
+            return $m[0];
+        }
+        return '.bin';
     }
 }
