@@ -113,7 +113,7 @@
         </div>
 
         {{-- Actions --}}
-        <div class="mt-2 flex items-center justify-between gap-3">
+        <div class="mt-2 grid grid-cols-1 md:flex items-center justify-between gap-3">
           <div class="text-xs text-gray-500 dark:text-gray-400">We usually reply within 24–48h.</div>
           <button type="submit"
                   @click="loading=true" :disabled="loading"
