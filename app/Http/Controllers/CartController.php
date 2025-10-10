@@ -45,4 +45,30 @@ class CartController extends Controller
         Cart::clear();
         return back()->with('success','Carrello svuotato');
     }
+    // app/Http/Controllers/CartController.php
+public function updateQty(Request $req, $index)
+{
+    $cart = session('cart', []);
+    if (!isset($cart[$index])) return back();
+
+    $item = $cart[$index];
+    $isCoach = ($item['type'] ?? '') === 'coach'
+           || ($item['meta']['type'] ?? '') === 'coach'
+           || !empty($item['meta']['is_coach']);
+
+    if (!$isCoach) return back(); // qty solo per coach
+
+    $qty = (int) $req->input('qty', $item['qty'] ?? 1);
+    if ($req->input('action') === 'inc') $qty++;
+    if ($req->input('action') === 'dec') $qty--;
+
+    $qty = max(1, min(99, $qty));
+    $item['qty'] = $qty;
+    $cart[$index] = $item;
+
+    session(['cart' => $cart]);
+
+    // opzionale: ricalcola totali qui o nel view composer
+    return back();
+}
 }
