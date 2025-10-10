@@ -131,11 +131,7 @@
     </form>
   </section>
 
-  {{-- ===== reCAPTCHA v3 (pronto ma COMMENTATO) =====
-       1) Sostituisci "YOUR_RECAPTCHA_SITE_KEY" con la tua SITE KEY v3
-       2) Nel tuo controller verifica server-side con la SECRET KEY
-  --}}
-  {{-- <script src="https://www.google.com/recaptcha/api.js?render=YOUR_RECAPTCHA_SITE_KEY"></script>
+  <script src="https://www.google.com/recaptcha/api.js?render=YOUR_RECAPTCHA_SITE_KEY"></script>
   <script>
     const SITE_KEY = '6LctPeUrAAAAAEzWnDS_wxig0QkdSjhzHDM0NVTG';
     document.addEventListener('DOMContentLoaded', () => {
@@ -147,5 +143,5 @@
         });
       });
     });
-  </script> --}}
+  </script>
 </x-app-layout>
