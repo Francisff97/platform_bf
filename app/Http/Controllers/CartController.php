@@ -46,29 +46,49 @@ class CartController extends Controller
         return back()->with('success','Carrello svuotato');
     }
     // app/Http/Controllers/CartController.php
-public function updateQty(Request $req, $index)
+// app/Http/Controllers/CartController.php
+
+public function updateQty(Request $r, $index)
 {
     $cart = session('cart', []);
-    if (!isset($cart[$index])) return back();
+
+    if (!isset($cart[$index])) {
+        return back()->with('error','Item not found.');
+    }
 
     $item = $cart[$index];
-    $isCoach = ($item['type'] ?? '') === 'coach'
-           || ($item['meta']['type'] ?? '') === 'coach'
-           || !empty($item['meta']['is_coach']);
 
-    if (!$isCoach) return back(); // qty solo per coach
+    // Solo i coach hanno qty variabile
+    $isCoach = (($item['type'] ?? null) === 'coach')
+        || (($item['meta']['type'] ?? null) === 'coach')
+        || !empty($item['meta']['is_coach']);
 
-    $qty = (int) $req->input('qty', $item['qty'] ?? 1);
-    if ($req->input('action') === 'inc') $qty++;
-    if ($req->input('action') === 'dec') $qty--;
+    // qty attuale (fallback a 1)
+    $current = max(1, (int)($item['qty'] ?? 1));
 
-    $qty = max(1, min(99, $qty));
-    $item['qty'] = $qty;
+    // Se ci sono i bottoni +/- li uso, altrimenti leggo qty dal campo number
+    $action = $r->string('action')->toString(); // 'inc' | 'dec' | ''
+    if ($isCoach) {
+        if ($action === 'inc')      $current++;
+        elseif ($action === 'dec')  $current--;
+        else                        $current = (int) $r->input('qty', $current);
+    } else {
+        // i non-coach restano a 1
+        $current = 1;
+    }
+
+    // clamp 1..99
+    $current = max(1, min(99, $current));
+
+    // 🔧 assicurati che ci sia unit_amount_cents
+    if (!isset($item['unit_amount_cents'])) {
+        $item['unit_amount_cents'] = (int) round(((float)($item['unit_amount'] ?? 0)) * 100);
+    }
+
+    $item['qty'] = $current;
     $cart[$index] = $item;
-
     session(['cart' => $cart]);
 
-    // opzionale: ricalcola totali qui o nel view composer
-    return back();
+    return back()->with('success','Quantity updated.');
 }
 }
