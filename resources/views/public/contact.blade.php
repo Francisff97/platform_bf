@@ -24,7 +24,7 @@
 
   {{-- ===== Form card (no wallpaper) ===== --}}
   <section x-data="{loading:false}" class="mx-auto my-10 max-w-5xl px-4">
-    <form method="POST" action="{{ route('contacts.submit') }}"
+    <form @submit="loading=true" x-data="{loading:false}" method="POST" action="{{ route('contacts.submit') }}"
           class="rounded-2xl border border-[color:var(--accent)]/25 bg-white/70 shadow-sm backdrop-blur-md
                  dark:border-[color:var(--accent)]/25 dark:bg-gray-900/60">
       @csrf
