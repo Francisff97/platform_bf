@@ -70,6 +70,9 @@
   <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
   @vite(['resources/css/app.css', 'resources/js/app.js'])
+  @if(($privacySettings?->banner_enabled) && $privacySettings?->banner_head_code)
+  {!! $privacySettings->banner_head_code !!}
+@endif
 </head>
 <body class="font-sans text-gray-900 antialiased bg-gray-50 dark:bg-gray-900 dark:text-gray-100">
   @if($gtm)
@@ -100,5 +103,8 @@
       {{ $slot }}
     </div>
   </div>
+  @if(($privacySettings?->banner_enabled) && $privacySettings?->banner_body_code)
+  {!! $privacySettings->banner_body_code !!}
+@endif
 </body>
 </html>
