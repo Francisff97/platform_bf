@@ -49,10 +49,4 @@ class CheckoutCouponController extends Controller
         session()->forget('coupon');
         return back()->with('success','Coupon removed');
     }
-
-public function remove()
-{
-    session()->forget('coupon');
-    return back()->with('success','Coupon removed');
-}
 }
