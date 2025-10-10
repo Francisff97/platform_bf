@@ -113,19 +113,40 @@
     @foreach($packs as $p)
       <div class="rounded-xl border border-[color:var(--accent)]/20 bg-white/80 p-3 shadow-sm backdrop-blur dark:border-[color:var(--accent)]/20 dark:bg-gray-900/70">
         <div class="flex items-center gap-3">
-          <div class="h-14 w-20 overflow-hidden rounded-lg ring-1 ring-black/5 dark:ring-white/10">
-            @if($p->image_path)
-              <img src="{{ asset('storage/'.$p->image_path) }}" class="h-full w-full object-cover" alt="">
-            @else
-              <div class="grid h-full w-full place-items-center text-xs text-gray-400">—</div>
-            @endif
-          </div>
-          <div class="min-w-0">
-            <div class="truncate font-medium">{{ $p->title }}</div>
-            <div class="truncate text-xs text-gray-500">/{{ $p->slug }}</div>
-          </div>
-          <a href="{{ route('admin.packs.edit',$p) }}" class="ml-auto rounded-full border px-3 py-1 text-xs hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">Edit</a>
-        </div>
+  <div class="h-14 w-20 overflow-hidden rounded-lg ring-1 ring-black/5 dark:ring-white/10">
+    @if($p->image_path)
+      <img src="{{ asset('storage/'.$p->image_path) }}" class="h-full w-full object-cover" alt="">
+    @else
+      <div class="grid h-full w-full place-items-center text-xs text-gray-400">—</div>
+    @endif
+  </div>
+
+  <div class="min-w-0">
+    <div class="truncate font-medium">{{ $p->title }}</div>
+    <div class="truncate text-xs text-gray-500">/{{ $p->slug }}</div>
+  </div>
+
+  {{-- azioni mobile --}}
+  <div class="ml-auto flex items-center gap-2">
+    <a href="{{ route('admin.packs.edit',$p) }}"
+       class="rounded-full border px-3 py-1 text-xs hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
+      Edit
+    </a>
+
+    <form x-data="{busy:false}"
+          method="POST"
+          action="{{ route('admin.packs.destroy',$p) }}"
+          onsubmit="return busy ? false : (busy=true, confirm('Eliminare questo pack?'))">
+      @csrf
+      @method('DELETE')
+      <button type="submit"
+              class="rounded-full border border-red-300 px-3 py-1 text-xs text-red-600 hover:bg-red-50
+                     dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/30">
+        Delete
+      </button>
+    </form>
+  </div>
+</div>
         <div class="mt-2 flex items-center justify-between text-sm">
           <div>
             @if($p->category)
