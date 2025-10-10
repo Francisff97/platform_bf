@@ -138,7 +138,7 @@
                           checked:bg-[color:var(--accent)] checked:border-[color:var(--accent)]
                           dark:border-gray-600 dark:bg-gray-900"/>
             <span>
-              I accept the <a href="{{ route('privacy.show') }}" class="underline" target="_blank">Privacy Policy</a>
+              I accept the <a href="#" class="underline" target="_blank">Privacy Policy</a>
             </span>
           </label>
 
