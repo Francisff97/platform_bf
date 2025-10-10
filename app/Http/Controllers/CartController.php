@@ -10,95 +10,158 @@ use App\Models\CoachPrice;
 
 class CartController extends Controller
 {
+    /**
+     * Normalizza la struttura del carrello in sessione.
+     * - qty minimo 1 (max 99)
+     * - unit_amount_cents presente (fallback da unit_amount in euro)
+     * - ignora elementi non-array
+     * - imposta type di default a 'pack'
+     */
+    protected function normalizeCart(array $cart): array
+    {
+        foreach ($cart as $k => &$it) {
+            if (!is_array($it)) {
+                // item corrotto: rimuovo
+                unset($cart[$k]);
+                continue;
+            }
+
+            // qty clamp 1..99
+            $it['qty'] = max(1, min(99, (int)($it['qty'] ?? 1)));
+
+            // unit_amount_cents → se manca, calcola dai euro
+            if (!isset($it['unit_amount_cents'])) {
+                $it['unit_amount_cents'] = (int) round(((float)($it['unit_amount'] ?? 0)) * 100);
+            }
+
+            // type di default
+            $it['type'] = $it['type'] ?? 'pack';
+        }
+        // reindicizza (in caso di unset)
+        return array_values($cart);
+    }
+
     public function index()
     {
-        $items = Cart::items();
+        // normalizza e persisti
+        $cart = $this->normalizeCart(session('cart', []));
+        session(['cart' => $cart]);
+
+        // totale in centesimi
+        $totalCents = 0;
+        foreach ($cart as $it) {
+            $totalCents += (int)($it['unit_amount_cents'] ?? 0) * (int)($it['qty'] ?? 1);
+        }
+
+        $currency = Cart::currency() ?? 'EUR';
+
         return view('cart.index', [
-            'items' => $items,
-            'totalCents' => Cart::totalCents(),
-            'currency' => Cart::currency()
+            'items'      => $cart,
+            'totalCents' => $totalCents,
+            'currency'   => $currency,
         ]);
     }
 
     public function addPack(Request $request, Pack $pack)
     {
-        Cart::addPack($pack, (int)$request->input('qty',1));
-        return back()->with('success','Aggiunto al carrello');
+        Cart::addPack($pack, (int)$request->input('qty', 1));
+
+        // normalizza dopo l’aggiunta
+        $cart = $this->normalizeCart(session('cart', []));
+        session(['cart' => $cart]);
+
+        return back()->with('success', 'Aggiunto al carrello');
     }
 
     public function addCoach(Request $request, Coach $coach)
     {
         $priceId = $request->input('price_id');
-        $price = CoachPrice::where('coach_id',$coach->id)->findOrFail($priceId);
-        Cart::addCoachPrice($coach, $price, (int)$request->input('qty',1));
-        return back()->with('success','Aggiunto al carrello');
+        $price   = CoachPrice::where('coach_id', $coach->id)->findOrFail($priceId);
+
+        Cart::addCoachPrice($coach, $price, (int)$request->input('qty', 1));
+
+        // normalizza dopo l’aggiunta
+        $cart = $this->normalizeCart(session('cart', []));
+        session(['cart' => $cart]);
+
+        return back()->with('success', 'Aggiunto al carrello');
     }
 
     public function remove(int $index)
     {
         Cart::remove($index);
-        return back()->with('success','Rimosso dal carrello');
+
+        // normalizza dopo la rimozione (reindicizzo gli indici)
+        $cart = $this->normalizeCart(session('cart', []));
+        session(['cart' => $cart]);
+
+        return back()->with('success', 'Rimosso dal carrello');
     }
 
     public function clear()
     {
         Cart::clear();
-        return back()->with('success','Carrello svuotato');
-    }
-    // app/Http/Controllers/CartController.php
-// app/Http/Controllers/CartController.php
+        // opzionale: hard reset coerente
+        session(['cart' => []]);
 
-public function updateQty(Request $r, $index)
-{
-    $cart = session('cart', []);
-
-    if (!isset($cart[$index])) {
-        return back()->with('error','Item not found.');
+        return back()->with('success', 'Carrello svuotato');
     }
 
-    $item = $cart[$index];
+    /**
+     * Aggiorna quantità SOLO per i coach.
+     * Accetta:
+     * - action=inc|dec (bottoni)
+     * - oppure qty (campo number)
+     */
+    public function updateQty(Request $r, int $index)
+    {
+        $cart = session('cart', []);
 
-    // Solo i coach hanno qty variabile
-    $isCoach = (($item['type'] ?? null) === 'coach')
-        || (($item['meta']['type'] ?? null) === 'coach')
-        || !empty($item['meta']['is_coach']);
-
-    // qty attuale (fallback a 1)
-    $current = max(1, (int)($item['qty'] ?? 1));
-
-    // Se ci sono i bottoni +/- li uso, altrimenti leggo qty dal campo number
-    $action = $r->string('action')->toString(); // 'inc' | 'dec' | ''
-    if ($isCoach) {
-        if ($action === 'inc')      $current++;
-        elseif ($action === 'dec')  $current--;
-        else                        $current = (int) $r->input('qty', $current);
-    } else {
-        // i non-coach restano a 1
-        $current = 1;
-    }
-
-    // clamp 1..99
-    $current = max(1, min(99, $current));
-
-    // 🔧 assicurati che ci sia unit_amount_cents
-    if (!isset($item['unit_amount_cents'])) {
-        $item['unit_amount_cents'] = (int) round(((float)($item['unit_amount'] ?? 0)) * 100);
-    }
-
-    $item['qty'] = $current;
-    $cart[$index] = $item;
-    session(['cart' => $cart]);
-
-    return back()->with('success','Quantity updated.');
-}
-protected function normalizeCart(array $cart): array
-{
-    foreach ($cart as &$it) {
-        $it['qty'] = max(1, (int)($it['qty'] ?? 1));
-        if (!isset($it['unit_amount_cents'])) {
-            $it['unit_amount_cents'] = (int) round(((float)($it['unit_amount'] ?? 0)) * 100);
+        if (!isset($cart[$index]) || !is_array($cart[$index])) {
+            return back()->with('error', 'Item not found.');
         }
+
+        $item = $cart[$index];
+
+        // coach detection
+        $isCoach = (($item['type'] ?? null) === 'coach')
+            || (($item['meta']['type'] ?? null) === 'coach')
+            || !empty($item['meta']['is_coach']);
+
+        // qty corrente
+        $current = max(1, (int)($item['qty'] ?? 1));
+
+        // bottoni +/- oppure input number
+        $action = (string) $r->input('action', '');
+        if ($isCoach) {
+            if ($action === 'inc') {
+                $current++;
+            } elseif ($action === 'dec') {
+                $current--;
+            } else {
+                $current = (int) $r->input('qty', $current);
+            }
+        } else {
+            // non coach: qty fissa a 1
+            $current = 1;
+        }
+
+        // clamp
+        $current = max(1, min(99, $current));
+
+        // assicurati che unit_amount_cents esista
+        if (!isset($item['unit_amount_cents'])) {
+            $item['unit_amount_cents'] = (int) round(((float)($item['unit_amount'] ?? 0)) * 100);
+        }
+
+        // salva item
+        $item['qty']    = $current;
+        $cart[$index]   = $item;
+
+        // normalizza e persisti
+        $cart = $this->normalizeCart($cart);
+        session(['cart' => $cart]);
+
+        return back()->with('success', 'Quantity updated.');
     }
-    return $cart;
-}
 }
