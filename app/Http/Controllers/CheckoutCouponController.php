@@ -12,25 +12,50 @@ class CheckoutCouponController extends Controller
         if (!$code) return back()->with('error','Enter a coupon code');
 
         $cart = session('cart', []);
-        $subtotal = 0;
-        foreach ($cart as $it) $subtotal += (int)$it['unit_amount_cents'] * (int)$it['qty'];
+        if (empty($cart)) {
+            return back()->with('error','Your cart is empty');
+        }
 
+        // 🔧 Normalizza SEMPRE gli item (qty e unit_amount_cents)
+        $subtotal = 0;
+        foreach ($cart as $k => $it) {
+            // qty fallback a 1 e clamp 1..99
+            $qty = max(1, min(99, (int)($it['qty'] ?? 1)));
+
+            // unit_amount_cents se manca, prova da unit_amount (euro) → cents
+            if (!isset($it['unit_amount_cents'])) {
+                $unitAmountCents = (int) round(((float)($it['unit_amount'] ?? 0)) * 100);
+                $cart[$k]['unit_amount_cents'] = $unitAmountCents;
+            } else {
+                $unitAmountCents = (int) $it['unit_amount_cents'];
+            }
+
+            // riscrivo qty normalizzata
+            $cart[$k]['qty'] = $qty;
+
+            $subtotal += $unitAmountCents * $qty;
+        }
+        // persisto carrello normalizzato
+        session(['cart' => $cart]);
+
+        // Cerca coupon e valida sul subtotal
         $coupon = Coupon::where('code',$code)->first();
         if (!$coupon || !$coupon->isCurrentlyValid($subtotal)) {
             return back()->with('error','Invalid or inactive coupon');
         }
 
+        // salvo solo quello che serve
         session(['coupon' => [
-            'id'           => $coupon->id,
-            'code'         => $coupon->code,
-            'type'         => $coupon->type,
-            'percent'      => $coupon->type==='percent' ? (int)$coupon->value : null,
-            'value_cents'  => $coupon->type==='fixed'   ? (int)$coupon->value_cents : null,
+            'id'                    => $coupon->id,
+            'code'                  => $coupon->code,
+            'type'                  => $coupon->type, // 'percent' | 'amount'
+            'value'                 => (int) $coupon->value, // percent oppure cents
+            'min_subtotal_cents'    => (int) $coupon->min_subtotal_cents,
+            'max_uses'              => $coupon->max_uses,
         ]]);
 
         return back()->with('success','Coupon applied');
     }
-
     public function remove()
     {
         session()->forget('coupon');
