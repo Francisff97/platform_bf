@@ -131,6 +131,7 @@
         ['label'=>'Orders',          'route'=>'admin.orders.index',     'match'=>['admin.orders.*']],
         ['label'=>'Appearance',      'route'=>'admin.appearance.edit',  'match'=>['admin.appearance.*']],
         ['label'=>'Platform info',   'route'=>'admin.platform.info',    'match'=>['admin.platform.*']],
+        ['label'=>'Privacy e Cookies','route'=>'admin.privacy.edit',   'match'=>['admin.privacy.*']],
         ['label'=>'Google Analytics','route'=>'admin.analytics.edit',   'match'=>['admin.analytics.*']],
       ];
 
@@ -284,6 +285,7 @@
               ['label'=>'Appearance', 'route'=>'admin.appearance.edit', 'match'=>['admin.appearance.*']],
               ['label'=>'Platform info', 'route'=>'admin.platform.info', 'match'=>['admin.platform.*']],
               ['label'=>'Google Analytics','route'=>'admin.analytics.edit', 'match'=>['admin.analytics.*']],
+              ['label'=>'Privacy e Cookies','route'=>'admin.privacy.edit', 'match'=>['admin.privacy.*']],
             ],
           ],
         ];
