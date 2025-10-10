@@ -42,25 +42,30 @@ class CartController extends Controller
     }
 
     public function index()
-    {
-        // normalizza e persisti
-        $cart = $this->normalizeCart(session('cart', []));
-        session(['cart' => $cart]);
+{
+    $items = \App\Support\Cart::items() ?? [];
 
-        // totale in centesimi
-        $totalCents = 0;
-        foreach ($cart as $it) {
-            $totalCents += (int)($it['unit_amount_cents'] ?? 0) * (int)($it['qty'] ?? 1);
+    // Normalizzazione minima
+    $normalized = [];
+    foreach ($items as $it) {
+        if (!is_array($it)) continue;
+        $it['qty'] = max(1, min(99, (int)($it['qty'] ?? 1)));
+        if (!isset($it['unit_amount_cents'])) {
+            $it['unit_amount_cents'] = (int) round(((float) data_get($it,'unit_amount',0)) * 100);
         }
-
-        $currency = Cart::currency() ?? 'EUR';
-
-        return view('cart.index', [
-            'items'      => $cart,
-            'totalCents' => $totalCents,
-            'currency'   => $currency,
-        ]);
+        $it['currency'] = (string) data_get($it,'currency','EUR');
+        $normalized[] = $it;
     }
+
+    // (opzionale) riscrivi la session per “pulirla”
+    session(['cart' => $normalized]);
+
+    return view('cart.index', [
+        'items'       => $normalized,
+        'totalCents'  => \App\Support\Cart::totalCents(), // se vuoi, ricalcola da $normalized
+        'currency'    => \App\Support\Cart::currency() ?? 'EUR',
+    ]);
+}
 
     public function addPack(Request $request, Pack $pack)
     {
