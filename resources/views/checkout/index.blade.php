@@ -43,25 +43,38 @@
       </form>
     </div>
 
-    {{-- Coupon --}}
-    <div class="rounded-2xl border bg-white/70 p-4 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/70">
-      <h2 class="mb-3 text-lg font-semibold">Coupon</h2>
+    {{-- COUPON --}}
+@php
+  $coupon = session('coupon');
+@endphp
 
-      @if($coupon)
-        <div class="flex items-center justify-between rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800 ring-1 ring-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-100 dark:ring-emerald-800">
-          <div>Applied: <strong>{{ $coupon['code'] }}</strong> ({{ $coupon['type']==='percent' ? $coupon['value'].'%' : format_money($coupon['value']*100,$currency) }} off)</div>
-          <form method="POST" action="{{ route('checkout.coupon.remove') }}">@csrf
-            <button class="rounded px-2 py-1 text-xs ring-1 ring-emerald-300 hover:bg-emerald-100/50 dark:ring-emerald-700 dark:hover:bg-emerald-800/40">Remove</button>
-          </form>
-        </div>
-      @else
-        <form class="flex items-center gap-2" method="POST" action="{{ route('checkout.coupon.apply') }}">
-          @csrf
-          <input name="code" placeholder="Enter coupon (e.g. BASEFORGE)" class="h-10 flex-1 rounded-xl border px-3 ring-1 ring-black/10 dark:bg-gray-900 dark:text-white dark:ring-white/10">
-          <button class="h-10 rounded-xl bg-[var(--accent)] px-4 text-white ring-1 ring-white/10 hover:opacity-95">Apply</button>
-        </form>
-      @endif
+<div class="rounded-xl border bg-white/60 p-4 ring-1 ring-black/5 dark:border-gray-800 dark:bg-white/5 dark:ring-white/10">
+  <h2 class="mb-3 text-lg font-semibold">Coupon</h2>
+
+  @if($coupon)
+    @php
+      $label = $coupon['type'] === 'percent'
+        ? (($coupon['percent'] ?? 0).'%')
+        : (number_format((int)($coupon['amount_cents'] ?? 0)/100, 2, '.', ',').' '.($currency ?? 'USD'));
+    @endphp
+
+    <div class="flex items-center justify-between rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800 ring-1 ring-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-100 dark:ring-emerald-800">
+      <div>Applied: <strong>{{ $coupon['code'] }}</strong> ({{ $label }} off)</div>
+      <form method="POST" action="{{ route('checkout.coupon.remove') }}">@csrf
+        <button class="rounded px-2 py-1 text-xs ring-1 ring-emerald-300 hover:bg-emerald-100/50 dark:ring-emerald-700 dark:hover:bg-emerald-800/40">
+          Remove
+        </button>
+      </form>
     </div>
+  @else
+    <form class="flex items-center gap-2" method="POST" action="{{ route('checkout.coupon.apply') }}">
+      @csrf
+      <input name="code" placeholder="Enter coupon (e.g. BASEFORGE)"
+             class="h-10 flex-1 rounded-xl border px-3 ring-1 ring-black/10 dark:bg-gray-900 dark:text-white dark:ring-white/10">
+      <button class="h-10 rounded-xl bg-[var(--accent)] px-4 text-white ring-1 ring-white/10 hover:opacity-95">Apply</button>
+    </form>
+  @endif
+</div>
 
     {{-- Payment --}}
     <div class="rounded-2xl border bg-white/70 p-4 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/70">
