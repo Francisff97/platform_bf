@@ -19,22 +19,22 @@ class CheckoutCouponController extends Controller
         // 🔧 Normalizza SEMPRE gli item (qty e unit_amount_cents)
         $subtotal = 0;
         foreach ($cart as $k => $it) {
-            // qty fallback a 1 e clamp 1..99
-            $qty = max(1, min(99, (int)($it['qty'] ?? 1)));
+    // se non è array, skip
+    if (!is_array($it)) continue;
 
-            // unit_amount_cents se manca, prova da unit_amount (euro) → cents
-            if (!isset($it['unit_amount_cents'])) {
-                $unitAmountCents = (int) round(((float)($it['unit_amount'] ?? 0)) * 100);
-                $cart[$k]['unit_amount_cents'] = $unitAmountCents;
-            } else {
-                $unitAmountCents = (int) $it['unit_amount_cents'];
-            }
+    $qty = max(1, min(99, (int)($it['qty'] ?? 1)));
 
-            // riscrivo qty normalizzata
-            $cart[$k]['qty'] = $qty;
+    // unit_amount_cents se manca, prova da unit_amount (euro) → cents
+    if (!isset($it['unit_amount_cents'])) {
+        $unitAmountCents = (int) round(((float)($it['unit_amount'] ?? 0)) * 100);
+        $cart[$k]['unit_amount_cents'] = $unitAmountCents;
+    } else {
+        $unitAmountCents = (int) $it['unit_amount_cents'];
+    }
 
-            $subtotal += $unitAmountCents * $qty;
-        }
+    $cart[$k]['qty'] = $qty;
+    $subtotal += $unitAmountCents * $qty;
+}
         // persisto carrello normalizzato
         session(['cart' => $cart]);
 
