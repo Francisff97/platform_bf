@@ -49,10 +49,10 @@ return [
     'discord' => [
     'bot_token'   => env('DISCORD_BOT_TOKEN'),
     'guild_id'    => env('DISCORD_GUILD_ID'),
-],
-'recaptcha' => [
-        'site_key'   => env('RECAPTCHA_SITE_KEY'),
-        'secret_key' => env('RECAPTCHA_SECRET_KEY'),
+    ],
+    'recaptcha' => [
+        'site_key'   => env('RECAPTCHA_SITE_KEY', ''),   // usata nel Blade
+        'secret_key' => env('RECAPTCHA_SECRET_KEY', ''), // usata nel controller
     ],
 
 ];
