@@ -151,4 +151,9 @@
     });
   </script>
 @endif
+<style>
+.gracaptcha-badge{
+  visibility:hidden;
+}
+</style>
 </x-app-layout>
