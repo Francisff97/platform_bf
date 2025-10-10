@@ -341,7 +341,7 @@
         @endif
       </nav>
 
-      <!-- Footer auth -->
+            <!-- Footer auth -->
       <div class="border-t border-black/10 px-4 py-3 backdrop-blur shrink-0 dark:border-white/10">
         @auth
           <div class="flex items-center gap-3">
@@ -351,11 +351,24 @@
               <div class="truncate text-sm font-medium">{{ auth()->user()->name }}</div>
               <div class="truncate text-xs opacity-70">{{ auth()->user()->email }}</div>
             </div>
-            <form method="POST" action="{{ route('logout') }}" class="ml-auto">@csrf
-              <button class="rounded-lg px-3 py-1.5 text-sm transition link-tile-light dark:bg-white/5 dark:ring-1 dark:ring-white/10 dark:hover:bg-white/10">
-                Logout
-              </button>
-            </form>
+
+            {{-- Azioni: Edit (accent outline) + Logout --}}
+            <div class="ml-auto inline-flex items-center gap-2">
+              <a href="{{ route('profile.edit') }}"
+                 @click="open=false"
+                 class="rounded-lg px-3 py-1.5 text-sm transition
+                        ring-1 hover:bg-black/5 dark:hover:bg-white/10"
+                 style="color: var(--accent); --tw-ring-color: var(--accent); border-color: var(--accent);">
+                Edit
+              </a>
+
+              <form method="POST" action="{{ route('logout') }}">@csrf
+                <button class="rounded-lg px-3 py-1.5 text-sm transition
+                               link-tile-light dark:bg-white/5 dark:ring-1 dark:ring-white/10 dark:hover:bg-white/10">
+                  Logout
+                </button>
+              </form>
+            </div>
           </div>
         @else
           <a href="{{ route('login') }}" @click="open=false"
