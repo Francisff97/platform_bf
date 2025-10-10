@@ -1,31 +1,43 @@
 <?php
-
 namespace App\Support;
 
-use App\Models\MediaAsset;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 class MediaIngestor
 {
-    public static function ingest(string $disk, string $path, ?string $alt = null, ?bool $isLazy = null): MediaAsset
+    /**
+     * @param  UploadedFile  $file
+     * @param  string        $destRelativePath   es. 'packs/foo/bar.png'
+     * @param  string|array|null $alt
+     * @return string  // percorso relativo salvato (es. 'packs/foo/bar.png')
+     */
+    public static function ingest(UploadedFile $file, string $destRelativePath, $alt = null): string
     {
-        $path = ltrim($path, '/');
+        // 🔒 normalizza $alt ad una stringa (o null)
+        if (is_array($alt)) {
+            $alt = trim(implode(' ', array_filter(array_map('trim', $alt))));
+            if ($alt === '') $alt = null;
+        } elseif (!is_null($alt)) {
+            $alt = trim((string) $alt);
+            if ($alt === '') $alt = null;
+        }
 
-        $ma = MediaAsset::firstOrCreate(['path'=>$path], [
-            'disk'=>$disk,
-            'is_lazy'=>true,
-        ]);
+        // salva file sul disk 'public'
+        $stored = Storage::disk('public')->putFileAs(
+            dirname($destRelativePath),
+            $file,
+            basename($destRelativePath)
+        );
 
-        try {
-            if (is_null($ma->checksum) && Storage::disk($disk)->exists($path)) {
-                $ma->checksum = hash('sha256', Storage::disk($disk)->get($path));
-            }
-        } catch (\Throwable $e) { /* ignore */ }
+        // se hai una tabella media_assets, salva anche l'alt qui (facoltativo)
+        if (class_exists(\App\Models\MediaAsset::class)) {
+            \App\Models\MediaAsset::updateOrCreate(
+                ['path' => $stored],
+                ['alt' => $alt]
+            );
+        }
 
-        if (!is_null($alt))    $ma->alt_text = $alt;
-        if (!is_null($isLazy)) $ma->is_lazy  = (bool) $isLazy;
-
-        $ma->save();
-        return $ma;
+        return $stored;
     }
 }
