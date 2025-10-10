@@ -6,6 +6,12 @@ use App\Http\Controllers\Admin\SeoMediaController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\CheckoutCouponController;
 
+
+
+//Privacy //
+use App\Http\Controllers\PrivacyPublicController;
+use App\Http\Controllers\Admin\PrivacyController;
+
 // DISCORD PUBLIC //
 use App\Http\Controllers\DiscordPublicController;
 use App\Http\Middleware\FeatureGate;
@@ -161,6 +167,9 @@ Route::post('/media/sync', [\App\Http\Controllers\Admin\SeoMediaController::clas
             Route::get('discord/sync', [\App\Http\Controllers\Admin\DiscordAddonController::class,'sync'])
                 ->name('discord.sync');
         });
+        
+        Route::get('privacy',  [PrivacyController::class, 'edit'])->name('privacy.edit');
+Route::post('privacy', [PrivacyController::class, 'update'])->name('privacy.update');
 
         // Admin > Analytics (GTM)
         Route::get('analytics', [\App\Http\Controllers\Admin\AnalyticsController::class, 'edit'])
@@ -375,3 +384,8 @@ Route::post('/flags/debug', function (\Illuminate\Http\Request $r) {
         'match' => hash_equals(hash_hmac('sha256', $r->getContent(), $secret), $r->header('X-Signature')),
     ];
 });
+
+
+// Pagine pubbliche privacy/cookies
+Route::get('/privacy-policy', [PrivacyPublicController::class, 'privacy'])->name('privacy');
+Route::get('/cookie-policy',  [PrivacyPublicController::class, 'cookies'])->name('cookies');
