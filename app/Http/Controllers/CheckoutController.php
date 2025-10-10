@@ -17,20 +17,22 @@ class CheckoutController extends Controller
 {
     // Pagina checkout
     public function checkout()
-    {
-        $items = Cart::items();
-        if (empty($items)) {
-            return redirect()->route('cart.index')->with('success', 'Il carrello è vuoto.');
-        }
+{
+    $cart = $this->normalizeCart(session('cart', []));
+    session(['cart' => $cart]); // tieni normalizzato in sessione
 
-        [$totalCentsSite, $siteCurrency] = $this->totalInSiteCurrency($items);
+    $currency = optional(\App\Models\SiteSetting::first())->currency ?? 'EUR';
+    [$subtotal, $discount, $payable] = $this->computeTotals($cart, session('coupon'));
 
-        return view('checkout.index', [
-            'items'      => $items,
-            'totalCents' => $totalCentsSite,
-            'currency'   => $siteCurrency,
-        ]);
-    }
+    return view('checkout.index', [
+        'items'         => $cart,
+        'currency'      => $currency,
+        'totalCents'    => $subtotal,
+        'discountCents' => $discount,
+        'payableCents'  => $payable,
+        'coupon'        => session('coupon')
+    ]);
+}
 
     /* ======================
        PayPal helpers
@@ -475,4 +477,43 @@ private function cartTotals(): array {
 
         return view('checkout.cancel', compact('order'));
     }
+    // app/Http/Controllers/CheckoutController.php
+
+private function normalizeCart(array $cart): array
+{
+    foreach ($cart as &$it) {
+        $it['qty'] = max(1, (int)($it['qty'] ?? 1));
+        if (!isset($it['unit_amount_cents'])) {
+            $it['unit_amount_cents'] = (int) round(((float)($it['unit_amount'] ?? 0)) * 100);
+        }
+        $it['currency'] = $it['currency'] ?? (optional(\App\Models\SiteSetting::first())->currency ?? 'EUR');
+    }
+    return $cart;
+}
+
+private function computeTotals(array $cart, ?array $coupon): array
+{
+    $subtotal = 0;
+    foreach ($cart as $it) {
+        $subtotal += (int)$it['unit_amount_cents'] * (int)$it['qty'];
+    }
+
+    // default: nessuno sconto
+    $discount = 0;
+
+    if ($coupon && !empty($coupon['type'])) {
+        if ($coupon['type'] === 'percent') {
+            $percent = max(0, (int)($coupon['percent'] ?? 0));
+            $discount = (int) floor($subtotal * ($percent / 100));
+        } elseif ($coupon['type'] === 'fixed') {
+            $discount = max(0, (int)($coupon['amount_cents'] ?? 0));
+        }
+        // clamp: sconto non oltre il subtotale
+        $discount = min($discount, $subtotal);
+    }
+
+    $payable = max(0, $subtotal - $discount);
+
+    return [$subtotal, $discount, $payable];
+}
 }
