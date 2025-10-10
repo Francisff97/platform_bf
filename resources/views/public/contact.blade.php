@@ -9,40 +9,49 @@
     </p>
   </section>
 
-  {{-- ===== Flash success ===== --}}
+  {{-- Flash --}}
   @if (session('success'))
-    <div class="mx-auto mt-6 max-w-3xl rounded-xl border border-green-300 bg-green-50/70 px-4 py-3 text-sm text-green-800">
+    <div class="mx-auto mt-6 max-w-3xl rounded-xl border border-green-300 bg-green-50/70 px-4 py-3 text-sm text-green-800 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-100">
       {{ session('success') }}
     </div>
   @endif
-
   @if (session('error'))
-  <div class="mx-auto mt-4 max-w-3xl rounded-xl border border-red-300 bg-red-50/70 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-200">
-    {{ session('error') }}
-  </div>
-@endif
+    <div class="mx-auto mt-4 max-w-3xl rounded-xl border border-red-300 bg-red-50/70 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-200">
+      {{ session('error') }}
+    </div>
+  @endif
 
-  {{-- ===== Form card (no wallpaper) ===== --}}
-  <section x-data="{loading:false}" class="mx-auto my-10 max-w-5xl px-4">
-    <form @submit="loading=true" x-data="{loading:false}" method="POST" action="{{ route('contacts.submit') }}"
-          class="rounded-2xl border border-[color:var(--accent)]/25 bg-white/70 shadow-sm backdrop-blur-md
-                 dark:border-[color:var(--accent)]/25 dark:bg-gray-900/60">
+  {{-- ===== Form card ===== --}}
+  <section class="mx-auto my-10 max-w-5xl px-4">
+    <form
+      method="POST"
+      action="{{ route('contacts.submit') }}"
+      x-data="{loading:false}"
+      @submit="loading=true"
+      class="rounded-2xl border border-[color:var(--accent)]/25 bg-white/70 shadow-sm backdrop-blur-md
+             dark:border-[color:var(--accent)]/25 dark:bg-gray-900/60">
       @csrf
 
       <div class="grid gap-6 p-6 sm:p-8">
         <div class="grid gap-6 sm:grid-cols-2">
+
           {{-- Name --}}
           <div class="relative">
-            <input name="name" value="{{ old('name') }}" placeholder=" "
-                   autocomplete="name"
-                   class="peer h-12 w-full rounded-xl border border-gray-300/60 bg-transparent px-4 text-[15px]
-                          outline-none transition focus:border-[color:var(--accent)] focus:ring-2 focus:ring-[color:var(--accent)]/20
-                          dark:border-gray-700 dark:text-white @error('name') border-red-500 focus:ring-red-500 @enderror"/>
-            <label class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 bg-transparent px-1 text-sm text-gray-500
-                           transition-all peer-focus:-top-2 peer-focus:text-[12px] peer-focus:text-[color:var(--accent)]
-                           peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2
-                           peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:text-[12px]
-                           dark:text-gray-400">
+            <input
+              name="name"
+              value="{{ old('name') }}"
+              placeholder=" "
+              autocomplete="name"
+              class="peer h-12 w-full rounded-xl border border-gray-300/60 bg-transparent px-4 text-[15px]
+                     outline-none transition focus:border-[color:var(--accent)] focus:ring-2 focus:ring-[color:var(--accent)]/20
+                     dark:border-gray-700 dark:text-white @error('name') border-red-500 focus:ring-red-500 @enderror" />
+            <label
+              class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 bg-transparent px-1 text-sm text-gray-500
+                     transition-all
+                     peer-focus:-top-2 peer-focus:text-[12px] peer-focus:text-[color:var(--accent)]
+                     peer-[&:not(:placeholder-shown)]:-top-2 peer-[&:not(:placeholder-shown)]:text-[12px]
+                     peer-[&:-webkit-autofill]:-top-2 peer-[&:-webkit-autofill]:text-[12px]
+                     dark:text-gray-400">
               Discord name or full name
             </label>
             @error('name') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
@@ -50,16 +59,22 @@
 
           {{-- Email --}}
           <div class="relative">
-            <input name="email" type="email" value="{{ old('email') }}" placeholder=" "
-                   autocomplete="email"
-                   class="peer h-12 w-full rounded-xl border border-gray-300/60 bg-transparent px-4 text-[15px]
-                          outline-none transition focus:border-[color:var(--accent)] focus:ring-2 focus:ring-[color:var(--accent)]/20
-                          dark:border-gray-700 dark:text-white @error('email') border-red-500 focus:ring-red-500 @enderror"/>
-            <label class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 bg-transparent px-1 text-sm text-gray-500
-                           transition-all peer-focus:-top-2 peer-focus:text-[12px] peer-focus:text-[color:var(--accent)]
-                           peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2
-                           peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:text-[12px]
-                           dark:text-gray-400">
+            <input
+              name="email"
+              type="email"
+              value="{{ old('email') }}"
+              placeholder=" "
+              autocomplete="email"
+              class="peer h-12 w-full rounded-xl border border-gray-300/60 bg-transparent px-4 text-[15px]
+                     outline-none transition focus:border-[color:var(--accent)] focus:ring-2 focus:ring-[color:var(--accent)]/20
+                     dark:border-gray-700 dark:text-white @error('email') border-red-500 focus:ring-red-500 @enderror" />
+            <label
+              class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 bg-transparent px-1 text-sm text-gray-500
+                     transition-all
+                     peer-focus:-top-2 peer-focus:text-[12px] peer-focus:text-[color:var(--accent)]
+                     peer-[&:not(:placeholder-shown)]:-top-2 peer-[&:not(:placeholder-shown)]:text-[12px]
+                     peer-[&:-webkit-autofill]:-top-2 peer-[&:-webkit-autofill]:text-[12px]
+                     dark:text-gray-400">
               Email
             </label>
             @error('email') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
@@ -68,35 +83,46 @@
 
         {{-- Subject --}}
         <div class="relative">
-          <input name="subject" value="{{ old('subject') }}" placeholder=" "
-                 class="peer h-12 w-full rounded-xl border border-gray-300/60 bg-transparent px-4 text-[15px]
-                        outline-none transition focus:border-[color:var(--accent)] focus:ring-2 focus:ring-[color:var(--accent)]/20
-                        dark:border-gray-700 dark:text-white"/>
-          <label class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 bg-transparent px-1 text-sm text-gray-500
-                         transition-all peer-focus:-top-2 peer-focus:text-[12px] peer-focus:text-[color:var(--accent)]
-                         peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2
-                         peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:text-[12px]
-                         dark:text-gray-400">
+          <input
+            name="subject"
+            value="{{ old('subject') }}"
+            placeholder=" "
+            class="peer h-12 w-full rounded-xl border border-gray-300/60 bg-transparent px-4 text-[15px]
+                   outline-none transition focus:border-[color:var(--accent)] focus:ring-2 focus:ring-[color:var(--accent)]/20
+                   dark:border-gray-700 dark:text-white" />
+          <label
+            class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 bg-transparent px-1 text-sm text-gray-500
+                   transition-all
+                   peer-focus:-top-2 peer-focus:text-[12px] peer-focus:text-[color:var(--accent)]
+                   peer-[&:not(:placeholder-shown)]:-top-2 peer-[&:not(:placeholder-shown)]:text-[12px]
+                   peer-[&:-webkit-autofill]:-top-2 peer-[&:-webkit-autofill]:text-[12px]
+                   dark:text-gray-400">
             Subject (optional)
           </label>
         </div>
 
         {{-- Message --}}
         <div class="relative">
-          <textarea name="message" rows="6" placeholder=" "
-                    class="peer w-full rounded-xl border border-gray-300/60 bg-transparent p-4 text-[15px]
-                           outline-none transition focus:border-[color:var(--accent)] focus:ring-2 focus:ring-[color:var(--accent)]/20
-                           dark:border-gray-700 dark:text-white @error('message') border-red-500 focus:ring-red-500 @enderror">{{ old('message') }}</textarea>
-          <label class="pointer-events-none absolute left-4 top-4 bg-transparent px-1 text-sm text-gray-500
-                         transition-all peer-focus:-top-2 peer-focus:text-[12px] peer-focus:text-[color:var(--accent)]
-                         peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:text-[12px]
-                         dark:text-gray-400">
+          <textarea
+            name="message"
+            rows="6"
+            placeholder=" "
+            class="peer w-full rounded-xl border border-gray-300/60 bg-transparent p-4 text-[15px]
+                   outline-none transition focus:border-[color:var(--accent)] focus:ring-2 focus:ring-[color:var(--accent)]/20
+                   dark:border-gray-700 dark:text-white @error('message') border-red-500 focus:ring-red-500 @enderror">{{ old('message') }}</textarea>
+          <label
+            class="pointer-events-none absolute left-4 top-4 bg-transparent px-1 text-sm text-gray-500
+                   transition-all
+                   peer-focus:-top-2 peer-focus:text-[12px] peer-focus:text-[color:var(--accent)]
+                   peer-[&:not(:placeholder-shown)]:-top-2 peer-[&:not(:placeholder-shown)]:text-[12px]
+                   peer-[&:-webkit-autofill]:-top-2 peer-[&:-webkit-autofill]:text-[12px]
+                   dark:text-gray-400">
             Your message
           </label>
           @error('message') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
         </div>
 
-        {{-- Honeypot anti-spam --}}
+        {{-- Honeypot --}}
         <div class="hidden">
           <label>Company</label>
           <input type="text" name="company" tabindex="-1" autocomplete="off" />
@@ -110,20 +136,19 @@
                           checked:bg-[color:var(--accent)] checked:border-[color:var(--accent)]
                           dark:border-gray-600 dark:bg-gray-900"/>
             <span>
-              I accept the <a href="https://www.iubenda.com/privacy-policy/44676557" class="underline" target="_blank">Privacy Policy</a>
+              I accept the <a href="{{ route('privacy.show') }}" class="underline" target="_blank">Privacy Policy</a>
             </span>
           </label>
 
-          {{-- hidden token (riempito da reCAPTCHA v3) --}}
           <input type="hidden" name="g-recaptcha-response" id="grecaptcha_token">
         </div>
 
         {{-- Actions --}}
-        <div class="mt-2 grid grid-cols-1 md:flex items-center justify-between gap-3">
+        <div class="mt-2 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
           <div class="text-xs text-gray-500 dark:text-gray-400">We usually reply within 24–48h.</div>
           <button type="submit"
-                  @click="loading=true" :disabled="loading"
-                  class="inline-flex items-center gap-2 rounded-xl bg-[color:var(--accent)] px-5 py-3 text-white shadow
+                  :disabled="loading"
+                  class="inline-flex items-center justify-center gap-2 rounded-xl bg-[color:var(--accent)] px-5 py-3 text-white shadow
                          transition hover:opacity-90 disabled:opacity-60">
             <svg x-show="!loading" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             <svg x-show="loading" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -138,27 +163,35 @@
   </section>
 
   @php
-  $recaptchaSiteKey = config('services.recaptcha.site_key')
-    ?? optional(\App\Models\SiteSetting::first())->recaptcha_site_key
-    ?? null;
-@endphp
+    $recaptchaSiteKey = config('services.recaptcha.site_key')
+      ?? optional(\App\Models\SiteSetting::first())->recaptcha_site_key
+      ?? null;
+  @endphp
 
-<script src="https://www.google.com/recaptcha/api.js?render={{ config('services.recaptcha.site_key') }}"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const siteKey = "{{ config('services.recaptcha.site_key') }}";
-    if (!siteKey || !window.grecaptcha) return;
-    grecaptcha.ready(function() {
-      grecaptcha.execute(siteKey, {action: 'contact'}).then(function(token) {
-        const inp = document.getElementById('grecaptcha_token');
-        if (inp) inp.value = token;
+  @if($recaptchaSiteKey)
+    <script src="https://www.google.com/recaptcha/api.js?render={{ $recaptchaSiteKey }}"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const siteKey = @json($recaptchaSiteKey);
+        if (!window.grecaptcha) return;
+        grecaptcha.ready(function () {
+          grecaptcha.execute(siteKey, {action: 'contact'}).then(function (token) {
+            const inp = document.getElementById('grecaptcha_token');
+            if (inp) inp.value = token;
+          });
+        });
       });
-    });
-  });
-</script>
+    </script>
+  @endif
 </x-app-layout>
+
+{{-- Fix autofill (giallo iOS/Chrome) + badge (non nasconderla in prod se usi reCAPTCHA v3) --}}
 <style>
-.gracaptcha-badge{
-  visibility:hidden;
-}
+  input:-webkit-autofill,
+  textarea:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
+    -webkit-text-fill-color: inherit !important;
+    transition: background-color 9999s ease-in-out 0s !important;
+  }
+  /* .grecaptcha-badge { visibility: hidden; }  // sconsigliato da Google */
 </style>
