@@ -354,6 +354,10 @@ Route::get('/about', [AboutController::class, 'show'])->name('about');
 Route::get('/about-us', [AboutController::class, 'show']);
 Route::post('/checkout/coupon/apply',  [CheckoutCouponController::class,'apply'])->name('checkout.coupon.apply');
 Route::post('/checkout/coupon/remove', [CheckoutCouponController::class,'remove'])->name('checkout.coupon.remove');
+Route::post('/cart/{index}/qty', [\App\Http\Controllers\CartController::class,'updateQty'])
+  ->name('cart.updateQty');
+
+
 Route::post('/flags/debug', function (\Illuminate\Http\Request $r) {
     $secret = env('FLAGS_SIGNING_SECRET', '');
     return [
