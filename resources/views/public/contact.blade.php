@@ -104,7 +104,7 @@
                           checked:bg-[color:var(--accent)] checked:border-[color:var(--accent)]
                           dark:border-gray-600 dark:bg-gray-900"/>
             <span>
-              I accept the <a href="#" class="underline">Privacy Policy</a>
+              I accept the <a href="https://www.iubenda.com/privacy-policy/44676557" class="underline" target="_blank">Privacy Policy</a>
             </span>
           </label>
 
@@ -137,7 +137,7 @@
   --}}
   {{-- <script src="https://www.google.com/recaptcha/api.js?render=YOUR_RECAPTCHA_SITE_KEY"></script>
   <script>
-    const SITE_KEY = 'YOUR_RECAPTCHA_SITE_KEY';
+    const SITE_KEY = '6LctPeUrAAAAAEzWnDS_wxig0QkdSjhzHDM0NVTG';
     document.addEventListener('DOMContentLoaded', () => {
       if (!window.grecaptcha || !SITE_KEY) return;
       grecaptcha.ready(function() {
