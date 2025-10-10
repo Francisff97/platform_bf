@@ -357,6 +357,13 @@ Route::post('/checkout/coupon/remove', [CheckoutCouponController::class,'remove'
 Route::post('/cart/{index}/qty', [\App\Http\Controllers\CartController::class,'updateQty'])
   ->name('cart.updateQty');
 
+// routes/web.php (solo temporanea in dev)
+Route::get('/_debug/cart', function () {
+    return response()->json([
+        'session_cart' => session('cart'),
+        'coupon'       => session('coupon'),
+    ]);
+});
 
 Route::post('/flags/debug', function (\Illuminate\Http\Request $r) {
     $secret = env('FLAGS_SIGNING_SECRET', '');
