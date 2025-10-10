@@ -11,6 +11,9 @@
     #homeHero .swiper-pagination-bullet-active{ background:#fff; }
     .card-ghost{ box-shadow: 0 8px 24px rgba(0,0,0,.08); }
     .ring-soft{ box-shadow: 0 1px 0 rgba(0,0,0,.04), inset 0 0 0 1px rgba(0,0,0,.06); }
+      @media screen and (max-width: 767px){
+        #homeHero .slide-figure{ height:400px; min-height:480px; }
+      }
   </style>
     <style>
   /* —— CARD FX —— */
