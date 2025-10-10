@@ -72,7 +72,23 @@
     border-color: color-mix(in oklab, var(--accent), black 40%);
   }
 </style>
+@php
+  // Prendi il path della prima slide (adatta alla tua struttura)
+  /** @var \App\Models\Slide[]|\Illuminate\Support\Collection $slides */
+  $firstSlidePath = isset($slides[0]) ? ($slides[0]->image_path ?? null) : null;
 
+  // URL pubblico (continua a usare Storage::url: Nginx rewriter servirà WebP se esiste)
+  $firstSlideUrl = $firstSlidePath ? \Illuminate\Support\Facades\Storage::url($firstSlidePath) : null;
+@endphp
+
+@if($firstSlideUrl)
+  {{-- Preload immagine LCP (il browser può usare anche imagesrcset/sizes se li passi) --}}
+  <link rel="preload" as="image"
+        href="{{ $firstSlideUrl }}"
+        imagesrcset="{{ $firstSlideUrl }} 1920w, {{ $firstSlideUrl }} 1280w, {{ $firstSlideUrl }} 768w"
+        imagesizes="(min-width:1024px) 1200px, 100vw"
+        fetchpriority="high">
+@endif
   <section class="full-bleed">
     <div id="homeHero" class="swiper w-full">
       <div class="swiper-wrapper">
