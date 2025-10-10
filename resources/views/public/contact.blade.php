@@ -16,6 +16,12 @@
     </div>
   @endif
 
+  @if (session('error'))
+  <div class="mx-auto mt-4 max-w-3xl rounded-xl border border-red-300 bg-red-50/70 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-200">
+    {{ session('error') }}
+  </div>
+@endif
+
   {{-- ===== Form card (no wallpaper) ===== --}}
   <section x-data="{loading:false}" class="mx-auto my-10 max-w-5xl px-4">
     <form method="POST" action="{{ route('contacts.submit') }}"
