@@ -2,6 +2,10 @@
 // SEO //
 use App\Http\Controllers\Admin\SeoPageController;
 use App\Http\Controllers\Admin\SeoMediaController;
+
+use App\Http\Controllers\Admin\CouponController;
+use App\Http\Controllers\CheckoutCouponController;
+
 // DISCORD PUBLIC //
 use App\Http\Controllers\DiscordPublicController;
 use App\Http\Middleware\FeatureGate;
@@ -118,7 +122,16 @@ Route::middleware(['auth', AdminOnly::class])
     ->group(function () {
         // routes/web.php (admin group, auth middleware)
 
-        
+        Route::prefix('coupons')->name('admin.coupons.')
+    ->group(function () {
+        Route::get('/',         [CouponController::class,'index'])->name('index');
+        Route::get('/create',   [CouponController::class,'create'])->name('create');
+        Route::post('/',        [CouponController::class,'store'])->name('store');
+        Route::get('/{coupon}/edit', [CouponController::class,'edit'])->name('edit');
+        Route::put('/{coupon}',       [CouponController::class,'update'])->name('update');
+        Route::delete('/{coupon}',    [CouponController::class,'destroy'])->name('destroy');
+        Route::post('/{coupon}/toggle', [CouponController::class,'toggle'])->name('toggle');
+    })
         Route::prefix('seo')->name('seo.')->group(function () {
         Route::post('/pages/sync', [\App\Http\Controllers\Admin\SeoPageController::class,'sync'])
     ->name('pages.sync');
@@ -339,7 +352,8 @@ Route::post('/api/flags/purge', function (Request $r) {
 
 Route::get('/about', [AboutController::class, 'show'])->name('about');
 Route::get('/about-us', [AboutController::class, 'show']);
-
+Route::post('/checkout/coupon/apply',  [CheckoutCouponController::class,'apply'])->name('checkout.coupon.apply');
+Route::post('/checkout/coupon/remove', [CheckoutCouponController::class,'remove'])->name('checkout.coupon.remove');
 Route::post('/flags/debug', function (\Illuminate\Http\Request $r) {
     $secret = env('FLAGS_SIGNING_SECRET', '');
     return [
