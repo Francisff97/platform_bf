@@ -15,7 +15,7 @@
 
     {{-- Name --}}
     <div>
-      <x-input-label class="dark:bg-dark-900 dark:text-white" for="name" :value="__('Name')" />
+      <x-input-label class="dark:text-white" for="name" :value="__('Name')" />
       <x-text-input id="name" name="name" type="text"
         class="mt-1 block w-full dark:bg-gray-900 dark:text-white"
         :value="old('name', $user->name)" required autofocus autocomplete="name" />
@@ -24,7 +24,7 @@
 
     {{-- Email --}}
     <div>
-      <x-input-label for="email" :value="__('Email')" />
+      <x-input-label class="dark:text-white" for="email" :value="__('Email')" />
       <x-text-input id="email" name="email" type="email"
         class="mt-1 block w-full dark:bg-gray-900 dark:text-white"
         :value="old('email', $user->email)" required autocomplete="username" />
@@ -48,7 +48,7 @@
 
     {{-- Avatar --}}
     <div>
-      <x-input-label for="avatar" :value="__('Profile Photo')" />
+      <x-input-label class="dark:text-white" for="avatar" :value="__('Profile Photo')" />
       <input id="avatar" name="avatar" type="file" accept="image/*"
              class="mt-1 block w-full rounded-xl border px-3 py-2 ring-1 ring-black/10 dark:border-gray-800 dark:bg-gray-900 dark:text-white dark:ring-white/10">
       @if(auth()->user()->avatar_url)
