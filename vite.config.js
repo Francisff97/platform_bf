@@ -8,4 +8,24 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+
+    build: {
+        // ✅ Output più compatto e ottimizzato
+        cssMinify: true,
+        minify: 'esbuild', // veloce e compatto
+        sourcemap: false,
+
+        rollupOptions: {
+            output: {
+                // ✅ Evita di creare troppi chunk JS separati
+                manualChunks: undefined,
+            },
+        },
+
+        // ✅ File hashati per cache lunga (immutabili)
+        assetsDir: 'assets',
+        manifest: true,
+        outDir: 'public/build',
+        emptyOutDir: true,
+    },
 });
