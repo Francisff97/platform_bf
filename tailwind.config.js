@@ -12,11 +12,13 @@ export default {
 
     theme: {
         extend: {
-            fontFamily: {
-                orbitron: ['Orbitron', 'sans-serif'],
-        sans: ['Orbitron', 'sans-serif'], // opzionale: sovrascrive TUTTO il sans
-            },
-        },
+      fontFamily: {
+        // usa Orbitron come "sans"
+        sans: ['Orbitron', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'Liberation Sans', 'sans-serif'],
+        display: ['Orbitron', 'sans-serif'],
+      },
+    },
+
     },
 
     plugins: [forms],
