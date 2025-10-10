@@ -80,6 +80,9 @@
       }
       .dark{ --bg-dark:  {{ $s->color_dark_bg  ?? '#0b0f1a' }}; }
     </style>
+    @if(($privacySettings?->banner_enabled) && $privacySettings?->banner_head_code)
+  {!! $privacySettings->banner_head_code !!}
+@endif
   </head>
 
   <body class="min-h-screen bg-[var(--bg-light)] dark:bg-[var(--bg-dark)] text-gray-900 dark:text-gray-100 font-orbitron">
@@ -116,5 +119,8 @@
 
       <x-site-footer />
     </div>
+    @if(($privacySettings?->banner_enabled) && $privacySettings?->banner_body_code)
+  {!! $privacySettings->banner_body_code !!}
+@endif
   </body>
 </html>
