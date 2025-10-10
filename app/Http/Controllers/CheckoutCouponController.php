@@ -1,4 +1,3 @@
-// app/Http/Controllers/CheckoutCouponController.php
 <?php
 namespace App\Http\Controllers;
 
