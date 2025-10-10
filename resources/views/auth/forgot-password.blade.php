@@ -23,7 +23,7 @@
                     dark:border-red-800 dark:bg-red-900/30 dark:text-red-200">
           {{ $errors->first() }}
         </div>
-      @endif>
+      @endif
 
       <form method="POST" action="{{ route('password.email') }}">
         @csrf
