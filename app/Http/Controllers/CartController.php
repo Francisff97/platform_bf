@@ -91,4 +91,14 @@ public function updateQty(Request $r, $index)
 
     return back()->with('success','Quantity updated.');
 }
+protected function normalizeCart(array $cart): array
+{
+    foreach ($cart as &$it) {
+        $it['qty'] = max(1, (int)($it['qty'] ?? 1));
+        if (!isset($it['unit_amount_cents'])) {
+            $it['unit_amount_cents'] = (int) round(((float)($it['unit_amount'] ?? 0)) * 100);
+        }
+    }
+    return $cart;
+}
 }
