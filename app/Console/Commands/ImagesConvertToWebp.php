@@ -8,10 +8,10 @@ use Illuminate\Support\Facades\Storage;
 class ImagesConvertToWebp extends Command
 {
     protected $signature = 'images:to-webp
-        {--disk=public : Filesystem disk}
-        {--quality=75 : WebP quality (0-100)}
-        {--path=* : Limita a una o più directory (relative al disk)}
-        {--force : Sovrascrive .webp esistenti}';
+    {--disk=public : Storage disk}
+    {--quality=75  : WebP quality (0-100)}
+    {--force       : Rebuild even if .webp exists}
+    {--only-missing : Alias: process only if .webp is missing (default behavior)}';
 
     protected $description = 'Convert JPG/PNG (su uno o più path) in WebP con Intervention Image (v2 o v3)';
 
