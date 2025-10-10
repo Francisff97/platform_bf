@@ -98,7 +98,7 @@ class Cart
             'type'               => 'coach',
             'id'                 => $coach->id,
             'name'               => $coach->name . ' – Session',
-            'image'              => $coach->avatar_path ? Storage::url($coach->avatar_path) : null,
+            'image'              => $coach->image_path ? Storage::url($coach->image_path) : null,
             'unit_amount_cents'  => (int)($price->price_cents ?? 0),
             'currency'           => $price->currency ?? config('app.currency','USD'),
             'qty'                => max(1, min(99, $qty)),
