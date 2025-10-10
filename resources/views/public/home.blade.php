@@ -94,12 +94,35 @@
       <div class="swiper-wrapper">
         @foreach($slides as $s)
           <div class="swiper-slide">
-            <figure class="slide-figure relative w-full">
-              @if($s->image_path)
-                <x-img :src="Storage::url($s->image_path)" :alt="$s->title" class="absolute inset-0 h-full w-full object-cover" />
-              @else
-                <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
-              @endif
+            <figure style="aspect-ratio: 16 / 9;" class="slide-figure relative w-full">
+              @php
+  $imgUrl = $s->image_path ? Storage::url($s->image_path) : null;
+@endphp
+
+@if($imgUrl)
+  @if($loop->first)
+    {{-- PRIMA SLIDE (LCP): eager + fetchpriority="high" + dimensioni per azzerare CLS --}}
+    <img
+      src="{{ $imgUrl }}"
+      alt="{{ $s->title }}"
+      width="1600" height="900"     {{-- metti le dimensioni reali se le conosci --}}
+      loading="eager"
+      fetchpriority="high"
+      decoding="async"
+      class="absolute inset-0 h-full w-full object-cover" />
+  @else
+    {{-- ALTRE SLIDE: lazy --}}
+    <img
+      src="{{ $imgUrl }}"
+      alt="{{ $s->title }}"
+      width="1600" height="900"
+      loading="lazy"
+      decoding="async"
+      class="absolute inset-0 h-full w-full object-cover" />
+  @endif
+@else
+  <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
+@endif
 
               <div class="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/60"></div>
 
