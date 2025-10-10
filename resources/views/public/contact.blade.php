@@ -131,17 +131,24 @@
     </form>
   </section>
 
-  <script src="https://www.google.com/recaptcha/api.js?render=YOUR_RECAPTCHA_SITE_KEY"></script>
+  @php
+  $recaptchaSiteKey = config('services.recaptcha.site_key')
+    ?? optional(\App\Models\SiteSetting::first())->recaptcha_site_key
+    ?? null;
+@endphp
+
+@if($recaptchaSiteKey)
+  <script src="https://www.google.com/recaptcha/api.js?render={{ $recaptchaSiteKey }}"></script>
   <script>
-    const SITE_KEY = '6LctPeUrAAAAAEzWnDS_wxig0QkdSjhzHDM0NVTG';
     document.addEventListener('DOMContentLoaded', () => {
-      if (!window.grecaptcha || !SITE_KEY) return;
+      if (!window.grecaptcha) return;
       grecaptcha.ready(function() {
-        grecaptcha.execute(SITE_KEY, {action: 'contact'}).then(function(token) {
+        grecaptcha.execute('{{ $recaptchaSiteKey }}', {action: 'contact'}).then(function(token) {
           const inp = document.getElementById('grecaptcha_token');
           if (inp) inp.value = token;
         });
       });
     });
   </script>
+@endif
 </x-app-layout>
