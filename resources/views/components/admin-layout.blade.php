@@ -119,6 +119,7 @@
       $items = [
         ['label'=>'Dashboard',       'route'=>'admin.dashboard',        'match'=>['admin.dashboard']],
         ['label'=>'Packs',           'route'=>'admin.packs.index',      'match'=>['admin.packs.*']],
+        ['label'=>'Coupons',           'route'=>'admin.coupons.index',      'match'=>['admin.coupons.*']],
         ['label'=>'Categories Pack', 'route'=>'admin.categories.index', 'match'=>['admin.categories.*']],
         ['label'=>'About page',      'route'=>'admin.about.index',      'match'=>['admin.about.*']],
         ['label'=>'Services',        'route'=>'admin.services.index',   'match'=>['admin.services.*']],
