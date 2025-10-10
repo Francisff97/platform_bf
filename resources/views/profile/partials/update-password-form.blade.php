@@ -25,7 +25,7 @@
     </div>
 
     <div>
-      <x-input-label for="update_password_password_confirmation" :value="__('Confirm Password')" />
+      <x-input-label class="dark:text-white" for="update_password_password_confirmation" :value="__('Confirm Password')" />
       <x-text-input id="update_password_password_confirmation" name="password_confirmation" type="password"
         class="mt-1 block w-full dark:bg-gray-900 dark:text-white" autocomplete="new-password" />
       <x-input-error :messages="$errors->updatePassword->get('password_confirmation')" class="mt-2" />
