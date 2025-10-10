@@ -267,6 +267,11 @@ private function buildOrderView(\App\Models\Order $order): array
             Log::error('captureCart exception', ['msg'=>$e->getMessage()]);
             return redirect()->route('checkout.cancel');
         }
+        // dopo il capture PayPal andato a buon fine:
+if ($couponSession = session('coupon')) {
+    \App\Models\Coupon::where('id',$couponSession['id'])->increment('usage_count');
+    session()->forget('coupon');
+}
     }
 
     /* ======================
@@ -428,7 +433,33 @@ public function sendOrderCancelledMail(\App\Models\Order $order): void
             Log::warning("Mail {$key} failed: ".$e->getMessage());
         }
     }
+    // Esempio di funzione di totali (come già ti avevo passato)
+private function cartTotals(): array {
+    $items = session('cart', []);
+    $currency = $items[0]['currency'] ?? 'EUR';
+    $subtotal = 0;
+    foreach ($items as $it) {
+        $subtotal += (int)$it['unit_amount_cents'] * (int)$it['qty'];
+    }
 
+    $couponSession = session('coupon');
+    $discount = 0;
+    if ($couponSession) {
+        // ricarico da DB per validazione runtime
+        $coupon = \App\Models\Coupon::find($couponSession['id'] ?? null);
+        if ($coupon) $discount = $coupon->discountFor($subtotal);
+        else session()->forget('coupon');
+    }
+
+    return [
+        'items'         => $items,
+        'currency'      => $currency,
+        'subtotal'      => $subtotal,
+        'discount'      => $discount,
+        'total'         => max(0,$subtotal - $discount),
+        'coupon'        => $couponSession,
+    ];
+}
     public function cancel(Request $request)
     {
         $orderId = $request->query('order') ?? session('last_order_id');
