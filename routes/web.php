@@ -384,8 +384,24 @@ Route::post('/flags/debug', function (\Illuminate\Http\Request $r) {
         'match' => hash_equals(hash_hmac('sha256', $r->getContent(), $secret), $r->header('X-Signature')),
     ];
 });
+Route::get('/webp-test', function () {
+    abort_unless(app()->environment(['local', 'testing']), 403, 'Access denied.');
 
+    $images = collect(Storage::disk('public')->allFiles())
+        ->filter(fn($f) => preg_match('/\.(jpe?g|png)$/i', $f))
+        ->map(function ($path) {
+            $webp = preg_replace('/\.(jpe?g|png)$/i', '.webp', $path);
+            return [
+                'file' => $path,
+                'exists_webp' => Storage::disk('public')->exists($webp),
+                'url_original' => Storage::url($path),
+                'url_webp' => Storage::disk('public')->exists($webp) ? Storage::url($webp) : null,
+            ];
+        })
+        ->values();
 
+    return response()->view('debug.webp', ['images' => $images]);
+});
 // Pagine pubbliche privacy/cookies
 Route::get('/privacy-policy', [PrivacyPublicController::class, 'privacy'])->name('privacy');
 Route::get('/cookie-policy',  [PrivacyPublicController::class, 'cookies'])->name('cookies');
