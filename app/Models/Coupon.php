@@ -1,4 +1,3 @@
-// app/Models/Coupon.php
 <?php
 namespace App\Models;
 
