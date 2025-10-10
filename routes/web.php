@@ -122,7 +122,7 @@ Route::middleware(['auth', AdminOnly::class])
     ->group(function () {
         // routes/web.php (admin group, auth middleware)
 
-        Route::prefix('coupons')->name('admin.coupons.')
+        Route::prefix('coupons')->name('coupons.')
     ->group(function () {
         Route::get('/',         [CouponController::class,'index'])->name('index');
         Route::get('/create',   [CouponController::class,'create'])->name('create');
