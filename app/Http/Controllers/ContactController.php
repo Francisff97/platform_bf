@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class ContactController extends Controller
 {
     public function submit(Request $r)
     {
-        // Honeypot: se "company" è pieno, fingo successo (spam bot)
+        // Honeypot: se "company" è pieno → fingo successo (bot)
         if (filled($r->input('company'))) {
             return back()->with('success', 'Thanks! We will get back to you soon.');
         }
@@ -25,24 +26,22 @@ class ContactController extends Controller
             'g-recaptcha-response' => 'nullable|string',
         ]);
 
-        // reCAPTCHA v3 (opzionale): se troviamo una secret key, verifichiamo
+        // reCAPTCHA v3 (opzionale)
         $secret = $this->recaptchaSecret();
-        if ($secret && $r->filled('g-recaptcha-response')) {
-            if (!$this->verifyRecaptcha($secret, $r->string('g-recaptcha-response'))) {
-                return back()
-                    ->withInput()
-                    ->with('error', 'Recaptcha validation failed. Please try again.');
+        $token  = (string) $r->input('g-recaptcha-response', '');
+        if ($secret && $token !== '') {
+            if (!$this->verifyRecaptcha($secret, $token, $r->ip())) {
+                return back()->withInput()
+                    ->with('error', 'reCAPTCHA validation failed. Please try again.');
             }
         }
 
-        // Dove inviare l'email (metti quello che vuoi)
-        $to   = config('mail.from.address'); // o la tua admin mail fissa
-        $name = config('mail.from.name', config('app.name'));
+        // Destinatario (fallback sicuro)
+        $to   = config('mail.from.address') ?: 'support@'.parse_url(config('app.url', 'http://localhost'), PHP_URL_HOST);
+        $name = config('mail.from.name', config('app.name', 'Base Forge'));
 
-        // Soggetto
+        // Soggetto & corpo
         $subj = $data['subject'] ?: ('New contact from '.$data['name']);
-
-        // Corpo semplice (puoi sostituire con un Mailable)
         $body = "New contact request\n\n"
               . "Name: {$data['name']}\n"
               . "Email: {$data['email']}\n"
@@ -54,18 +53,19 @@ class ContactController extends Controller
                 $m->to($to, $name)->subject($subj);
             });
         } catch (\Throwable $e) {
-            return back()
-                ->withInput()
+            Log::error('Contact mail send failed', ['err' => $e->getMessage()]);
+            return back()->withInput()
                 ->with('error', 'Unable to send your message right now. Please try later.');
         }
 
         return back()->with('success', 'Thanks! Your message has been sent.');
     }
 
-    /** Prova a prendere la SITE KEY: prima da config/services, poi da SiteSetting (se esiste) */
+    /** SITE KEY: prima da config/services, poi da SiteSetting */
     private function recaptchaSite(): ?string
     {
-        $site = config('services.recaptcha.site_key');
+        // usa la stessa nomenclatura del secret per coerenza
+        $site = config('services.recaptcha.site_key') ?? config('services.recaptcha.site');
         if ($site) return $site;
 
         if (class_exists(\App\Models\SiteSetting::class)) {
@@ -74,10 +74,10 @@ class ContactController extends Controller
         return null;
     }
 
-    /** Prova a prendere la SECRET KEY: prima da config/services, poi da SiteSetting (se esiste) */
+    /** SECRET KEY: prima da config/services, poi da SiteSetting */
     private function recaptchaSecret(): ?string
     {
-        $secret = config('services.recaptcha.secret_key');
+        $secret = config('services.recaptcha.secret_key') ?? config('services.recaptcha.secret');
         if ($secret) return $secret;
 
         if (class_exists(\App\Models\SiteSetting::class)) {
@@ -86,13 +86,16 @@ class ContactController extends Controller
         return null;
     }
 
-    /** Verifica reCAPTCHA v3 (ritorna true se ok/sufficient score) */
-    private function verifyRecaptcha(string $secret, string $token): bool
+    /** Verifica reCAPTCHA v3 (true se ok con soglia >= 0.5) */
+    private function verifyRecaptcha(string $secret, string $token, ?string $ip = null): bool
     {
         try {
-            $resp = Http::asForm()->post(
+            $payload = ['secret' => $secret, 'response' => $token];
+            if ($ip) $payload['remoteip'] = $ip;
+
+            $resp = Http::asForm()->timeout(8)->post(
                 'https://www.google.com/recaptcha/api/siteverify',
-                ['secret' => $secret, 'response' => $token]
+                $payload
             );
 
             if (!$resp->successful()) return false;
@@ -100,10 +103,9 @@ class ContactController extends Controller
             $json  = $resp->json();
             $ok    = (bool)($json['success'] ?? false);
             $score = (float)($json['score'] ?? 0);
-
-            // Metti la soglia che preferisci (0.5–0.7 tipico)
             return $ok && $score >= 0.5;
         } catch (\Throwable $e) {
+            Log::warning('reCAPTCHA verify error: '.$e->getMessage());
             return false;
         }
     }
