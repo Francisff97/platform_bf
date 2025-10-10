@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\View;    // ✅ per i composer
 use App\Support\Cart;                   // se usi Cart::count() nel composer
 use App\Models\SiteSetting;       
 use App\Services\FlagsClient;      // per leggere la currency
+use App\Models\PrivacySetting;
+
 
 class AppServiceProvider extends ServiceProvider
 {
