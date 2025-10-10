@@ -12,6 +12,8 @@ class CartController extends Controller
 {
     public function index()
     {
+         $cart = \App\Support\Cart::items(); // già normalizza
+    session(['cart' => $cart]);
         return view('cart.index', [
             'items'      => Cart::items(),
             'totalCents' => Cart::totalCents(),
@@ -45,20 +47,34 @@ class CartController extends Controller
         return back()->with('success','Cart emptied');
     }
 
-    public function updateQty(Request $r, int $index)
-    {
-        $action = (string) $r->input('action','');
-        $qty    = (int) $r->input('qty', 0);
+    public function updateQty(Request $r, $index)
+{
+    $cart = \App\Support\Cart::items();
 
-        // se arrivano i pulsanti +/-
-        if ($action === 'inc' || $action === 'dec') {
-            // leggo qty corrente dal carrello
-            $items = Cart::items();
-            $cur   = max(1, (int)($items[$index]['qty'] ?? 1));
-            $qty   = $action === 'inc' ? $cur + 1 : $cur - 1;
-        }
-
-        Cart::setQty($index, $qty > 0 ? $qty : 1);
-        return back()->with('success','Quantity updated');
+    if (!isset($cart[$index])) {
+        return back()->with('error','Item not found.');
     }
+
+    $item    = $cart[$index];
+    $isCoach = (($item['type'] ?? null) === 'coach')
+        || (($item['meta']['type'] ?? null) === 'coach')
+        || !empty($item['meta']['is_coach']);
+
+    $current = max(1, (int)($item['qty'] ?? 1));
+    $action  = (string)$r->input('action', '');
+
+    if ($isCoach) {
+        if ($action === 'inc')      $current++;
+        elseif ($action === 'dec')  $current--;
+        else                        $current = (int) $r->input('qty', $current);
+    } else {
+        $current = 1; // pack sempre 1
+    }
+
+    $item['qty'] = max(1, min(99, $current));
+    $cart[$index] = $item;
+
+    session(['cart' => $cart]); // Cart::items normalizza sempre
+    return back()->with('success','Quantity updated.');
+}
 }
