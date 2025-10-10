@@ -162,6 +162,14 @@
           </button>
         </div>
       </div>
+            {{-- Legal note for reCAPTCHA --}}
+      <p class="mt-6 text-center text-[11px] leading-snug text-gray-500 dark:text-gray-400 opacity-80">
+        This site is protected by reCAPTCHA and the Google
+        <a href="https://policies.google.com/privacy" target="_blank" class="underline hover:text-[color:var(--accent)]">Privacy Policy</a>
+        and
+        <a href="https://policies.google.com/terms" target="_blank" class="underline hover:text-[color:var(--accent)]">Terms of Service</a>
+        apply.
+      </p>
     </form>
   </section>
 
