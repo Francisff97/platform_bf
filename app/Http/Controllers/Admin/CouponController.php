@@ -1,4 +1,3 @@
-// app/Http/Controllers/Admin/CouponController.php
 <?php
 namespace App\Http\Controllers\Admin;
 
