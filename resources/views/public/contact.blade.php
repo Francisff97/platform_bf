@@ -143,23 +143,22 @@
     ?? null;
 @endphp
 
-@if($recaptchaSiteKey)
-  <script src="https://www.google.com/recaptcha/api.js?render={{ $recaptchaSiteKey }}"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      if (!window.grecaptcha) return;
-      grecaptcha.ready(function() {
-        grecaptcha.execute('{{ $recaptchaSiteKey }}', {action: 'contact'}).then(function(token) {
-          const inp = document.getElementById('grecaptcha_token');
-          if (inp) inp.value = token;
-        });
+<script src="https://www.google.com/recaptcha/api.js?render={{ config('services.recaptcha.site_key') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const siteKey = "{{ config('services.recaptcha.site_key') }}";
+    if (!siteKey || !window.grecaptcha) return;
+    grecaptcha.ready(function() {
+      grecaptcha.execute(siteKey, {action: 'contact'}).then(function(token) {
+        const inp = document.getElementById('grecaptcha_token');
+        if (inp) inp.value = token;
       });
     });
-  </script>
-@endif
+  });
+</script>
+</x-app-layout>
 <style>
 .gracaptcha-badge{
   visibility:hidden;
 }
 </style>
-</x-app-layout>
