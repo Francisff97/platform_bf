@@ -8,82 +8,95 @@ use Illuminate\Support\Facades\Storage;
 class ImagesConvertToWebp extends Command
 {
     protected $signature = 'images:to-webp
-    {--disk=public : Storage disk}
-    {--quality=75  : WebP quality (0-100)}
-    {--force       : Rebuild even if .webp exists}
-    {--only-missing : Alias: process only if .webp is missing (default behavior)}';
+        {--disk=public : Storage disk}
+        {--quality=75  : WebP quality (0-100)}
+        {--force       : Rebuild even if .webp exists}
+        {--only-missing : Alias: process only if .webp is missing (default behavior)}
+        {--path=*      : Optional one or more paths (dirs/files) to scan within the disk}';
 
-    protected $description = 'Convert JPG/PNG (su uno o più path) in WebP con Intervention Image (v2 o v3)';
+    protected $description = 'Convert JPG/PNG to WebP (local disk). Compatible with Intervention Image v2/v3.';
 
     public function handle(): int
     {
-        $disk     = (string) $this->option('disk');
-        $quality  = max(0, min(100, (int) $this->option('quality')));
-        $paths    = (array) $this->option('path');
-        $force    = (bool) $this->option('force');
+        $disk        = (string) $this->option('disk');
+        $quality     = max(0, min(100, (int) $this->option('quality')));
+        $paths       = (array) $this->option('path'); // array of dirs/files (optional)
+        $force       = (bool) $this->option('force');
+        $onlyMissing = (bool) $this->option('only-missing'); // alias, no-op (default already missing-only)
 
-        if (!in_array($disk, array_keys(config('filesystems.disks')), true)) {
-            $this->error("Disk \"$disk\" non trovato in config/filesystems.php");
+        if (!array_key_exists($disk, config('filesystems.disks'))) {
+            $this->error("Disk \"{$disk}\" non trovato in config/filesystems.php");
             return self::FAILURE;
         }
 
-        // Raccogli i file
-        $all = collect($paths ?: Storage::disk($disk)->allFiles())
-            ->when($paths, function ($c) use ($disk, $paths) {
-                // Se passano più path, union dei file per ognuno
-                return collect($paths)->flatMap(fn ($p) => Storage::disk($disk)->allFiles($p));
-            })
-            ->filter(function ($path) {
-                // Solo immagini comuni (puoi aggiungere gif ecc.)
-                return preg_match('/\.(jpe?g|png)$/i', $path);
-            })
+        // Raccogli i file da processare
+        $files = collect();
+
+        if (!empty($paths)) {
+            foreach ($paths as $p) {
+                // Se $p è una directory sul disk, prendi tutti i file sotto
+                if (Storage::disk($disk)->exists($p) && !preg_match('~/[^/]+\.[a-z0-9]{2,5}$~i', $p)) {
+                    $files = $files->merge(Storage::disk($disk)->allFiles($p));
+                } else {
+                    // trattalo come singolo file relativo al disk
+                    $files->push($p);
+                }
+            }
+        } else {
+            $files = collect(Storage::disk($disk)->allFiles());
+        }
+
+        $all = $files
+            ->filter(fn ($path) => preg_match('/\.(jpe?g|png)$/i', $path))
             ->values();
 
         if ($all->isEmpty()) {
-            $this->info('Nessuna immagine da convertire.');
+            $this->info('Nessuna immagine JPG/PNG trovata.');
             return self::SUCCESS;
         }
 
-        $this->line("Disk: <info>{$disk}</info>  ·  Quality: <info>{$quality}</info>  ·  Force: <info>".($force?'yes':'no')."</info>");
-        $this->line('File trovati: <info>'.$all->count().'</info>');
-        $bar = $this->output->createProgressBar($all->count());
-        $bar->start();
+        $this->line("Disk: <info>{$disk}</info> · Quality: <info>{$quality}</info> · Force: <info>".($force ? 'yes' : 'no')."</info>".($onlyMissing ? ' · only-missing' : ''));
 
-        // Detect Intervention versione
+        // Rileva Intervention installata
         $usingV3 = class_exists(\Intervention\Image\ImageManager::class);
         $usingV2 = class_exists(\Intervention\Image\ImageManagerStatic::class);
 
         if (!$usingV3 && !$usingV2) {
-            $this->newLine();
-            $this->error('Intervention Image non è installato. Esegui: composer require intervention/image');
+            $this->error('Intervention Image non installato. Esegui: composer require intervention/image');
             return self::FAILURE;
         }
 
-        // Se su server c’è GD/Imagick?
         $driverInfo = 'n/d';
         if ($usingV3) {
-            $driverInfo = class_exists(\Intervention\Image\Drivers\Imagick\Driver::class) ? 'imagick' : 'gd';
+            $driverInfo = class_exists(\Intervention\Image\Drivers\Imagick\Driver::class) && extension_loaded('imagick')
+                ? 'imagick'
+                : 'gd';
         } else {
-            // v2 non espone driver in modo semplice, ma in genere GD è il default
             $driverInfo = extension_loaded('imagick') ? 'imagick' : 'gd';
         }
-        $this->newLine();
-        $this->line('Intervention: <info>'.($usingV3?'v3':'v2')."</info>  ·  Driver: <info>{$driverInfo}</info>");
+        $this->line('Intervention: <info>'.($usingV3 ? 'v3' : 'v2')."</info> · Driver: <info>{$driverInfo}</info>");
+
+        $bar = $this->output->createProgressBar($all->count());
+        $bar->start();
 
         foreach ($all as $path) {
             try {
                 $webpPath = preg_replace('/\.(jpe?g|png)$/i', '.webp', $path);
 
+                // Default: SOLO MANCANTI. Se --force, rigenera.
                 if (!$force && Storage::disk($disk)->exists($webpPath)) {
                     $bar->advance();
                     continue;
                 }
 
-                $abs = Storage::disk($disk)->path($path);
+                $abs = Storage::disk($disk)->path($path); // valido per disk locali (es. "public")
+                if (!is_file($abs)) {
+                    $bar->advance();
+                    continue;
+                }
 
                 if ($usingV3) {
-                    // === Intervention v3 ===
-                    // Driver: usa Imagick se presente, altrimenti GD
+                    // v3: crea manager con driver dinamico
                     if (class_exists(\Intervention\Image\Drivers\Imagick\Driver::class) && extension_loaded('imagick')) {
                         $driver = new \Intervention\Image\Drivers\Imagick\Driver();
                     } else {
@@ -91,17 +104,14 @@ class ImagesConvertToWebp extends Command
                     }
                     $manager = new \Intervention\Image\ImageManager($driver);
 
-                    $img = $manager->read($abs)->toWebp($quality);
-                    // $img è \Intervention\Image\EncodedImage
-                    Storage::disk($disk)->put($webpPath, (string) $img);
+                    $encoded = $manager->read($abs)->toWebp($quality); // EncodedImage
+                    Storage::disk($disk)->put($webpPath, (string) $encoded);
                 } else {
-                    // === Intervention v2 ===
-                    // Static API
-                    $img = \Intervention\Image\ImageManagerStatic::make($abs)->encode('webp', $quality);
-                    Storage::disk($disk)->put($webpPath, (string) $img);
+                    // v2: API statica
+                    $encoded = \Intervention\Image\ImageManagerStatic::make($abs)->encode('webp', $quality);
+                    Storage::disk($disk)->put($webpPath, (string) $encoded);
                 }
             } catch (\Throwable $e) {
-                // Non bloccare l’intero batch: logga e passa oltre
                 $this->newLine();
                 $this->warn("Errore su {$path}: ".$e->getMessage());
             } finally {
