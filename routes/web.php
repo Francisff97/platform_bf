@@ -384,24 +384,56 @@ Route::post('/flags/debug', function (\Illuminate\Http\Request $r) {
         'match' => hash_equals(hash_hmac('sha256', $r->getContent(), $secret), $r->header('X-Signature')),
     ];
 });
-Route::get('/webp-test', function () {
-    abort_unless(app()->environment(['local', 'testing']), 403, 'Access denied.');
 
-    $images = collect(Storage::disk('public')->allFiles())
-        ->filter(fn($f) => preg_match('/\.(jpe?g|png)$/i', $f))
-        ->map(function ($path) {
-            $webp = preg_replace('/\.(jpe?g|png)$/i', '.webp', $path);
-            return [
-                'file' => $path,
-                'exists_webp' => Storage::disk('public')->exists($webp),
-                'url_original' => Storage::url($path),
-                'url_webp' => Storage::disk('public')->exists($webp) ? Storage::url($webp) : null,
-            ];
-        })
-        ->values();
+Route::middleware(['auth', AdminOnly::class])
+    ->prefix('admin/webp')->name('admin.webp.')
+    ->group(function () {
 
-    return response()->view('debug.webp', ['images' => $images]);
-});
+        // Pagina di debug/preview
+        Route::get('/', function () {
+            $images = collect(Storage::disk('public')->allFiles())
+                ->filter(fn($f) => preg_match('/\.(jpe?g|png)$/i', $f))
+                ->map(function ($path) {
+                    $webp = preg_replace('/\.(jpe?g|png)$/i', '.webp', $path);
+                    return [
+                        'file'         => $path,
+                        'exists_webp'  => Storage::disk('public')->exists($webp),
+                        'url_original' => Storage::url($path),
+                        'url_webp'     => Storage::disk('public')->exists($webp) ? Storage::url($webp) : null,
+                    ];
+                })
+                ->values();
+
+            $total = $images->count();
+            $have  = $images->where('exists_webp', true)->count();
+            $miss  = $total - $have;
+
+            return view('admin.webp.index', [
+                'images' => $images,
+                'total'  => $total,
+                'have'   => $have,
+                'miss'   => $miss,
+            ]);
+        })->name('index');
+
+        // Azione rigenerazione (usa il tuo comando artisan)
+        Route::post('/rebuild', function (\Illuminate\Http\Request $r) {
+            $onlyMissing = $r->boolean('only_missing', true);
+
+            try {
+                // Se il tuo comando supporta --only-missing, ok; altrimenti togli l'opzione:
+                $exit = Artisan::call('images:to-webp', $onlyMissing ? ['--only-missing' => true] : []);
+
+                return back()->with('success',
+                    $onlyMissing
+                        ? 'Rigenerazione avviata: verranno creati solo i WebP mancanti.'
+                        : 'Rigenerazione avviata: verranno ricreati tutti i WebP.'
+                );
+            } catch (\Throwable $e) {
+                return back()->with('error', 'Errore durante la rigenerazione: '.$e->getMessage());
+            }
+        })->name('rebuild');
+    });
 // Pagine pubbliche privacy/cookies
 Route::get('/privacy-policy', [PrivacyPublicController::class, 'privacy'])->name('privacy');
 Route::get('/cookie-policy',  [PrivacyPublicController::class, 'cookies'])->name('cookies');
