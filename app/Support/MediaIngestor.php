@@ -14,13 +14,13 @@ class MediaIngestor
     /**
      * Ingest di un file (UploadedFile OPPURE path stringa già esistente).
      *
-     * @param  UploadedFile|string $file  UploadedFile dal form OPPURE 'packs/foo.png' / '/storage/packs/foo.png'
-     * @param  string|null         $destRelativePath  es. 'packs/foo/bar.png' (se null viene generato)
-     * @param  string|array|null   $alt
-     * @param  string              $disk  default 'public'
-     * @return string              percorso relativo salvato nel disk (es. 'packs/foo/bar.png')
+     * @param  UploadedFile|string      $file   UploadedFile dal form OPPURE 'packs/foo.png' / '/storage/packs/foo.png'
+     * @param  string|null              $destRelativePath  es. 'packs/foo/bar.png' (se null viene generato)
+     * @param  string|array|null        $alt
+     * @param  string                   $disk  default 'public'
+     * @return string|null              percorso relativo salvato nel disk (es. 'packs/foo/bar.png') oppure null se fallisce
      */
-    public static function ingest(UploadedFile|string $file, ?string $destRelativePath = null, string|array|null $alt = null, string $disk = 'public'): string
+    public static function ingest(UploadedFile|string $file, ?string $destRelativePath = null, string|array|null $alt = null, string $disk = 'public'): ?string
     {
         // --- normalizza ALT ---
         if (is_array($alt)) {
@@ -38,8 +38,10 @@ class MediaIngestor
             $destRelativePath = $base.'/'.$name;
         }
 
-        // assicura directory
+        // Assicura la directory di destinazione
         Storage::disk($disk)->makeDirectory(dirname($destRelativePath));
+
+        $stored = null;
 
         // --- salva il file ---
         if ($file instanceof UploadedFile) {
@@ -51,26 +53,37 @@ class MediaIngestor
             $stored = $destRelativePath;
         } else {
             // è una stringa: può essere '/storage/...' oppure 'packs/...' ecc.
-            $candidate = ltrim(preg_replace('~^/?storage/~', '', $file), '/');
+            $candidate = ltrim(preg_replace('~^/?storage/~', '', (string)$file), '/');
 
             if (Storage::disk($disk)->exists($candidate)) {
                 // già nel disk
                 $stored = $candidate;
-            } elseif (is_file(public_path($file))) {
+            } elseif (is_string($file) && is_file(public_path($file))) {
                 // file dentro public: copialo nel disk alla destinazione richiesta
-                Storage::disk($disk)->put($destRelativePath, file_get_contents(public_path($file)));
+                Storage::disk($disk)->put($destRelativePath, @file_get_contents(public_path($file)));
+                $stored = $destRelativePath;
+            } elseif (is_string($file) && is_file($file)) {
+                // path assoluto leggibile
+                Storage::disk($disk)->put($destRelativePath, @file_get_contents($file));
                 $stored = $destRelativePath;
             } else {
-                // fallback: se la stringa è un path leggibile dal FS assoluto
-                if (is_file($file)) {
-                    Storage::disk($disk)->put($destRelativePath, file_get_contents($file));
-                    $stored = $destRelativePath;
-                } else {
-                    // ultima spiaggia: crea un file vuoto per non far esplodere il flusso
-                    Storage::disk($disk)->put($destRelativePath, '');
-                    $stored = $destRelativePath;
-                }
+                // sorgente non valida -> NON creare file vuoti
+                logger()->warning('MediaIngestor: sorgente non valida (string)', ['file' => $file]);
+                return null;
             }
+        }
+
+        // --- sanity check: niente file 0 byte ---
+        try {
+            $abs = Storage::disk($disk)->path($stored);
+            if (!is_file($abs) || filesize($abs) === 0) {
+                logger()->warning('MediaIngestor: file salvato ma vuoto, annullo', ['path' => $stored]);
+                Storage::disk($disk)->delete($stored);
+                return null;
+            }
+        } catch (\Throwable $e) {
+            logger()->warning('MediaIngestor: check size fallito', ['e' => $e->getMessage()]);
+            // se non riesco a verificare, proseguo comunque
         }
 
         // --- genera WEBP accanto se PNG/JPG ---
@@ -80,6 +93,13 @@ class MediaIngestor
         if (class_exists(\App\Models\MediaAsset::class)) {
             \App\Models\MediaAsset::updateOrCreate(['path' => $stored], ['alt' => $alt]);
         }
+
+        // Debug minimale opzionale (commenta se non ti serve)
+        // session()->flash('debug_upload', [
+        //   'stored' => $stored,
+        //   'disk'   => $disk,
+        //   'exists' => Storage::disk($disk)->exists($stored),
+        // ]);
 
         return $stored;
     }
@@ -94,15 +114,20 @@ class MediaIngestor
             if (!is_file($abs)) return;
 
             $webpRel = preg_replace('/\.(png|jpe?g)$/i', '.webp', $relativePath);
+
             // se già esiste, esci
             if (Storage::disk($disk)->exists($webpRel)) return;
 
             $manager = new ImageManager(new Driver()); // GD
-            $img = $manager->read($abs);
+            $img     = $manager->read($abs);
 
             Storage::disk($disk)->put($webpRel, (string) $img->toWebp($quality));
         } catch (\Throwable $e) {
-            // niente throw: non bloccare il flusso di salvataggio
+            logger()->warning('MediaIngestor: toWebp() fallita', [
+                'path' => $relativePath,
+                'err'  => $e->getMessage(),
+            ]);
+            // non bloccare il flusso
         }
     }
 
