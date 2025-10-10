@@ -131,7 +131,7 @@ Route::middleware(['auth', AdminOnly::class])
         Route::put('/{coupon}',       [CouponController::class,'update'])->name('update');
         Route::delete('/{coupon}',    [CouponController::class,'destroy'])->name('destroy');
         Route::post('/{coupon}/toggle', [CouponController::class,'toggle'])->name('toggle');
-    })
+    });
         Route::prefix('seo')->name('seo.')->group(function () {
         Route::post('/pages/sync', [\App\Http\Controllers\Admin\SeoPageController::class,'sync'])
     ->name('pages.sync');
