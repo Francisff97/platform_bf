@@ -130,71 +130,100 @@ private function buildOrderView(\App\Models\Order $order): array
        API create order
        ====================== */
     public function createOrderFromCart(Request $request)
-    {
-        try {
-            $request->validate([
-                'full_name' => 'required|max:120',
-                'email'     => 'required|email',
-            ]);
+{
+    try {
+        // 1) Validazione dati cliente
+        $request->validate([
+            'full_name' => 'required|max:120',
+            'email'     => 'required|email',
+        ]);
 
-            $items = Cart::items();
-            if (empty($items)) {
-                abort(400, 'Carrello vuoto');
-            }
-
-            [$totalCents, $currency] = $this->totalInSiteCurrency($items);
-            abort_if($totalCents <= 0, 400, 'Carrello vuoto');
-
-            $order = Order::create([
-                'user_id'      => auth()->id(),
-                'amount_cents' => $totalCents,
-                'currency'     => $currency,
-                'status'       => 'pending',
-                'provider'     => 'paypal',
-                'meta'         => [
-                    'cart'     => $items,
-                    'customer' => $request->only('full_name', 'email'),
-                ],
-            ]);
-
-            session(['last_order_id' => $order->id]);
-
-            [$base, $token] = $this->paypalAuth();
-
-            $body = [
-                'intent' => 'CAPTURE',
-                'purchase_units' => [[
-                    'reference_id' => (string) $order->id,
-                    'amount' => [
-                        'currency_code' => strtoupper($currency),
-                        'value' => number_format($totalCents / 100, 2, '.', ''),
-                    ],
-                    'description' => "Order #{$order->id}",
-                ]],
-                'application_context' => [
-                    'return_url' => route('checkout.capture'),
-                    'cancel_url' => route('checkout.cancel', ['order' => $order->id]),
-                    'shipping_preference' => 'NO_SHIPPING',
-                    'user_action' => 'PAY_NOW',
-                ],
-            ];
-
-            $res = Http::withToken($token)->post("$base/v2/checkout/orders", $body);
-
-            if (!$res->successful() || !($ppOrderId = $res->json('id'))) {
-                Log::error('PayPal create order failed', ['status' => $res->status(), 'body' => $res->body()]);
-                $order->update(['status' => 'failed', 'provider_response' => $res->body()]);
-                return response()->json(['error' => 'paypal_create_failed'], 422);
-            }
-
-            $order->update(['provider_order_id' => $ppOrderId]);
-
-            return response()->json(['id' => $ppOrderId]);
-        } catch (\Throwable $e) {
-            Log::error('createOrderFromCart exception', ['msg' => $e->getMessage()]);
-            return response()->json(['error' => 'server_error'], 500);
+        // 2) Carrello normalizzato (in sessione)
+        $cart = $this->normalizeCart(session('cart', []));
+        if (empty($cart)) {
+            abort(400, 'Carrello vuoto');
         }
+        session(['cart' => $cart]);
+
+        // 3) Subtotale in valuta del sito (con FX) + valuta del sito
+        [$subtotalCents, $currency] = $this->totalInSiteCurrency($cart);
+
+        // 4) Applica coupon (se presente/valido) sul subtotale in valuta del sito
+        $discountCents = 0;
+        if ($couponSession = session('coupon')) {
+            $coupon = \App\Models\Coupon::find($couponSession['id'] ?? null);
+            if ($coupon) {
+                // usa la tua API di dominio per calcolare lo sconto in cents
+                $discountCents = (int) $coupon->discountFor($subtotalCents);
+                // clamp
+                $discountCents = max(0, min($discountCents, $subtotalCents));
+            } else {
+                // coupon non più valido → rimuovi dalla sessione
+                session()->forget('coupon');
+            }
+        }
+
+        // 5) Totale da pagare
+        $payableCents = max(0, $subtotalCents - $discountCents);
+        abort_if($payableCents <= 0, 400, 'Importo non valido');
+
+        // 6) Crea ordine locale (amount = totale SCONTATO)
+        $order = Order::create([
+            'user_id'      => auth()->id(),
+            'amount_cents' => $payableCents,      // 👈 totale scontato
+            'currency'     => $currency,          // valuta del sito
+            'status'       => 'pending',
+            'provider'     => 'paypal',
+            'meta'         => [
+                'cart'        => $cart,
+                'customer'    => $request->only('full_name', 'email'),
+                'subtotal'    => $subtotalCents,
+                'discount'    => $discountCents,
+                'coupon_code' => $couponSession['code'] ?? null,
+            ],
+        ]);
+
+        session(['last_order_id' => $order->id]);
+
+        // 7) PayPal OAuth
+        [$base, $token] = $this->paypalAuth();
+
+        // 8) Crea ordine PayPal con importo SCONTATO
+        $body = [
+            'intent' => 'CAPTURE',
+            'purchase_units' => [[
+                'reference_id' => (string) $order->id,
+                'amount' => [
+                    'currency_code' => strtoupper($currency),
+                    'value'         => number_format($payableCents / 100, 2, '.', ''), // 👈 importo scontato
+                ],
+                'description' => "Order #{$order->id}",
+            ]],
+            'application_context' => [
+                'return_url' => route('checkout.capture'),
+                'cancel_url' => route('checkout.cancel', ['order' => $order->id]),
+                'shipping_preference' => 'NO_SHIPPING',
+                'user_action' => 'PAY_NOW',
+            ],
+        ];
+
+        $res = Http::withToken($token)->post("$base/v2/checkout/orders", $body);
+
+        if (!$res->successful() || !($ppOrderId = $res->json('id'))) {
+            Log::error('PayPal create order failed', ['status' => $res->status(), 'body' => $res->body()]);
+            $order->update(['status' => 'failed', 'provider_response' => $res->body()]);
+            return response()->json(['error' => 'paypal_create_failed'], 422);
+        }
+
+        $order->update(['provider_order_id' => $ppOrderId]);
+
+        return response()->json(['id' => $ppOrderId]);
+
+    } catch (\Throwable $e) {
+        Log::error('createOrderFromCart exception', ['msg' => $e->getMessage()]);
+        return response()->json(['error' => 'server_error'], 500);
     }
+}
 
     /* ======================
        Cattura ordine PayPal
