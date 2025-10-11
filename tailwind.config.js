@@ -15,9 +15,9 @@ export default {
     theme: {
         extend: {
       fontFamily: {
-        // usa Orbitron come "sans"
-        sans: ['Orbitron', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'Liberation Sans', 'sans-serif'],
-        display: ['Orbitron', 'sans-serif'],
+        // usa Inter come "sans"
+        sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'Liberation Sans', 'sans-serif'],
+        display: ['Inter', 'sans-serif'],
       },
     },
 
