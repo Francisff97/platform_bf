@@ -170,6 +170,8 @@ private function buildOrderView(\App\Models\Order $order): array
         // 6) Crea ordine locale (amount = totale SCONTATO)
         $order = Order::create([
             'user_id'      => auth()->id(),
+            'pack_id'      => $pack_id ?? null,
+            'coach_id'      => $coach_id ?? null,
             'amount_cents' => $payableCents,      // 👈 totale scontato
             'currency'     => $currency,          // valuta del sito
             'status'       => 'pending',
