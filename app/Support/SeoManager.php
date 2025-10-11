@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Support;
 
 use App\Models\SeoPage;
@@ -6,7 +7,6 @@ use App\Models\MediaAsset;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Contracts\Support\Arrayable;
 
 class SeoManager
 {
@@ -16,10 +16,10 @@ class SeoManager
     }
 
     /**
-     * Ritorna meta risolti (applicando i placeholder) per la pagina corrente
-     * Esempio placeholder: {name}, {slug}, {excerpt}, {description}, {image_url}, {price_eur}, {builder_name}
+     * Restituisce i meta per la pagina corrente (o per route/path passati) con
+     * SUPPORTO VARIABILI: passa $ctx = ['name'=>'...','slug'=>'...'] ecc.
      */
-    public static function pageMeta(?string $route = null, ?string $path = null, mixed $subject = null): array
+    public static function pageMeta(?string $route = null, ?string $path = null, array $ctx = []): array
     {
         if (!static::enabled()) {
             return ['title'=>null,'description'=>null,'og_image'=>null];
@@ -33,28 +33,107 @@ class SeoManager
             ->when(!$route && $path, fn($q)=>$q->orWhere('path',$path))
             ->first();
 
-        // Se non trovato, ritorna vuoto (non forziamo fallback qui)
-        if (!$page) {
-            return ['title'=>null,'description'=>null,'og_image'=>null];
-        }
+        // leggi raw
+        $rawTitle = $page?->meta_title ?: null;
+        $rawDesc  = $page?->meta_description ?: null;
+        $rawOg    = $page?->og_image_path ?: null;
 
-        $map = static::subjectMap($subject);
+        // Interpolazione {var}
+        $title = static::interpolate($rawTitle, $ctx);
+        $desc  = static::interpolate($rawDesc,  $ctx);
+        $og    = static::interpolate($rawOg,    $ctx);
 
-        $title = static::applyTemplate($page->meta_title ?? '', $map, 70);
-        $desc  = static::applyTemplate($page->meta_description ?? '', $map, 160);
-        $img   = static::applyTemplate($page->og_image_path ?? '', $map);
-
-        // Se og_image è percorso relativo o /storage/... → rendi absolute
-        $img = static::absolute($img);
+        // Normalizza og_image → assoluto
+        $og = $og
+            ? (Str::startsWith($og, ['http://','https://'])
+                ? $og
+                : Storage::disk('public')->url(ltrim($og,'/')))
+            : null;
 
         return [
-            'title'       => $title ?: null,
-            'description' => $desc ?: null,
-            'og_image'    => $img ?: null,
+            'title'       => $title,
+            'description' => $desc,
+            'og_image'    => $og,
         ];
     }
 
-    /** Enrich <img> in HTML con alt/lazy presi da media_assets (rimane invariata) */
+    /** Sostituisce i token {chiave} in modo case-insensitive. */
+    public static function interpolate(?string $text, array $ctx): ?string
+    {
+        if (!$text || empty($ctx)) return $text;
+
+        // normalizza chiavi: {name}, {slug}, {price_eur}, ecc.
+        $replacements = [];
+        foreach ($ctx as $k => $v) {
+            $replacements['{'.strtolower($k).'}'] = (string) $v;
+        }
+
+        // sostituzione case-insensitive tenendo {chiave} come pattern
+        return preg_replace_callback('/\{([a-z0-9_\.]+)\}/i', function($m) use ($replacements){
+            $key = '{'.strtolower($m[1]).'}';
+            return array_key_exists($key, $replacements) ? $replacements[$key] : $m[0];
+        }, $text);
+    }
+
+    /**
+     * Crea un contesto standard da un Model (Pack/Builder/Coach/Service).
+     * Puoi passarlo alle view -> $seoCtx = SeoManager::contextFromModel($model).
+     */
+    public static function contextFromModel($model): array
+    {
+        if (!$model) return [];
+
+        // base
+        $ctx = [
+            'id'          => $model->id ?? null,
+            'name'        => $model->name ?? ($model->title ?? null),
+            'title'       => $model->title ?? ($model->name ?? null),
+            'slug'        => $model->slug ?? null,
+            'excerpt'     => $model->excerpt ?? null,
+            'description' => $model->description ?? ($model->body ?? null),
+            'image_url'   => null,
+            'builder_name'=> method_exists($model,'builder') ? optional($model->builder)->name : null,
+            'team'        => $model->team ?? null,
+            'price_eur'   => null,
+            'currency'    => $model->currency ?? null,
+        ];
+
+        // immagine
+        $imagePath = $model->image_path ?? null;
+        if ($imagePath) {
+            $ctx['image_url'] = Storage::disk('public')->url($imagePath);
+        }
+
+        // prezzo (se presenti price_cents/currency)
+        if (isset($model->price_cents)) {
+            $curr = $model->currency ?? 'EUR';
+            $ctx['price_eur'] = number_format($model->price_cents/100, 2, ',', '.').' '.$curr;
+        }
+
+        // pulizia null -> stringhe
+        return array_filter($ctx, fn($v) => !is_null($v));
+    }
+
+    // ---- Meta per immagini inline nei contenuti (come già avevi) ----
+    public static function imgAttrsByUrl(string $url): array
+    {
+        if (!static::enabled()) return ['alt'=>null,'lazy'=>true];
+        $path = static::toStoragePath($url);
+        $m = $path ? MediaAsset::where('path',$path)->first() : null;
+        return ['alt'=>$m?->alt_text, 'lazy'=>$m?->is_lazy ?? true];
+    }
+
+    public static function toStoragePath(string $url): ?string
+    {
+        if (Str::startsWith($url, ['http://','https://'])) {
+            $p = parse_url($url, PHP_URL_PATH) ?? '';
+            if (Str::contains($p, '/storage/')) return ltrim(Str::after($p, '/storage/'), '/');
+            return null;
+        }
+        if (Str::startsWith($url, '/storage/')) return ltrim(Str::after($url, '/storage/'), '/');
+        return ltrim($url, '/');
+    }
+
     public static function enrichHtmlImages(string $html): string
     {
         if (!static::enabled()) return $html;
@@ -65,113 +144,32 @@ class SeoManager
             $tag   = $m[0];
 
             if (($attrs['alt'] ?? null) !== null) {
-                if (preg_match('/\salt=["\']/i', $tag)) {
-                    $tag = preg_replace('/alt=["\'][^"\']*["\']/', 'alt="'.e($attrs['alt']).'"', $tag);
-                } else {
-                    $tag = rtrim($tag, '>'); $tag .= ' alt="'.e($attrs['alt']).'">';
-                }
+                $tag = preg_replace('/\salt=["\'][^"\']*["\']/', ' alt="'.e($attrs['alt']).'"', $tag) ?? rtrim($tag,'>').' alt="'.e($attrs['alt']).'">';
             }
-
             if ($attrs['lazy'] ?? true) {
-                if (preg_match('/\sloading=["\']/i', $tag)) {
-                    $tag = preg_replace('/loading=["\'][^"\']*["\']/', 'loading="lazy"', $tag);
-                } else {
-                    $tag = rtrim($tag, '>'); $tag .= ' loading="lazy">';
-                }
+                $tag = preg_replace('/\sloading=["\'][^"\']*["\']/', ' loading="lazy"', $tag) ?? rtrim($tag,'>').' loading="lazy">';
             }
-
             return $tag;
         }, $html);
     }
 
-    public static function imgAttrsByUrl(string $url): array
+    /**
+     * (Opzionale) Stampa direttamente i meta nel <head>.
+     */
+    public static function renderHead(?array $ctx = null): string
     {
-        if (!static::enabled()) return ['alt'=>null,'lazy'=>true];
+        $meta = static::pageMeta(null, null, $ctx ?? []);
+        $title = e($meta['title'] ?? config('app.name'));
+        $desc  = e($meta['description'] ?? '');
+        $og    = $meta['og_image'] ? e($meta['og_image']) : '';
 
-        $path = static::toStoragePath($url);
-        $m = $path ? \App\Models\MediaAsset::where('path',$path)->first() : null;
-        return [
-            'alt'  => $m?->alt_text,
-            'lazy' => $m?->is_lazy ?? true,
-        ];
-    }
-
-    public static function toStoragePath(string $url): ?string
-    {
-        if (Str::startsWith($url, ['http://','https://'])) {
-            $parsed = parse_url($url, PHP_URL_PATH) ?? '';
-            if (Str::contains($parsed, '/storage/')) {
-                return ltrim(Str::after($parsed, '/storage/'), '/');
-            }
-            return null;
-        }
-        if (Str::startsWith($url, '/storage/')) {
-            return ltrim(Str::after($url, '/storage/'), '/');
-        }
-        return ltrim($url, '/');
-    }
-
-    // ====== NEW: templating ======
-    protected static function subjectMap($s): array
-    {
-        if (!$s) return [];
-
-        $arr = $s instanceof Arrayable ? $s->toArray()
-             : (is_object($s) ? get_object_vars($s) : (array) $s);
-
-        // alias comuni
-        $arr['name']        = $arr['name'] ?? $arr['title'] ?? null;
-        $arr['slug']        = $arr['slug'] ?? null;
-        $arr['excerpt']     = $arr['excerpt'] ?? null;
-        $arr['description'] = $arr['description'] ?? null;
-
-        // prezzo comodo
-        if (isset($arr['price_cents'])) {
-            $arr['price_eur'] = number_format(($arr['price_cents']/100), 2, ',', '.').' '.($arr['currency'] ?? 'EUR');
-        }
-
-        // image_url se c'è image_path
-        if (!empty($arr['image_path'])) {
-            $arr['image_url'] = Storage::url($arr['image_path']);
-        }
-
-        // builder_name se relazione disponibile
-        if (is_object($s) && method_exists($s,'builder')) {
-            try { $arr['builder_name'] = optional($s->builder)->name; } catch (\Throwable $e) {}
-        }
-
-        // normalizza a stringhe scalari
-        return array_map(fn($v)=>is_scalar($v)?(string)$v:null, $arr);
-    }
-
-    /** sostituisce {token} con valori, compatta spazi, opz. tronca */
-    protected static function applyTemplate(string $tpl, array $map, int $maxLen=0): string
-    {
-        if ($tpl === '') return '';
-        $out = preg_replace_callback('/\{([a-z0-9_]+)\}/i', function($m) use ($map){
-            $k = strtolower($m[1]);
-            return $map[$k] ?? '';
-        }, $tpl);
-        $out = trim(preg_replace('/\s+/', ' ', $out));
-        if ($maxLen > 0 && mb_strlen($out) > $maxLen) {
-            $out = Str::limit($out, $maxLen, '…');
-        }
-        return $out;
-    }
-
-    protected static function absolute(?string $url): ?string
-    {
-        if (!$url) return null;
-        if (Str::startsWith($url, ['http://','https://','data:'])) return $url;
-
-        // se è "storage/foo.png" o "/storage/foo.png"
-        if (Str::startsWith($url, '/storage/')) {
-            return rtrim(config('app.url'), '/').$url;
-        }
-        if (!Str::startsWith($url, '/')) {
-            // potrebbe essere path relativo su disk public
-            $url = '/'.$url;
-        }
-        return rtrim(config('app.url'), '/').$url;
+        return <<<HTML
+<title>{$title}</title>
+<meta name="description" content="{$desc}">
+<meta property="og:title" content="{$title}">
+<meta property="og:description" content="{$desc}">
+<meta property="og:type" content="website">
+HTML
+.($og ? "\n<meta property=\"og:image\" content=\"{$og}\">" : '');
     }
 }
