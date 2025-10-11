@@ -4,150 +4,155 @@ namespace App\Support;
 
 use App\Models\SeoPage;
 use App\Models\MediaAsset;
+use App\Models\Pack;
+use App\Models\Builder;
+use App\Models\Coach;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class SeoManager
 {
+    /** Abilita/disabilita SEO manager via config('seo.enabled') */
     public static function enabled(): bool
     {
         return (bool) config('seo.enabled', true);
     }
 
     /**
-     * Recupera i meta per route/path e compila i placeholder con $ctx.
-     * Esempi placeholder: {name}, {title}, {slug}, {builder_name}, {price}, {image_url}...
+     * Recupera i meta per la pagina corrente e compila i placeholder
+     * (supporta {var}, {{var}} e (var)).
      */
-    public static function pageMeta(?string $route = null, ?string $path = null, array $ctx = []): array
+    public static function pageMeta(?string $route = null, ?string $path = null): array
     {
         if (!static::enabled()) {
             return ['title'=>null,'description'=>null,'og_image'=>null];
         }
 
-        $route = $route ?? optional(Route::current())->getName();
-        $path  = $path  ?? '/'.ltrim(request()->path(), '/');
+        $route ??= optional(Route::current())->getName();
+        $path  ??= '/'.ltrim(request()->path(), '/');
 
         $page = SeoPage::query()
-            ->when($route, fn($q)=>$q->where('route_name',$route))
-            ->when(!$route && $path, fn($q)=>$q->orWhere('path',$path))
+            ->when($route, fn($q) => $q->where('route_name', $route))
+            ->when(!$route && $path, fn($q) => $q->orWhere('path', $path))
             ->first();
 
-        // Normalizza contesto (aggiunge alias e fallback utili)
-        $vars = static::normalizeContext($ctx);
+        // Costruiamo il CONTEXT automaticamente dai parametri di rotta (per le *show*)
+        $ctx = static::autoContextFromRoute();
 
-        // Compila titoli/descrizioni con placeholder
-        $title = static::compile($page?->meta_title, $vars);
-        $desc  = static::compile($page?->meta_description, $vars);
+        // Titolo & description compilati
+        $title = static::compileTemplate($page?->meta_title, $ctx);
+        $desc  = static::compileTemplate($page?->meta_description, $ctx);
 
-        // Risolvi immagine OG: 1) campo su tabella  2) image_url dal ctx  3) null
-        $og = null;
-        if ($page?->og_image_path) {
-            $og = Str::startsWith($page->og_image_path, ['http://','https://'])
-                ? $page->og_image_path
-                : Storage::disk('public')->url(ltrim($page->og_image_path,'/'));
-        } elseif (!empty($vars['image_url'])) {
-            $og = $vars['image_url'];
-        }
+        // OG image: se il record ha un percorso immagine con placeholder, compilalo.
+        $ogFromPage = static::compileTemplate($page?->og_image_path, $ctx);
+        $ogUrl = static::resolveImageUrl($ogFromPage ?: ($ctx['image_url'] ?? null));
 
         return [
             'title'       => $title,
             'description' => $desc,
-            'og_image'    => $og,
+            'og_image'    => $ogUrl,
         ];
     }
 
     /**
-     * Compilatore placeholder molto permissivo: sostituisce {key} con $vars[key] (string),
-     * ignora le chiavi mancanti (toglie le graffe).
+     * Compila una stringa sostituendo {var}, {{var}} e (var) con i valori presenti in $ctx.
      */
-    public static function compile(?string $tpl, array $vars): ?string
+    public static function compileTemplate(?string $tpl, array $ctx): ?string
     {
-        if ($tpl === null || $tpl === '') return $tpl;
+        if (!$tpl) return $tpl;
 
-        // {price_cents} ecc. -> cast a stringa
-        $replace = [];
-        foreach ($vars as $k => $v) {
-            if (is_scalar($v))        $replace['{'.$k.'}'] = (string) $v;
-            elseif (method_exists($v, '__toString')) $replace['{'.$k.'}'] = (string) $v;
+        // Normalizza chiavi (case-insensitive)
+        $norm = [];
+        foreach ($ctx as $k => $v) {
+            $norm[strtolower($k)] = $v;
         }
-        $out = strtr($tpl, $replace);
 
-        // Pulisci placeholder rimasti (chiavi mancanti)
-        $out = preg_replace('/\{[a-z0-9_\.\-]+\}/i', '', $out);
-        // Spazi multipli dopo pulizia
-        return trim(preg_replace('/\s{2,}/', ' ', $out));
+        // Funzione sostituzione
+        $replace = function(string $text) use ($norm) {
+            // {foo}
+            $text = preg_replace_callback('/\{([a-z0-9_\.]+)\}/i', function($m) use ($norm){
+                $key = strtolower($m[1]);
+                return array_key_exists($key, $norm) ? (string) $norm[$key] : $m[0];
+            }, $text);
+
+            // {{foo}}
+            $text = preg_replace_callback('/\{\{\s*([a-z0-9_\.]+)\s*\}\}/i', function($m) use ($norm){
+                $key = strtolower($m[1]);
+                return array_key_exists($key, $norm) ? (string) $norm[$key] : $m[0];
+            }, $text);
+
+            // (foo)
+            $text = preg_replace_callback('/\(([a-z0-9_\.]+)\)/i', function($m) use ($norm){
+                $key = strtolower($m[1]);
+                return array_key_exists($key, $norm) ? (string) $norm[$key] : $m[0];
+            }, $text);
+
+            return $text;
+        };
+
+        return $replace($tpl);
     }
 
     /**
-     * Normalizza il contesto per Pack/Builder/Coach o generico Eloquent Model.
-     * - name/title fallback
-     * - slug
-     * - description/excerpt
-     * - image_url (da molti possibili campi)
-     * - builder_name (se relazione esiste)
+     * Prova a capire il contesto da rotta: packs.show/builders.show/coaches.show
+     * Restituisce: ['name'=>..., 'title'=>..., 'slug'=>..., 'image_url'=>..., ...]
      */
-    public static function normalizeContext(array $ctx): array
+    public static function autoContextFromRoute(): array
     {
-        $out = $ctx;
+        $ctx = [];
+        $routeName = optional(Route::current())->getName();
+        $params = request()->route()?->parameters() ?? [];
 
-        // Se arriva un modello, prendi gli attributi
-        if (isset($ctx['_model']) && is_object($ctx['_model'])) {
-            $m   = $ctx['_model'];
-            $arr = method_exists($m, 'toArray') ? $m->toArray() : [];
+        // Helper per preparare il contesto comune
+        $fillFromModel = function($m) use (&$ctx){
+            if (!$m) return;
+            $ctx['name']      = $m->name       ?? $m->title ?? null;
+            $ctx['title']     = $m->title      ?? $m->name  ?? null;
+            $ctx['slug']      = $m->slug       ?? null;
+            $ctx['image_url'] = isset($m->image_path) ? Storage::disk('public')->url($m->image_path) : null;
+            // Se hai altri campi utili ai template, aggiungili qui.
+        };
 
-            // name/title
-            $name  = $arr['name']  ?? $arr['title'] ?? $arr['slug'] ?? null;
-            $title = $arr['title'] ?? $arr['name']  ?? null;
-            $slug  = $arr['slug']  ?? null;
-
-            // description
-            $desc  = $arr['meta_description'] ?? $arr['description'] ?? $arr['excerpt'] ?? null;
-
-            // image path candidates
-            $imgPath = $arr['og_image_path']
-                ?? $arr['image_path']
-                ?? $arr['cover_path']
-                ?? $arr['thumbnail_path']
-                ?? null;
-
-            // builder name se relazione esiste
-            $builderName = null;
-            if (method_exists($m, 'builder')) {
-                try {
-                    $builder = $m->builder;
-                    $builderName = $builder?->name ?? $builder?->title ?? null;
-                } catch (\Throwable $e) {}
+        try {
+            if ($routeName === 'packs.show' && isset($params['slug'])) {
+                $fillFromModel(Pack::where('status','published')->where('slug',$params['slug'])->first());
+            } elseif ($routeName === 'builders.show' && isset($params['slug'])) {
+                $fillFromModel(Builder::where('slug',$params['slug'])->first());
+            } elseif ($routeName === 'coaches.show' && isset($params['slug'])) {
+                $fillFromModel(Coach::where('slug',$params['slug'])->first());
             }
-
-            // absolute image url
-            $imageUrl = null;
-            if ($imgPath) {
-                $imageUrl = Str::startsWith($imgPath, ['http://','https://'])
-                    ? $imgPath
-                    : Storage::disk('public')->url(ltrim($imgPath,'/'));
-            }
-
-            $out = array_merge([
-                'name'         => $name,
-                'title'        => $title ?? $name,
-                'slug'         => $slug,
-                'description'  => $desc,
-                'builder_name' => $builderName,
-                'image_url'    => $imageUrl,
-            ], $out);
+        } catch (\Throwable $e) {
+            // no-op: non bloccare se i modelli non esistono in questo progetto
         }
 
-        // Coerenza alias espliciti se passati manualmente
-        if (!empty($out['title']) && empty($out['name']))  $out['name']  = $out['title'];
-        if (!empty($out['name'])  && empty($out['title'])) $out['title'] = $out['name'];
+        // Aggiungi anche i parametri "grezzi" (slug ecc.) così sono sempre disponibili
+        foreach ($params as $k => $v) {
+            if (is_scalar($v)) $ctx[$k] = $v;
+        }
 
-        return $out;
+        return $ctx;
     }
 
-    /**
-     * Alt + lazy per immagini (usato dai componenti).
-     */
+    /** Converte un path relativo del disk 'public' in URL assoluto. */
+    protected static function resolveImageUrl(?string $maybePath): ?string
+    {
+        if (!$maybePath) return null;
+
+        if (Str::startsWith($maybePath, ['http://','https://'])) {
+            return $maybePath;
+        }
+
+        // consentiamo che nel DB sia salvato già /storage/....
+        if (Str::startsWith($maybePath, '/storage/')) {
+            return url($maybePath);
+        }
+
+        // altrimenti assumiamo path relativo sul disk public
+        return Storage::disk('public')->url(ltrim($maybePath,'/'));
+    }
+
+    /** Arricchisce <img> nel markup con alt/lazy provenienti da media_assets (opzionale) */
     public static function imgAttrsByUrl(string $url): array
     {
         if (!static::enabled()) return ['alt'=>null,'lazy'=>true];
@@ -156,31 +161,20 @@ class SeoManager
         $m = $path ? MediaAsset::where('path',$path)->first() : null;
 
         return [
-            'alt'  => $m?->alt ?? $m?->alt_text ?? null,
+            'alt'  => $m?->alt_text,
             'lazy' => $m?->is_lazy ?? true,
         ];
     }
 
+    /** Estrae il path relativo da una URL /storage/... o assoluta verso /storage/... */
     public static function toStoragePath(string $url): ?string
     {
         if (Str::startsWith($url, ['http://','https://'])) {
-            $parsed = parse_url($url, PHP_URL_PATH) ?? '';
-            if (Str::contains($parsed, '/storage/')) {
-                return ltrim(Str::after($parsed, '/storage/'), '/');
-            }
-            return null;
+            $p = parse_url($url, PHP_URL_PATH) ?? '';
+            return Str::contains($p, '/storage/') ? ltrim(Str::after($p, '/storage/'), '/') : null;
         }
-        if (Str::startsWith($url, '/storage/')) {
-            return ltrim(Str::after($url, '/storage/'), '/');
-        }
-        return ltrim($url, '/');
-    }
-
-    /**
-     * Helper per creare un contesto standard da un modello.
-     */
-    public static function contextFromModel($model): array
-    {
-        return ['_model' => $model];
+        return Str::startsWith($url, '/storage/')
+            ? ltrim(Str::after($url, '/storage/'), '/')
+            : ltrim($url, '/');
     }
 }
