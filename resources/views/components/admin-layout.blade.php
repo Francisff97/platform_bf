@@ -116,6 +116,14 @@
   <div class="flex min-h-[calc(100vh-3.5rem)]">
     {{-- SIDEBAR --}}
     @php
+      $groups = [
+        [
+          'label' => 'Admin',
+          'key' => 'admin',
+         'items' => [
+        ['label'=>'Dashboard', 'route'=>'admin.dashboard', 'match'=>['admin.dashboard']],
+        ]
+        ],
       $items = [
         ['label'=>'Dashboard',       'route'=>'admin.dashboard',        'match'=>['admin.dashboard']],
         ['label'=>'Packs',           'route'=>'admin.packs.index',      'match'=>['admin.packs.*']],
