@@ -439,5 +439,7 @@ Route::middleware(['auth', AdminOnly::class])
 // Pagine pubbliche privacy/cookies
 Route::get('/privacy-policy', [PrivacyPublicController::class, 'privacy'])->name('privacy');
 Route::get('/cookie-policy',  [PrivacyPublicController::class, 'cookies'])->name('cookies');
-// routes/web.php
+
+// Sitemap & Robots //
 Route::get('/robots.txt', [\App\Http\Controllers\RobotsController::class, 'index']);
+Route::get('/sitemap.xml', [\App\Http\Controllers\SitemapController::class, 'index']);
