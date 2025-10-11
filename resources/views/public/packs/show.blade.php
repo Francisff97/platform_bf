@@ -2,14 +2,14 @@
 <x-app-layout>
   @php
     ($seoSubject = $pack);
-
     $catColor = $pack->category->color ?? 'indigo';
+
     $titleColorMap = [
-      'indigo'=>'text-indigo-600 dark:text-indigo-300',
-      'emerald'=>'text-emerald-600 dark:text-emerald-300',
-      'amber'=>'text-amber-600 dark:text-amber-300',
-      'rose'=>'text-rose-600 dark:text-rose-300',
-      'sky'=>'text-sky-600 dark:text-sky-300',
+      'indigo'  => 'text-indigo-600 dark:text-indigo-300',
+      'emerald' => 'text-emerald-600 dark:text-emerald-300',
+      'amber'   => 'text-amber-600 dark:text-amber-300',
+      'rose'    => 'text-rose-600 dark:text-rose-300',
+      'sky'     => 'text-sky-600 dark:text-sky-300',
     ];
     $titleColor = $titleColorMap[$catColor] ?? 'text-gray-900 dark:text-gray-100';
 
@@ -46,9 +46,7 @@
       </h1>
 
       <div class="mt-1 text-sm text-gray-600 dark:text-gray-300">
-        @if($pack->builder)
-          by <span class="font-medium">{{ $pack->builder->name }}</span>
-        @endif
+        @if($pack->builder) by <span class="font-medium">{{ $pack->builder->name }}</span> @endif
       </div>
     </div>
   </section>
@@ -62,7 +60,48 @@
     </div>
   @endif
 
-  {{-- BODY --}}
+  {{-- SCELTA VIDEO DA MOSTRARE --}}
+  @php
+    use App\Support\VideoEmbed;
+    use App\Support\Purchases;
+
+    $isBuyer = auth()->check() && (
+      (method_exists(\App\Support\Purchases::class,'userHasPack') && Purchases::userHasPack(auth()->id(), $pack->id))
+    );
+
+    // Tutorial primario: se acquirente prendo anche i privati, altrimenti solo pubblici
+    $primaryTutorial = $isBuyer
+      ? $pack->tutorials()->orderBy('sort_order')->first()
+      : $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->first();
+
+    $embedUrl = null;
+    if ($primaryTutorial && $primaryTutorial->video_url) {
+      $embedUrl = VideoEmbed::from($primaryTutorial->video_url);
+    }
+
+    // fallback sul campo video_url del pack
+    if (!$embedUrl && !empty($pack->video_url)) {
+      $embedUrl = VideoEmbed::from($pack->video_url);
+    }
+  @endphp
+
+  {{-- PLAYER (solo se URL valido) --}}
+  @if($embedUrl)
+    <div class="mx-auto max-w-6xl px-4 pt-6">
+      <div class="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
+        <iframe
+          src="{{ $embedUrl }}"
+          class="h-[360px] w-full sm:h-[420px]"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+          loading="lazy"
+        ></iframe>
+      </div>
+    </div>
+  @endif
+
+  {{-- BODY + BUYBOX --}}
   <div class="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 py-10 md:grid-cols-3">
     <section class="md:col-span-2">
       @if($pack->excerpt)
@@ -101,38 +140,13 @@
     </aside>
   </div>
 
-  {{-- VIDEO (pubblico o privato se acquistato) --}}
-  @php
-    $canSeePrivate = auth()->check() && \App\Support\Purchases::userHasPack(auth()->id(), $pack->id);
-
-    $publicVideo  = \App\Support\VideoEmbed::from($pack->video_url ?? null);
-    $privateVideo = $canSeePrivate ? \App\Support\VideoEmbed::from($pack->private_video_url ?? null) : null;
-
-    // Se non c'è un video definito su Pack, prendo il primo tutorial corrispondente
-    if (!$publicVideo) {
-      $t = $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->first();
-      $publicVideo = $t?->embed_url;
-    }
-    if (!$privateVideo && $canSeePrivate) {
-      $t = $pack->tutorials()->where('is_public', false)->orderBy('sort_order')->first();
-      $privateVideo = $t?->embed_url;
-    }
-
-    $embedUrl = $privateVideo ?: $publicVideo;
-  @endphp
-
-  @if($embedUrl)
-    <div class="mx-auto max-w-6xl px-4 pt-6">
-      <div class="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
-        <iframe src="{{ $embedUrl }}" class="h-[360px] w-full sm:h-[420px]" frameborder="0" allowfullscreen loading="lazy"></iframe>
-      </div>
-    </div>
-  @endif
-
   {{-- TUTORIALS --}}
   @php
-    $public  = $pack->tutorials()->where('is_public', true)->get();
-    $private = $canSeePrivate ? $pack->tutorials()->where('is_public', false)->get() : collect();
+    $public  = $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->get();
+    $private = collect();
+    if ($isBuyer) {
+      $private = $pack->tutorials()->where('is_public', false)->orderBy('sort_order')->get();
+    }
   @endphp
 
   @if($public->count() || $private->count() || $pack->tutorials()->where('is_public', false)->exists())
