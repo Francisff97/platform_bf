@@ -137,45 +137,92 @@
     </aside>
   </div>
 
-  {{-- TUTORIALS --}}
-  @php
-    $public  = $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->get();
-    $private = collect();
-    if ($isBuyer) {
-      $private = $pack->tutorials()->where('is_public', false)->orderBy('sort_order')->get();
-    }
-  @endphp
+  {{-- ====== VIDEO (pubblico/privato) ====== --}}
+@php
+  /** Decidi se l’utente è buyer */
+  $isBuyer = auth()->check() && method_exists(auth()->user(), 'hasPurchasedPack')
+    ? auth()->user()->hasPurchasedPack($pack->id)
+    : false;
 
-  @if($public->count() || $private->count() || $pack->tutorials()->where('is_public', false)->exists())
-    <div class="mx-auto max-w-6xl px-4 pb-14">
-      <div class="mt-2 rounded-2xl border border-gray-100 p-6 shadow-sm dark:border-gray-800">
-        <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Tutorials</h3>
+  // 1) Se esistono tutorial: scegli il "primario"
+  //    - buyer: qualsiasi (anche privati), ordinati
+  //    - non buyer: solo pubblici, ordinati
+  $primaryTutorial = $isBuyer
+    ? $pack->tutorials()->orderBy('sort_order')->first()
+    : $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->first();
 
-        @if($public->count())
+  // 2) Se non trovi tutorial, fallback ai campi sul Pack (se li usi)
+  $rawUrl = null;
+  if ($primaryTutorial && !empty($primaryTutorial->video_url)) {
+    $rawUrl = $primaryTutorial->video_url;
+  } else {
+    // eventuali campi video sul pack
+    $rawUrl = $isBuyer
+      ? ($pack->private_video_url ?? $pack->video_url ?? null)
+      : ($pack->video_url ?? null);
+  }
+
+  $embedUrl = \App\Support\VideoEmbed::from($rawUrl);
+@endphp
+
+@if($embedUrl)
+  {{-- Wrapper con rapporto 16:9 che evita "altezza 0" --}}
+  <div class="mx-auto max-w-6xl px-4 pt-6">
+    <div style="position:relative;width:100%;padding-top:56.25%;overflow:hidden;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.08)">
+      <iframe
+        src="{{ $embedUrl }}"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen
+        loading="lazy"
+        style="position:absolute;top:0;left:0;width:100%;height:100%;border:0">
+      </iframe>
+    </div>
+
+    {{-- debug temporaneo (puoi rimuoverlo) --}}
+    {{-- <div class="mt-2 text-xs text-gray-500">EMBED: {{ $embedUrl }}</div> --}}
+  </div>
+@endif
+
+{{-- ====== TUTORIALS GRID ====== --}}
+@php
+  $public  = $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->get();
+  $private = $isBuyer
+    ? $pack->tutorials()->where('is_public', false)->orderBy('sort_order')->get()
+    : collect();
+@endphp
+
+@if($public->count() || $private->count() || $pack->tutorials()->where('is_public', false)->exists())
+  <div class="mx-auto max-w-6xl px-4 pb-14">
+    <div class="mt-2 rounded-2xl border border-gray-100 p-6 shadow-sm dark:border-gray-800">
+      <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Tutorials</h3>
+
+      {{-- PUBLIC --}}
+      @if($public->count())
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          @foreach($public as $t)
+            <x-tutorial-card :tutorial="$t" />
+          @endforeach
+        </div>
+      @endif
+
+      {{-- PRIVATE (solo buyer) --}}
+      @if($private->count())
+        <div class="mt-8 border-t pt-4 dark:border-gray-800">
+          <div class="mb-3 text-sm text-gray-500">Exclusive for buyers</div>
           <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            @foreach($public as $t)
+            @foreach($private as $t)
               <x-tutorial-card :tutorial="$t" />
             @endforeach
           </div>
-        @endif
-
-        @if($private->count())
-          <div class="mt-8 border-t pt-4 dark:border-gray-800">
-            <div class="mb-3 text-sm text-gray-500">Exclusive for buyers</div>
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              @foreach($private as $t)
-                <x-tutorial-card :tutorial="$t" />
-              @endforeach
-            </div>
-          </div>
-        @elseif($pack->tutorials()->where('is_public', false)->exists())
-          <div class="mt-8 rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
-            Some tutorials are available after purchase.
-          </div>
-        @endif
-      </div>
+        </div>
+      @elseif($pack->tutorials()->where('is_public', false)->exists())
+        <div class="mt-8 rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
+          Some tutorials are available after purchase.
+        </div>
+      @endif
     </div>
-  @endif
+  </div>
+@endif
                     {{-- debugging --}}
 <div class="my-2 text-sm text-red-600">EMBED URL: {{ $embedUrl ?? 'null' }}</div>
                     <iframe src="https://www.youtube.com/embed/dRnR6oBuEYE" width="560" height="315"></iframe>
