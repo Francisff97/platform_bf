@@ -162,30 +162,35 @@
         </div>
       </div>
 
-        {{-- VIDEO (dentro la colonna destra) --}}
+        {{-- ======= VIDEO (pubblico o privato se acquistato) ======= --}}
 @php
-  $publicVideo  = \App\Support\VideoEmbed::from($coach->video_url ?? null);
-  $privateVideo = null;
-
   $canSeePrivate = auth()->check() && \App\Support\Purchases::userHasCoach(auth()->id(), $coach->id);
 
-  if ($canSeePrivate && !empty($coach->private_video_url)) {
-      $privateVideo = \App\Support\VideoEmbed::from($coach->private_video_url);
+  $publicVideo  = \App\Support\VideoEmbed::from($coach->video_url ?? null);
+  $privateVideo = $canSeePrivate ? \App\Support\VideoEmbed::from($coach->private_video_url ?? null) : null;
+
+  if (!$publicVideo) {
+    $t = $coach->tutorials()->where('is_public', true)->orderBy('sort_order')->first();
+    $publicVideo = $t?->embed_url;
   }
+  if (!$privateVideo && $canSeePrivate) {
+    $t = $coach->tutorials()->where('is_public', false)->orderBy('sort_order')->first();
+    $privateVideo = $t?->embed_url;
+  }
+
   $embedUrl = $privateVideo ?: $publicVideo;
 @endphp
 
-@if(!empty($embedUrl))
+@if($embedUrl)
   <div class="mt-6 overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
     <iframe src="{{ $embedUrl }}" class="h-[360px] w-full sm:h-[420px]" frameborder="0" allowfullscreen loading="lazy"></iframe>
   </div>
 @endif
 
+{{-- ======= TUTORIALS ======= --}}
 @php
-  $public  = $coach->tutorials()->where('is_public', true)->orderBy('sort_order')->get();
-  $private = $canSeePrivate
-      ? $coach->tutorials()->where('is_public', false)->orderBy('sort_order')->get()
-      : collect();
+  $public  = $coach->tutorials()->where('is_public', true)->get();
+  $private = $canSeePrivate ? $coach->tutorials()->where('is_public', false)->get() : collect();
 @endphp
 
 @if($public->count() || $private->count() || $coach->tutorials()->where('is_public', false)->exists())
