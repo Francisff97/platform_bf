@@ -176,4 +176,6 @@
       </div>
     </div>
   @endif
+                    {{-- debugging --}}
+<div class="my-2 text-sm text-red-600">EMBED URL: {{ $embedUrl ?? 'null' }}</div>
 </x-app-layout>
