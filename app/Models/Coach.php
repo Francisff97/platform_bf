@@ -31,9 +31,11 @@ class Coach extends Model
     public function prices()  { return $this->hasMany(CoachPrice::class); }
 
     public function tutorials()
-    {
-        return $this->morphMany(\App\Models\Tutorial::class, 'tutorialable')->orderBy('sort_order');
-    }
+{
+    return $this->morphMany(\App\Models\Tutorial::class, 'tutorialable')
+        ->orderBy('sort_order')
+        ->orderBy('id');
+}
 
     private function preferWebp(?string $path): ?string
     {
@@ -44,10 +46,4 @@ class Coach extends Model
         }
         return Storage::disk('public')->url($path);
     }
-    public function tutorials()
-{
-    return $this->morphMany(\App\Models\Tutorial::class, 'tutorialable')
-        ->orderBy('sort_order')
-        ->orderBy('id');
-}
 }
