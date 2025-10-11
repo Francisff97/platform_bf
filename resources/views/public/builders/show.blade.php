@@ -1,6 +1,6 @@
 <x-app-layout>
     @php
-    ($seoSubject = $builder)
+    ($seoSubject = $builder);
     $title = $builder->name;
   @endphp
 
