@@ -214,7 +214,7 @@
 
       @foreach($groups as $g)
         @php $isAnyActive = collect($g['items'])->contains(fn($it)=>request()->routeIs(...$it['match'])); @endphp
-        <section class="overflow-hidden rounded-xl border bg-white/70 dark:border-gray-800 dark:bg-gray-900/60"
+        <section class="overflow-hidden grid grid-cols-1 rounded-xl border bg-white/70 dark:border-gray-800 dark:bg-gray-900/60"
                  data-acc-group="{{ $g['key'] }}">
           <button type="button"
                   class="flex w-full items-center justify-between px-3 py-2 text-sm font-semibold"
