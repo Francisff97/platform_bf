@@ -118,64 +118,60 @@
       </div>
     </aside>
   </div>
- {{-- VIDEO embed (se presente) --}}
-@php
-    $embedUrl = \App\Support\VideoEmbed::from($pack->video_url ?? null);
+ @php
+  use App\Support\VideoEmbed;
+  use App\Support\Purchases;
+
+  $publicVideo  = VideoEmbed::from($pack->video_url ?? null);
+  $privateVideo = null;
+
+  $canSeePrivate = auth()->check() && Purchases::userHasPack(auth()->id(), $pack->id);
+
+  if ($canSeePrivate && !empty($pack->private_video_url)) {
+      $privateVideo = VideoEmbed::from($pack->private_video_url);
+  }
+  $embedUrl = $privateVideo ?: $publicVideo;
 @endphp
 
 @if($embedUrl)
   <div class="mx-auto max-w-6xl px-4 pt-6">
     <div class="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
-      <iframe src="{{ $embedUrl }}"
-              class="h-[360px] w-full sm:h-[420px]"
-              frameborder="0"
-              allowfullscreen
-              loading="lazy"></iframe>
+      <iframe src="{{ $embedUrl }}" class="h-[360px] w-full sm:h-[420px]" frameborder="0" allowfullscreen loading="lazy"></iframe>
     </div>
   </div>
 @endif
-  {{-- Tutorials --}}
   @php
-    $public = $pack->tutorials()->where('is_public', true)->get();
-    $private = collect();
-    $canSeePrivate = auth()->check() && method_exists(auth()->user(),'hasPurchasedPack')
-      ? auth()->user()->hasPurchasedPack($pack->id)
-      : (auth()->check() && auth()->user()->hasPurchasedPack($pack->id));
-    if ($canSeePrivate) {
-      $private = $pack->tutorials()->where('is_public', false)->get();
-    }
-  @endphp
+  $public  = $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->get();
+  $private = collect();
+  if ($canSeePrivate) {
+    $private = $pack->tutorials()->where('is_public', false)->orderBy('sort_order')->get();
+  }
+@endphp
 
-  @if($public->count() || $private->count() || $pack->tutorials()->where('is_public', false)->exists())
-    <div class="mx-auto max-w-6xl px-4 pb-14">
-      <div class="mt-2 rounded-2xl border border-gray-100 p-6 shadow-sm dark:border-gray-800">
-        <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Tutorials</h3>
+@if($public->count() || $private->count() || $pack->tutorials()->where('is_public', false)->exists())
+  <div class="mx-auto max-w-6xl px-4 pb-14">
+    <div class="mt-2 rounded-2xl border border-gray-100 p-6 shadow-sm dark:border-gray-800">
+      <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Tutorials</h3>
 
-        {{-- PUBLIC --}}
-        @if($public->count())
+      @if($public->count())
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          @foreach($public as $t) <x-tutorial-card :tutorial="$t" /> @endforeach
+        </div>
+      @endif
+
+      @if($private->count())
+        <div class="mt-8 border-t pt-4 dark:border-gray-800">
+          <div class="mb-3 text-sm text-gray-500">Exclusive for buyers</div>
           <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            @foreach($public as $t)
-              <x-tutorial-card :tutorial="$t" />
-            @endforeach
+            @foreach($private as $t) <x-tutorial-card :tutorial="$t" /> @endforeach
           </div>
-        @endif
-
-        {{-- PRIVATE --}}
-        @if($private->count())
-          <div class="mt-8 border-t pt-4 dark:border-gray-800">
-            <div class="mb-3 text-sm text-gray-500">Exclusive for buyers</div>
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              @foreach($private as $t)
-                <x-tutorial-card :tutorial="$t" />
-              @endforeach
-            </div>
-          </div>
-        @elseif($pack->tutorials()->where('is_public', false)->exists())
-          <div class="mt-8 rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
-            Some tutorials are available after purchase.
-          </div>
-        @endif
-      </div>
+        </div>
+      @elseif($pack->tutorials()->where('is_public', false)->exists())
+        <div class="mt-8 rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
+          Some tutorials are available after purchase.
+        </div>
+      @endif
     </div>
-  @endif
+  </div>
+@endif
 </x-app-layout>
