@@ -215,6 +215,7 @@
       'items'=>[
         ['label'=>'Orders', 'route'=>'admin.orders.index', 'match'=>['admin.orders.*']],
         ['label'=>'Coupons', 'route'=>'admin.coupons.index', 'match'=>['admin.coupons.*']],
+        ['label'=>'Customers', 'route'=>'admin.users.index', 'match'=>['admin.users.*']],
       ],
     ],
     [
