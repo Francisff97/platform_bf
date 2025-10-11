@@ -6,6 +6,8 @@ use App\Http\Controllers\Admin\SeoMediaController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\CheckoutCouponController;
 
+use App\Http\Controllers\RobotsController;
+
 
 
 //Privacy //
@@ -437,3 +439,5 @@ Route::middleware(['auth', AdminOnly::class])
 // Pagine pubbliche privacy/cookies
 Route::get('/privacy-policy', [PrivacyPublicController::class, 'privacy'])->name('privacy');
 Route::get('/cookie-policy',  [PrivacyPublicController::class, 'cookies'])->name('cookies');
+// routes/web.php
+Route::get('/robots.txt', [\App\Http\Controllers\RobotsController::class, 'index']);
