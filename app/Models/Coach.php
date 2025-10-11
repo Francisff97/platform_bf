@@ -44,4 +44,10 @@ class Coach extends Model
         }
         return Storage::disk('public')->url($path);
     }
+    public function tutorials()
+{
+    return $this->morphMany(\App\Models\Tutorial::class, 'tutorialable')
+        ->orderBy('sort_order')
+        ->orderBy('id');
+}
 }
