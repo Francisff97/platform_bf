@@ -7,32 +7,34 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Blade;
-use App\Support\Money;
 
 use App\Support\Cart;
 use App\Support\Currency;
+use App\Support\Money;
 use App\Models\Order;
 
 class CheckoutController extends Controller
 {
-    // Pagina checkout
+    /* ======================
+       Pagina checkout
+       ====================== */
     public function checkout()
-{
-    $cart = $this->normalizeCart(session('cart', []));
-    session(['cart' => $cart]); // tieni normalizzato in sessione
+    {
+        $cart = $this->normalizeCart(session('cart', []));
+        session(['cart' => $cart]); // tieni normalizzato in sessione
 
-    $currency = optional(\App\Models\SiteSetting::first())->currency ?? 'EUR';
-    [$subtotal, $discount, $payable] = $this->computeTotals($cart, session('coupon'));
+        $currency = optional(\App\Models\SiteSetting::first())->currency ?? 'EUR';
+        [$subtotal, $discount, $payable] = $this->computeTotals($cart, session('coupon'));
 
-    return view('checkout.index', [
-        'items'         => $cart,
-        'currency'      => $currency,
-        'totalCents'    => $subtotal,
-        'discountCents' => $discount,
-        'payableCents'  => $payable,
-        'coupon'        => session('coupon')
-    ]);
-}
+        return view('checkout.index', [
+            'items'         => $cart,
+            'currency'      => $currency,
+            'totalCents'    => $subtotal,
+            'discountCents' => $discount,
+            'payableCents'  => $payable,
+            'coupon'        => session('coupon'),
+        ]);
+    }
 
     /* ======================
        PayPal helpers
@@ -66,47 +68,47 @@ class CheckoutController extends Controller
 
         return [$base, $res->json('access_token')];
     }
-    /** Prepara i dati attesi dal template DB (order.number, order.total_formatted, order.items[*].price_formatted, ecc.) */
-private function buildOrderView(\App\Models\Order $order): array
-{
-    $number = $order->number ?? $order->id;
-    $totalFormatted = \App\Support\Money::formatCents((int)$order->amount_cents, $order->currency ?? 'EUR');
 
-    // items sorgente: model->items oppure meta['cart']
-    $rawItems = [];
-    if (is_iterable($order->items ?? null)) {
-        $rawItems = $order->items;
-    } elseif (is_array($order->meta['cart'] ?? null)) {
-        $rawItems = $order->meta['cart'];
-    }
+    /** Prepara i dati attesi dai template email (order.number, total_formatted, items[*].price_formatted, ecc.) */
+    private function buildOrderView(\App\Models\Order $order): array
+    {
+        $number = $order->number ?? $order->id;
+        $totalFormatted = Money::formatCents((int)$order->amount_cents, $order->currency ?? 'EUR');
 
-    // Normalizza in ARRAY DI OGGETTI, così il template può fare $it->name / $it->qty / $it->price_formatted
-    $items = [];
-    foreach ($rawItems as $it) {
-        $name  = $it['name'] ?? ($it->name ?? '');
-        $qty   = (int)($it['qty'] ?? ($it->qty ?? 1));
-        $unitC = (int)($it['unit_amount_cents'] ?? ($it->unit_amount_cents ?? 0));
-        $cur   = strtoupper($it['currency'] ?? ($it->currency ?? ($order->currency ?? 'EUR')));
-        $rowC  = $unitC * max(1, $qty);
+        // items sorgente: model->items oppure meta['cart']
+        $rawItems = [];
+        if (is_iterable($order->items ?? null)) {
+            $rawItems = $order->items;
+        } elseif (is_array($order->meta['cart'] ?? null)) {
+            $rawItems = $order->meta['cart'];
+        }
 
-        $items[] = (object)[
-            'name'            => $name,
-            'qty'             => $qty,
-            'price_formatted' => \App\Support\Money::formatCents($rowC, $cur),
+        $items = [];
+        foreach ($rawItems as $it) {
+            $name  = $it['name'] ?? ($it->name ?? '');
+            $qty   = (int)($it['qty'] ?? ($it->qty ?? 1));
+            $unitC = (int)($it['unit_amount_cents'] ?? ($it->unit_amount_cents ?? 0));
+            $cur   = strtoupper($it['currency'] ?? ($it->currency ?? ($order->currency ?? 'EUR')));
+            $rowC  = $unitC * max(1, $qty);
+
+            $items[] = (object)[
+                'name'            => $name,
+                'qty'             => $qty,
+                'price_formatted' => Money::formatCents($rowC, $cur),
+            ];
+        }
+
+        return [
+            'number'          => $number,
+            'total_formatted' => $totalFormatted,
+            'created_at'      => $order->created_at,
+            'timezone'        => config('app.timezone') ?? 'UTC',
+            'items'           => $items,
         ];
     }
 
-    return [
-        'number'          => $number,
-        'total_formatted' => $totalFormatted,
-        'created_at'      => $order->created_at,
-        'timezone'       => config('app.timezone') ?? 'UTC',
-        'items'           => $items, // <-- array di oggetti
-    ];
-}
-
     /* ======================
-       Somma carrello
+       Somme/Fx
        ====================== */
     private function totalInSiteCurrency(array $items): array
     {
@@ -127,105 +129,129 @@ private function buildOrderView(\App\Models\Order $order): array
     }
 
     /* ======================
-       API create order
+       Estrai pack/coach dal carrello
+       ====================== */
+    private function extractTargetsFromCart(array $cart): array
+    {
+        $packId  = null;
+        $coachId = null;
+
+        foreach ($cart as $line) {
+            $type = strtolower($line['type'] ?? $line['kind'] ?? $line['model'] ?? '');
+            $id   = $line['pack_id']
+                 ?? $line['coach_id']
+                 ?? $line['model_id']
+                 ?? $line['id']
+                 ?? null;
+
+            if (!$id) continue;
+
+            if (!$packId  && in_array($type, ['pack','packs']))   $packId  = (int)$id;
+            if (!$coachId && in_array($type, ['coach','coaches'])) $coachId = (int)$id;
+        }
+
+        return [$packId, $coachId];
+    }
+
+    /* ======================
+       API: crea ordine da carrello
        ====================== */
     public function createOrderFromCart(Request $request)
-{
-    try {
-        // 1) Validazione dati cliente
-        $request->validate([
-            'full_name' => 'required|max:120',
-            'email'     => 'required|email',
-        ]);
+    {
+        try {
+            // 1) Validazione dati cliente
+            $request->validate([
+                'full_name' => 'required|max:120',
+                'email'     => 'required|email',
+            ]);
 
-        // 2) Carrello normalizzato (in sessione)
-        $cart = $this->normalizeCart(session('cart', []));
-        if (empty($cart)) {
-            abort(400, 'Carrello vuoto');
-        }
-        session(['cart' => $cart]);
+            // 2) Carrello normalizzato
+            $cart = $this->normalizeCart(session('cart', []));
+            if (empty($cart)) abort(400, 'Carrello vuoto');
+            session(['cart' => $cart]);
 
-        // 3) Subtotale in valuta del sito (con FX) + valuta del sito
-        [$subtotalCents, $currency] = $this->totalInSiteCurrency($cart);
+            // 3) Subtotale in valuta del sito
+            [$subtotalCents, $currency] = $this->totalInSiteCurrency($cart);
 
-        // 4) Applica coupon (se presente/valido) sul subtotale in valuta del sito
-        $discountCents = 0;
-        if ($couponSession = session('coupon')) {
-            $coupon = \App\Models\Coupon::find($couponSession['id'] ?? null);
-            if ($coupon) {
-                // usa la tua API di dominio per calcolare lo sconto in cents
-                $discountCents = (int) $coupon->discountFor($subtotalCents);
-                // clamp
-                $discountCents = max(0, min($discountCents, $subtotalCents));
-            } else {
-                // coupon non più valido → rimuovi dalla sessione
-                session()->forget('coupon');
+            // 4) Coupon (se presente)
+            $discountCents = 0;
+            $couponSession = session('coupon');
+            if ($couponSession) {
+                $coupon = \App\Models\Coupon::find($couponSession['id'] ?? null);
+                if ($coupon) {
+                    $discountCents = (int) $coupon->discountFor($subtotalCents);
+                    $discountCents = max(0, min($discountCents, $subtotalCents));
+                } else {
+                    session()->forget('coupon');
+                }
             }
-        }
 
-        // 5) Totale da pagare
-        $payableCents = max(0, $subtotalCents - $discountCents);
-        abort_if($payableCents <= 0, 400, 'Importo non valido');
+            // 5) Totale
+            $payableCents = max(0, $subtotalCents - $discountCents);
+            abort_if($payableCents <= 0, 400, 'Importo non valido');
 
-        // 6) Crea ordine locale (amount = totale SCONTATO)
-        $order = Order::create([
-            'user_id'      => auth()->id(),
-            'pack_id'      => $pack_id ?? null,
-            'coach_id'      => $coach_id ?? null,
-            'amount_cents' => $payableCents,      // 👈 totale scontato
-            'currency'     => $currency,          // valuta del sito
-            'status'       => 'pending',
-            'provider'     => 'paypal',
-            'meta'         => [
-                'cart'        => $cart,
-                'customer'    => $request->only('full_name', 'email'),
-                'subtotal'    => $subtotalCents,
-                'discount'    => $discountCents,
-                'coupon_code' => $couponSession['code'] ?? null,
-            ],
-        ]);
+            // 6) Targets + Crea ordine locale
+            [$packId, $coachId] = $this->extractTargetsFromCart($cart);
 
-        session(['last_order_id' => $order->id]);
-
-        // 7) PayPal OAuth
-        [$base, $token] = $this->paypalAuth();
-
-        // 8) Crea ordine PayPal con importo SCONTATO
-        $body = [
-            'intent' => 'CAPTURE',
-            'purchase_units' => [[
-                'reference_id' => (string) $order->id,
-                'amount' => [
-                    'currency_code' => strtoupper($currency),
-                    'value'         => number_format($payableCents / 100, 2, '.', ''), // 👈 importo scontato
+            $order = Order::create([
+                'user_id'      => auth()->id(),
+                'pack_id'      => $packId,
+                'coach_id'     => $coachId,
+                'amount_cents' => $payableCents,      // totale scontato
+                'currency'     => $currency,
+                'status'       => 'pending',
+                'provider'     => 'paypal',
+                'items'        => $cart,              // se hai colonna JSON 'items'
+                'meta'         => [
+                    'cart'        => $cart,
+                    'customer'    => $request->only('full_name', 'email'),
+                    'subtotal'    => $subtotalCents,
+                    'discount'    => $discountCents,
+                    'coupon_code' => $couponSession['code'] ?? null,
                 ],
-                'description' => "Order #{$order->id}",
-            ]],
-            'application_context' => [
-                'return_url' => route('checkout.capture'),
-                'cancel_url' => route('checkout.cancel', ['order' => $order->id]),
-                'shipping_preference' => 'NO_SHIPPING',
-                'user_action' => 'PAY_NOW',
-            ],
-        ];
+            ]);
 
-        $res = Http::withToken($token)->post("$base/v2/checkout/orders", $body);
+            session(['last_order_id' => $order->id]);
 
-        if (!$res->successful() || !($ppOrderId = $res->json('id'))) {
-            Log::error('PayPal create order failed', ['status' => $res->status(), 'body' => $res->body()]);
-            $order->update(['status' => 'failed', 'provider_response' => $res->body()]);
-            return response()->json(['error' => 'paypal_create_failed'], 422);
+            // 7) PayPal OAuth
+            [$base, $token] = $this->paypalAuth();
+
+            // 8) Crea ordine PayPal (importo scontato)
+            $body = [
+                'intent' => 'CAPTURE',
+                'purchase_units' => [[
+                    'reference_id' => (string) $order->id,
+                    'amount' => [
+                        'currency_code' => strtoupper($currency),
+                        'value'         => number_format($payableCents / 100, 2, '.', ''),
+                    ],
+                    'description' => "Order #{$order->id}",
+                ]],
+                'application_context' => [
+                    'return_url' => route('checkout.capture'),
+                    'cancel_url' => route('checkout.cancel', ['order' => $order->id]),
+                    'shipping_preference' => 'NO_SHIPPING',
+                    'user_action' => 'PAY_NOW',
+                ],
+            ];
+
+            $res = Http::withToken($token)->post("$base/v2/checkout/orders", $body);
+
+            if (!$res->successful() || !($ppOrderId = $res->json('id'))) {
+                Log::error('PayPal create order failed', ['status' => $res->status(), 'body' => $res->body()]);
+                $order->update(['status' => 'failed', 'provider_response' => $res->body()]);
+                return response()->json(['error' => 'paypal_create_failed'], 422);
+            }
+
+            $order->update(['provider_order_id' => $ppOrderId]);
+
+            return response()->json(['id' => $ppOrderId]);
+
+        } catch (\Throwable $e) {
+            Log::error('createOrderFromCart exception', ['msg' => $e->getMessage()]);
+            return response()->json(['error' => 'server_error'], 500);
         }
-
-        $order->update(['provider_order_id' => $ppOrderId]);
-
-        return response()->json(['id' => $ppOrderId]);
-
-    } catch (\Throwable $e) {
-        Log::error('createOrderFromCart exception', ['msg' => $e->getMessage()]);
-        return response()->json(['error' => 'server_error'], 500);
     }
-}
 
     /* ======================
        Cattura ordine PayPal
@@ -251,6 +277,14 @@ private function buildOrderView(\App\Models\Order $order): array
             if ($state === 'COMPLETED' || $firstCapture === 'COMPLETED') {
                 $order->update(['status'=>'paid','provider_response'=>$details->json()]);
                 Cart::clear();
+
+                // 🔸 incrementa coupon PRIMA del redirect
+                if ($couponSession = session('coupon')) {
+                    \App\Models\Coupon::where('id',$couponSession['id'] ?? null)
+                        ->increment('usage_count');
+                    session()->forget('coupon');
+                }
+
                 $this->sendOrderCompletedMail($order);
                 return redirect()->route('checkout.success', ['order'=>$order->id]);
             }
@@ -263,25 +297,31 @@ private function buildOrderView(\App\Models\Order $order): array
                 return redirect()->route('checkout.cancel', ['order'=>$order->id]);
             }
 
-            // Capture
+            // Capture (alcuni ambienti vogliono il body vuoto, altri proprio senza body)
             $cap = Http::withToken($token)
                 ->withHeaders(['Content-Type' => 'application/json'])
                 ->withBody('{}', 'application/json')
                 ->post("$base/v2/checkout/orders/{$ppOrderId}/capture");
 
             if ($cap->status() === 400 && str_contains($cap->body(), 'MALFORMED_REQUEST_JSON')) {
-                $cap = Http::withToken($token)
-                    ->send('POST', "$base/v2/checkout/orders/{$ppOrderId}/capture");
+                $cap = Http::withToken($token)->send('POST', "$base/v2/checkout/orders/{$ppOrderId}/capture");
             }
 
-            $overall = $cap->json('status');
-            $cap0 = $cap->json('purchase_units.0.payments.captures.0') ?? [];
+            $overall   = $cap->json('status');
+            $cap0      = $cap->json('purchase_units.0.payments.captures.0') ?? [];
             $capStatus = $cap0['status'] ?? null;
             $pendingReason = data_get($cap0, 'status_details.reason');
 
             if ($cap->successful() && ($overall === 'COMPLETED' || $capStatus === 'COMPLETED')) {
                 $order->update(['status'=>'paid','provider_response'=>$cap->json()]);
                 Cart::clear();
+
+                if ($couponSession = session('coupon')) {
+                    \App\Models\Coupon::where('id',$couponSession['id'] ?? null)
+                        ->increment('usage_count');
+                    session()->forget('coupon');
+                }
+
                 $this->sendOrderCompletedMail($order);
                 return redirect()->route('checkout.success', ['order'=>$order->id]);
             }
@@ -289,6 +329,14 @@ private function buildOrderView(\App\Models\Order $order): array
             if ($capStatus === 'PENDING' && $pendingReason === 'PENDING_REVIEW') {
                 $order->update(['status'=>'processing','provider_response'=>$cap->json()]);
                 Cart::clear();
+
+                // Se vuoi considerarlo “consumato” anche in processing:
+                if ($couponSession = session('coupon')) {
+                    \App\Models\Coupon::where('id',$couponSession['id'] ?? null)
+                        ->increment('usage_count');
+                    session()->forget('coupon');
+                }
+
                 $this->sendOrderConfirmedMail($order);
                 return redirect()->route('checkout.success', ['order'=>$order->id]);
             }
@@ -300,199 +348,203 @@ private function buildOrderView(\App\Models\Order $order): array
             Log::error('captureCart exception', ['msg'=>$e->getMessage()]);
             return redirect()->route('checkout.cancel');
         }
-        // dopo il capture PayPal andato a buon fine:
-if ($couponSession = session('coupon')) {
-    \App\Models\Coupon::where('id',$couponSession['id'])->increment('usage_count');
-    session()->forget('coupon');
-}
     }
 
     /* ======================
        Mail helpers
        ====================== */
-/** Mail: ordine COMPLETATO */
-public function sendOrderCompletedMail(\App\Models\Order $order): void
-{
-    try {
-        $tpl  = \App\Models\EmailTemplate::where('key','order_completed')->where('enabled',true)->first();
-        $to   = $order->meta['customer']['email'] ?? $order->customer_email;
-        $name = $order->meta['customer']['full_name'] ?? ($order->customer_name ?? '');
-        if (!$to) return;
 
-        if ($tpl) {
-            // prepara l'oggetto order come lo vuole il template
-            $orderView = (object) $this->buildOrderView($order->fresh());
-
-            $html = Blade::render($tpl->body_html, [
-                'order'         => $orderView,   // 👈 qui il "fake order" con number/total_formatted/items
-                'customer_name' => $name,
-            ]);
-
-            \Mail::html($html, function($m) use ($tpl,$to,$name) {
-                $m->to($to, $name)->subject($tpl->subject);
-            });
-        } else {
-            \Mail::raw("Thanks for your order #{$order->id}", function($m) use ($to,$name,$order) {
-                $m->to($to, $name)->subject("Order #{$order->id} completed");
-            });
-        }
-    } catch (\Throwable $mailEx) {
-        \Log::warning('OrderCompleted mail failed: '.$mailEx->getMessage());
-    }
-}
-
-/** Mail: ordine CONFERMATO (APPROVED) */
-public function sendOrderConfirmedMail(\App\Models\Order $order): void
-{
-    try {
-        $tpl  = \App\Models\EmailTemplate::where('key','order_confirmed')->where('enabled',true)->first();
-        if (!$tpl) return;
-
-        $to   = $order->meta['customer']['email'] ?? $order->customer_email;
-        $name = $order->meta['customer']['full_name'] ?? ($order->customer_name ?? '');
-        if (!$to) return;
-
-        $orderView = (object) $this->buildOrderView($order->fresh());
-
-        $html = Blade::render($tpl->body_html, [
-            'order'         => $orderView,
-            'customer_name' => $name,
-        ]);
-
-        \Mail::html($html, function($m) use ($tpl,$to,$name) {
-            $m->to($to, $name)->subject($tpl->subject);
-        });
-    } catch (\Throwable $e) {
-        \Log::warning('OrderConfirmed mail failed: '.$e->getMessage());
-    }
-}
-// App\Http\Controllers\CheckoutController.php
-
-public function sendOrderDeletedMail(\App\Models\Order $order, ?string $reason = null): void
-{
-    try {
-        $tpl = \App\Models\EmailTemplate::where('key','order_deleted')
-            ->where('enabled', true)
-            ->first();
-
-        if (!$tpl) {
-            \Log::info("order_deleted template not enabled/present; skip");
-            return;
-        }
-
-        // Risolvi destinatario in modo robusto
-        $to = $order->meta['customer']['email'] ?? null;
-        if (!$to && !empty($order->customer_email)) {
-            $to = $order->customer_email;
-        }
-        if (!$to && method_exists($order, 'user') && $order->relationLoaded('user') ? $order->user : $order->user()->exists()) {
-            $to = optional($order->user)->email ?: $to;
-        }
-
-        $name = $order->meta['customer']['full_name']
-            ?? ($order->customer_name ?? optional($order->user)->name ?? '');
-
-        if (!$to) {
-            \Log::warning("OrderDeleted: no recipient email for order #{$order->id}; skip");
-            return;
-        }
-
-        // Prepara i dati come si aspettano i template
-        $orderView = (object) $this->buildOrderView($order->fresh());
-
-        $html = \Illuminate\Support\Facades\Blade::render($tpl->body_html, [
-            'order'         => $orderView,
-            'customer_name' => $name,
-            'reason'        => $reason,
-        ]);
-
-        \Mail::html($html, function ($m) use ($tpl, $to, $name) {
-            $m->to($to, $name)->subject($tpl->subject);
-        });
-
-        \Log::info("OrderDeleted mail sent for order #{$order->id} to {$to}");
-    } catch (\Throwable $e) {
-        \Log::warning('OrderDeleted mail failed: '.$e->getMessage());
-    }
-}
-
-/** Mail: ordine ANNULLATO/CANCELLATO */
-public function sendOrderCancelledMail(\App\Models\Order $order): void
-{
-    try {
-        $tpl  = \App\Models\EmailTemplate::where('key','order_cancelled')->where('enabled',true)->first();
-        if (!$tpl) return;
-
-        $to   = $order->meta['customer']['email'] ?? $order->customer_email;
-        $name = $order->meta['customer']['full_name'] ?? ($order->customer_name ?? '');
-        if (!$to) return;
-
-        $orderView = (object) $this->buildOrderView($order->fresh());
-
-        $html = Blade::render($tpl->body_html, [
-            'order'         => $orderView,
-            'customer_name' => $name,
-        ]);
-
-        \Mail::html($html, function($m) use ($tpl,$to,$name) {
-            $m->to($to, $name)->subject($tpl->subject);
-        });
-    } catch (\Throwable $e) {
-        \Log::warning('OrderCancelled mail failed: '.$e->getMessage());
-    }
-}
-    private function sendTemplateMail(Order $order, string $key, string $fallbackSubject): void
+    /** COMPLETED */
+    public function sendOrderCompletedMail(Order $order): void
     {
         try {
-            $tpl  = \App\Models\EmailTemplate::where('key',$key)->where('enabled',true)->first();
+            $tpl  = \App\Models\EmailTemplate::where('key','order_completed')->where('enabled',true)->first();
             $to   = $order->meta['customer']['email'] ?? $order->customer_email;
             $name = $order->meta['customer']['full_name'] ?? ($order->customer_name ?? '');
             if (!$to) return;
 
             if ($tpl) {
-                $html = $tpl->body_html ?? '';
-                $html = str_replace('{{ $customer_name }}', e($name), $html);
-                $html = str_replace(['{{ $order->id }}','{{ $order->number }}'], e((string)($order->number ?? $order->id)), $html);
+                $orderView = (object) $this->buildOrderView($order->fresh());
+                $html = Blade::render($tpl->body_html, [
+                    'order'         => $orderView,
+                    'customer_name' => $name,
+                ]);
 
                 Mail::html($html, function($m) use ($tpl,$to,$name) {
                     $m->to($to, $name)->subject($tpl->subject);
                 });
             } else {
-                Mail::raw("Gentile {$name},\n\n{$fallbackSubject}", function($m) use ($to,$name,$fallbackSubject) {
-                    $m->to($to, $name)->subject($fallbackSubject);
+                Mail::raw("Thanks for your order #{$order->id}", function($m) use ($to,$name,$order) {
+                    $m->to($to, $name)->subject("Order #{$order->id} completed");
                 });
             }
-        } catch (\Throwable $e) {
-            Log::warning("Mail {$key} failed: ".$e->getMessage());
+        } catch (\Throwable $mailEx) {
+            Log::warning('OrderCompleted mail failed: '.$mailEx->getMessage());
         }
     }
-    // Esempio di funzione di totali (come già ti avevo passato)
-private function cartTotals(): array {
-    $items = session('cart', []);
-    $currency = $items[0]['currency'] ?? 'EUR';
-    $subtotal = 0;
-    foreach ($items as $it) {
-        $subtotal += (int)$it['unit_amount_cents'] * (int)$it['qty'];
+
+    /** APPROVED (pre-capture) */
+    public function sendOrderConfirmedMail(Order $order): void
+    {
+        try {
+            $tpl  = \App\Models\EmailTemplate::where('key','order_confirmed')->where('enabled',true)->first();
+            if (!$tpl) return;
+
+            $to   = $order->meta['customer']['email'] ?? $order->customer_email;
+            $name = $order->meta['customer']['full_name'] ?? ($order->customer_name ?? '');
+            if (!$to) return;
+
+            $orderView = (object) $this->buildOrderView($order->fresh());
+            $html = Blade::render($tpl->body_html, [
+                'order'         => $orderView,
+                'customer_name' => $name,
+            ]);
+
+            Mail::html($html, function($m) use ($tpl,$to,$name) {
+                $m->to($to, $name)->subject($tpl->subject);
+            });
+        } catch (\Throwable $e) {
+            Log::warning('OrderConfirmed mail failed: '.$e->getMessage());
+        }
     }
 
-    $couponSession = session('coupon');
-    $discount = 0;
-    if ($couponSession) {
-        // ricarico da DB per validazione runtime
-        $coupon = \App\Models\Coupon::find($couponSession['id'] ?? null);
-        if ($coupon) $discount = $coupon->discountFor($subtotal);
-        else session()->forget('coupon');
+    /** CANCELED */
+    public function sendOrderCancelledMail(Order $order): void
+    {
+        try {
+            $tpl  = \App\Models\EmailTemplate::where('key','order_cancelled')->where('enabled',true)->first();
+            if (!$tpl) return;
+
+            $to   = $order->meta['customer']['email'] ?? $order->customer_email;
+            $name = $order->meta['customer']['full_name'] ?? ($order->customer_name ?? '');
+            if (!$to) return;
+
+            $orderView = (object) $this->buildOrderView($order->fresh());
+            $html = Blade::render($tpl->body_html, [
+                'order'         => $orderView,
+                'customer_name' => $name,
+            ]);
+
+            Mail::html($html, function($m) use ($tpl,$to,$name) {
+                $m->to($to, $name)->subject($tpl->subject);
+            });
+        } catch (\Throwable $e) {
+            Log::warning('OrderCancelled mail failed: '.$e->getMessage());
+        }
     }
 
-    return [
-        'items'         => $items,
-        'currency'      => $currency,
-        'subtotal'      => $subtotal,
-        'discount'      => $discount,
-        'total'         => max(0,$subtotal - $discount),
-        'coupon'        => $couponSession,
-    ];
-}
+    /** DELETED (manuale) */
+    public function sendOrderDeletedMail(Order $order, ?string $reason = null): void
+    {
+        try {
+            $tpl = \App\Models\EmailTemplate::where('key','order_deleted')
+                ->where('enabled', true)
+                ->first();
+
+            if (!$tpl) return;
+
+            $to = $order->meta['customer']['email'] ?? $order->customer_email ?? optional($order->user)->email;
+            if (!$to) {
+                Log::warning("OrderDeleted: no recipient email for order #{$order->id}; skip");
+                return;
+            }
+
+            $name = $order->meta['customer']['full_name']
+                ?? ($order->customer_name ?? optional($order->user)->name ?? '');
+
+            $orderView = (object) $this->buildOrderView($order->fresh());
+
+            $html = Blade::render($tpl->body_html, [
+                'order'         => $orderView,
+                'customer_name' => $name,
+                'reason'        => $reason,
+            ]);
+
+            Mail::html($html, function ($m) use ($tpl, $to, $name) {
+                $m->to($to, $name)->subject($tpl->subject);
+            });
+
+        } catch (\Throwable $e) {
+            Log::warning('OrderDeleted mail failed: '.$e->getMessage());
+        }
+    }
+
+    /* ======================
+       Utility carrello/totali
+       ====================== */
+    private function normalizeCart(array $cart): array
+    {
+        foreach ($cart as &$it) {
+            $it['qty'] = max(1, (int)($it['qty'] ?? 1));
+
+            if (!isset($it['unit_amount_cents'])) {
+                $it['unit_amount_cents'] = (int) round(((float)($it['unit_amount'] ?? 0)) * 100);
+            }
+
+            $it['currency'] = strtoupper($it['currency'] ?? (optional(\App\Models\SiteSetting::first())->currency ?? 'EUR'));
+
+            // fallback coerente per il tipo
+            if (empty($it['type']) && !empty($it['model'])) {
+                $it['type'] = $it['model'];
+            }
+        }
+        return $cart;
+    }
+
+    private function computeTotals(array $cart, ?array $coupon): array
+    {
+        $subtotal = 0;
+        foreach ($cart as $it) {
+            $subtotal += (int)$it['unit_amount_cents'] * (int)$it['qty'];
+        }
+
+        $discount = 0;
+        if ($coupon && !empty($coupon['type'])) {
+            if ($coupon['type'] === 'percent') {
+                $percent = max(0, (int)($coupon['percent'] ?? 0));
+                $discount = (int) floor($subtotal * ($percent / 100));
+            } elseif ($coupon['type'] === 'fixed') {
+                $discount = max(0, (int)($coupon['amount_cents'] ?? 0));
+            }
+            $discount = min($discount, $subtotal);
+        }
+
+        $payable = max(0, $subtotal - $discount);
+
+        return [$subtotal, $discount, $payable];
+    }
+
+    // (usata in alcune blade: la lascio)
+    private function cartTotals(): array
+    {
+        $items = session('cart', []);
+        $currency = $items[0]['currency'] ?? 'EUR';
+        $subtotal = 0;
+        foreach ($items as $it) {
+            $subtotal += (int)$it['unit_amount_cents'] * (int)$it['qty'];
+        }
+
+        $couponSession = session('coupon');
+        $discount = 0;
+        if ($couponSession) {
+            $coupon = \App\Models\Coupon::find($couponSession['id'] ?? null);
+            if ($coupon) $discount = $coupon->discountFor($subtotal);
+            else session()->forget('coupon');
+        }
+
+        return [
+            'items'    => $items,
+            'currency' => $currency,
+            'subtotal' => $subtotal,
+            'discount' => $discount,
+            'total'    => max(0, $subtotal - $discount),
+            'coupon'   => $couponSession,
+        ];
+    }
+
+    /* ======================
+       Cancel page
+       ====================== */
     public function cancel(Request $request)
     {
         $orderId = $request->query('order') ?? session('last_order_id');
@@ -508,43 +560,4 @@ private function cartTotals(): array {
 
         return view('checkout.cancel', compact('order'));
     }
-    // app/Http/Controllers/CheckoutController.php
-
-private function normalizeCart(array $cart): array
-{
-    foreach ($cart as &$it) {
-        $it['qty'] = max(1, (int)($it['qty'] ?? 1));
-        if (!isset($it['unit_amount_cents'])) {
-            $it['unit_amount_cents'] = (int) round(((float)($it['unit_amount'] ?? 0)) * 100);
-        }
-        $it['currency'] = $it['currency'] ?? (optional(\App\Models\SiteSetting::first())->currency ?? 'EUR');
-    }
-    return $cart;
-}
-
-private function computeTotals(array $cart, ?array $coupon): array
-{
-    $subtotal = 0;
-    foreach ($cart as $it) {
-        $subtotal += (int)$it['unit_amount_cents'] * (int)$it['qty'];
-    }
-
-    // default: nessuno sconto
-    $discount = 0;
-
-    if ($coupon && !empty($coupon['type'])) {
-        if ($coupon['type'] === 'percent') {
-            $percent = max(0, (int)($coupon['percent'] ?? 0));
-            $discount = (int) floor($subtotal * ($percent / 100));
-        } elseif ($coupon['type'] === 'fixed') {
-            $discount = max(0, (int)($coupon['amount_cents'] ?? 0));
-        }
-        // clamp: sconto non oltre il subtotale
-        $discount = min($discount, $subtotal);
-    }
-
-    $payable = max(0, $subtotal - $discount);
-
-    return [$subtotal, $discount, $payable];
-}
 }
