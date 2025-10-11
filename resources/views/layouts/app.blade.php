@@ -1,12 +1,22 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
   <head>
-    @php $meta = \App\Support\SeoManager::pageMeta(); @endphp
-    @if(\App\Support\SeoManager::enabled())
-      @if(!empty($meta['title']))       <title>{{ $meta['title'] }}</title> @endif
-      @if(!empty($meta['description'])) <meta name="description" content="{{ $meta['description'] }}"> @endif
-      @if(!empty($meta['og_image']))    <meta property="og:image" content="{{ $meta['og_image'] }}"> @endif
-    @endif
+    @php
+  // passa qui il soggetto quando serve (es. $pack, $builder, $coach, …)
+  $seo = \App\Support\SeoManager::pageMeta(subject: $seoSubject ?? null);
+@endphp
+
+@if($seo['title'])       <title>{{ $seo['title'] }}</title> @endif
+@if($seo['description']) <meta name="description" content="{{ $seo['description'] }}"> @endif
+
+@if($seo['title'])       <meta property="og:title" content="{{ $seo['title'] }}"> @endif
+@if($seo['description']) <meta property="og:description" content="{{ $seo['description'] }}"> @endif
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ url()->current() }}">
+@if($seo['og_image'])    <meta property="og:image" content="{{ $seo['og_image'] }}"> @endif
+
+<meta name="twitter:card" content="summary_large_image">
+@if($seo['og_image'])    <meta name="twitter:image" content="{{ $seo['og_image'] }}"> @endif
 
     @php $gtm = optional(\App\Models\SiteSetting::first())->gtm_container_id; @endphp
     @if($gtm)
@@ -24,6 +34,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&display=swap" rel="stylesheet">
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
