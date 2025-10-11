@@ -100,147 +100,199 @@
   </div>
 
   {{-- ====== COSTRUISCO L’ELENCO VIDEO ====== --}}
-  @php
-    $isBuyer = auth()->check() && method_exists(auth()->user(),'hasPurchasedPack')
-      ? auth()->user()->hasPurchasedPack($pack->id)
-      : false;
+@php
+  // è acquirente?
+  $isBuyer = auth()->check() && method_exists(auth()->user(),'hasPurchasedPack')
+    ? auth()->user()->hasPurchasedPack($pack->id)
+    : false;
 
-    $tutorials = $isBuyer
-      ? $pack->tutorials()->orderBy('sort_order')->get()
-      : $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->get();
+  // prendo i tutorial rispettando la visibilità
+  $tutorials = $isBuyer
+    ? $pack->tutorials()->orderBy('sort_order')->get()
+    : $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->get();
 
-    $videos = collect();
+  $videos = collect();
 
-    // Fallback “Overview” dal Pack
-    $fallbackUrl = $isBuyer ? ($pack->private_video_url ?? $pack->video_url) : $pack->video_url;
-    if (!empty($fallbackUrl)) {
-      $embed = \App\Support\VideoEmbed::from($fallbackUrl);
-      if ($embed) {
-        $vis = ($isBuyer && $pack->private_video_url && $fallbackUrl === $pack->private_video_url) ? 'private' : 'public';
-        $videos->push(['title'=>'Overview', 'embed'=>$embed, 'visibility'=>$vis]);
-      }
+  // 1) fallback dal Pack (Overview). Se l’overview è private_video_url e l’utente è buyer => Private, altrimenti Public
+  $fallbackUrl = $isBuyer ? ($pack->private_video_url ?? $pack->video_url) : $pack->video_url;
+  if (!empty($fallbackUrl)) {
+    $embed = \App\Support\VideoEmbed::from($fallbackUrl);
+    if ($embed) {
+      $vis = ($isBuyer && $pack->private_video_url && $fallbackUrl === $pack->private_video_url) ? 'private' : 'public';
+      $videos->push(['title'=>'Overview', 'embed'=>$embed, 'visibility'=>$vis]);
     }
+  }
 
-    // Tutorial collegati
-    foreach ($tutorials as $t) {
-      if (!$t->video_url) continue;
-      $embed = \App\Support\VideoEmbed::from($t->video_url);
-      if ($embed) {
-        $videos->push([
-          'title'      => $t->title ?: 'Tutorial',
-          'embed'      => $embed,
-          'visibility' => $t->is_public ? 'public' : 'private',
-        ]);
-      }
+  // 2) tutti i tutorial
+  foreach ($tutorials as $t) {
+    if (!$t->video_url) continue;
+    $embed = \App\Support\VideoEmbed::from($t->video_url);
+    if ($embed) {
+      $videos->push([
+        'title'      => $t->title ?: 'Tutorial',
+        'embed'      => $embed,
+        'visibility' => $t->is_public ? 'public' : 'private',
+      ]);
     }
+  }
 
-    // Deduplica
-    $videos = $videos->unique('embed')->values();
-  @endphp
+  // 3) deduplica per URL embed
+  $videos = $videos->unique('embed')->values();
 
-  @if($videos->count())
-    <div class="mx-auto max-w-6xl px-4 pb-10 pt-6"
-         x-data="videoRail(@json($videos))"
-         x-init="init()">
+  $featured = $videos->first();
+  $others   = $videos->slice(1);
+@endphp
 
-      <div class="mb-3 flex items-center justify-between">
-        <h3 class="text-lg font-semibold">More videos</h3>
-        <div class="text-xs text-gray-500 sm:hidden">Swipe to watch more →</div>
+{{-- ====== FEATURED PLAYER (grande) ====== --}}
+@if($featured)
+  <div class="mx-auto max-w-6xl px-4 pt-6">
+    <div
+      x-data="videoPlayer('{{ $featured['embed'] }}')"
+      x-init="init()"
+      class="relative overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10 bg-white/60 dark:bg-gray-900/60">
+
+      {{-- aspect 16:9 --}}
+      <div class="relative w-full" style="padding-top:56.25%">
+        <iframe
+          x-ref="frame"
+          title="Featured video"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+          loading="lazy"
+          style="position:absolute;inset:0;width:100%;height:100%;border:0;display:block"
+          x-show="canPlay"></iframe>
+
+        {{-- Placeholder se mancano i consensi --}}
+        <div x-show="!canPlay" class="absolute inset-0 grid place-items-center p-4">
+          <div class="w-full max-w-lg rounded-xl border border-[color:var(--accent)]/30 bg-white/80 p-5 text-center shadow-sm backdrop-blur
+                      dark:border-[color:var(--accent)]/25 dark:bg-gray-900/70">
+            <div class="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-[color:var(--accent)]/10 text-[color:var(--accent)]">
+              <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+            <h3 class="text-base font-semibold">Enable video playback</h3>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+              To watch this video you need to allow <span class="font-medium">experience/marketing</span> cookies in the cookie preferences.
+            </p>
+            <div class="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+              <button type="button" @click="openPrefs()"
+                      class="w-full sm:w-auto rounded-lg bg-[color:var(--accent)] px-4 py-2 text-white shadow hover:opacity-90">Open cookie preferences</button>
+              <button type="button" @click="tryLoadAnyway()"
+                      class="w-full sm:w-auto rounded-lg border px-4 py-2 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">I already accepted</button>
+            </div>
+            <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">Tip: if you don’t accept cookies you might not see embedded videos.</p>
+          </div>
+        </div>
       </div>
 
-      {{-- Rail orizzontale: mobile 1 card, desktop 3 (50% + 25% + 25%) --}}
-      <div class="relative">
-        <div class="-mx-4 overflow-x-auto px-4" x-ref="scroller" @scroll.passive="onScroll">
-          <div class="flex items-stretch gap-4 snap-x snap-mandatory" x-ref="track">
-            @foreach($videos as $i => $v)
-              <div class="snap-start shrink-0"
-                   :style="itemWidth({{ $i }})"
-                   x-ref="item{{ $i }}">
-                <div
-                  x-data="videoPlayer('{{ $v['embed'] }}')"
-                  x-init="init()"
-                  class="relative overflow-hidden rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-black/5 backdrop-blur
-                         dark:border-gray-800 dark:bg-gray-900/60 dark:ring-white/10">
+      {{-- Header info: titolo + chip visibilità --}}
+      <div class="flex items-center justify-between gap-3 border-t border-black/5 px-4 py-3 text-sm dark:border-white/10">
+        <div class="font-medium">{{ $featured['title'] }}</div>
+        @php $vis = $featured['visibility'] ?? 'public'; @endphp
+        <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold
+                     {{ $vis==='public'
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200'
+                        : 'bg-rose-50 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200' }}">
+          {{ $vis==='public' ? 'PUBLIC' : 'PRIVATE' }}
+        </span>
+      </div>
+    </div>
+  </div>
+@endif
 
-                  {{-- 16:9 --}}
-                  <div class="relative w-full" style="padding-top:56.25%">
-                    <iframe x-ref="frame" title="Video {{ $i+1 }}"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                            allowfullscreen loading="lazy"
-                            style="position:absolute;inset:0;width:100%;height:100%;border:0;display:block"
-                            x-show="canPlay"></iframe>
+{{-- ====== ALTRI VIDEO (sostituisce “Tutorials”) ====== --}}
+@if($others->count())
+  <div class="mx-auto max-w-6xl px-4 pb-12 pt-6">
+    <div class="mb-3 flex items-center justify-between">
+      <h3 class="text-lg font-semibold">More videos</h3>
+      <div class="text-xs text-gray-500 sm:hidden">Swipe to watch more →</div>
+    </div>
 
-                    {{-- Placeholder se mancano i consensi --}}
-                    <div x-show="!canPlay" class="absolute inset-0 grid place-items-center p-3">
-                      <div class="w-full max-w-sm rounded-xl border border-[color:var(--accent)]/30 bg-white/85 p-4 text-center text-xs shadow-sm backdrop-blur
-                                  dark:border-[color:var(--accent)]/25 dark:bg-gray-900/70">
-                        Allow cookies to play this video.
-                        <div class="mt-2 flex justify-center gap-2">
-                          <button type="button" @click="openPrefs()" class="rounded bg-[color:var(--accent)] px-3 py-1.5 text-white">Preferences</button>
-                          <button type="button" @click="tryLoadAnyway()" class="rounded border px-3 py-1.5 dark:border-gray-700">I accepted</button>
-                        </div>
+    {{-- MOBILE: slider 1-per-schermo con snap --}}
+    <div class="sm:hidden relative">
+      <div class="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-[var(--bg-light)]/90 to-transparent dark:from-[var(--bg-dark)]/90"></div>
+      <div class="-mx-4 overflow-x-auto px-4">
+        <div class="flex snap-x snap-mandatory gap-4">
+          @foreach($others as $i => $v)
+            @php $vis = $v['visibility'] ?? 'public'; @endphp
+            <div class="w-[85%] shrink-0 snap-start">
+              <div
+                x-data="videoPlayer('{{ $v['embed'] }}')"
+                x-init="init()"
+                class="relative overflow-hidden rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-black/5 backdrop-blur
+                       dark:border-gray-800 dark:bg-gray-900/60 dark:ring-white/10">
+                <div class="relative w-full" style="padding-top:56.25%">
+                  <iframe x-ref="frame" title="Video {{ $i+1 }}"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowfullscreen loading="lazy"
+                          style="position:absolute;inset:0;width:100%;height:100%;border:0;display:block"
+                          x-show="canPlay"></iframe>
+                  <div x-show="!canPlay" class="absolute inset-0 grid place-items-center p-3">
+                    <div class="w-full max-w-sm rounded-xl border border-[color:var(--accent)]/30 bg-white/85 p-4 text-center text-xs shadow-sm backdrop-blur
+                                dark:border-[color:var(--accent)]/25 dark:bg-gray-900/70">
+                      Allow cookies to play this video.
+                      <div class="mt-2 flex justify-center gap-2">
+                        <button type="button" @click="openPrefs()" class="rounded bg-[color:var(--accent)] px-3 py-1.5 text-white">Preferences</button>
+                        <button type="button" @click="tryLoadAnyway()" class="rounded border px-3 py-1.5 dark:border-gray-700">I accepted</button>
                       </div>
                     </div>
                   </div>
-
-                  {{-- footer card: titolo + chip --}}
-                  <div class="flex items-center justify-between gap-3 border-t border-black/5 px-3 py-2 text-sm dark:border-white/10">
-                    <div class="font-medium truncate">{{ $v['title'] }}</div>
-                    @php $vis = $v['visibility'] ?? 'public'; @endphp
-                    <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold
-                                 {{ $vis==='public'
-                                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200'
-                                    : 'bg-rose-50 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200' }}">
-                      {{ $vis==='public' ? 'PUBLIC' : 'PRIVATE' }}
-                    </span>
-                  </div>
+                </div>
+                <div class="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                  <div class="font-medium truncate">{{ $v['title'] }}</div>
+                  <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold
+                               {{ $vis==='public'
+                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200'
+                                  : 'bg-rose-50 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200' }}">
+                    {{ $vis==='public' ? 'PUBLIC' : 'PRIVATE' }}
+                  </span>
                 </div>
               </div>
-            @endforeach
-          </div>
+            </div>
+          @endforeach
         </div>
-
-        {{-- bordo sfumato a destra per indicare scroll (solo mobile) --}}
-        <div class="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-[var(--bg-light)]/90 to-transparent dark:from-[var(--bg-dark)]/90 sm:hidden"></div>
       </div>
     </div>
-  @endif
 
-  <script>
-    // Rail responsiva: desktop 3 visibili (50% + 25% + 25%), mobile 1 card
-    function videoRail(videos){
-      return {
-        videos,
-        featuredIndex: 0,
-        scroller: null,
-        items: [],
-        init(){
-          this.scroller = this.$refs.scroller;
-          this.items = Array.from({length: this.videos.length}, (_,i)=> this.$refs['item'+i]);
-          this.updateFeatured();
-          window.addEventListener('resize', () => this.updateFeatured(true), { passive: true });
-        },
-        itemWidth(i){
-          const isDesktop = window.innerWidth >= 640; // sm
-          if (!isDesktop) return 'width: 85%';
-          return `width: ${this.featuredIndex === i ? '50%' : '25%'}`;
-        },
-        onScroll(){ this.updateFeatured(); },
-        updateFeatured(force = false){
-          const isDesktop = window.innerWidth >= 640;
-          if (!isDesktop || !this.scroller) { this.featuredIndex = 0; return; }
-          let best = 0, bestDelta = Infinity;
-          const parentRect = this.scroller.getBoundingClientRect();
-          this.items.forEach((el, idx) => {
-            if (!el) return;
-            const delta = Math.abs(el.getBoundingClientRect().left - parentRect.left);
-            if (delta < bestDelta) { bestDelta = delta; best = idx; }
-          });
-          if (force || best !== this.featuredIndex) { this.featuredIndex = best; this.$nextTick(() => {}); }
-        }
-      }
-    }
-  </script>
+    {{-- DESKTOP: griglia 3 --}}
+    <div class="hidden sm:grid grid-cols-3 gap-6">
+      @foreach($others as $i => $v)
+        @php $vis = $v['visibility'] ?? 'public'; @endphp
+        <div
+          x-data="videoPlayer('{{ $v['embed'] }}')"
+          x-init="init()"
+          class="relative overflow-hidden rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-black/5 backdrop-blur
+                 dark:border-gray-800 dark:bg-gray-900/60 dark:ring-white/10">
+          <div class="relative w-full" style="padding-top:56.25%">
+            <iframe x-ref="frame" title="Video {{ $i+1 }}"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowfullscreen loading="lazy"
+                    style="position:absolute;inset:0;width:100%;height:100%;border:0;display:block"
+                    x-show="canPlay"></iframe>
+            <div x-show="!canPlay" class="absolute inset-0 grid place-items-center p-3">
+              <div class="w-full max-w-sm rounded-xl border border-[color:var(--accent)]/30 bg-white/85 p-4 text-center text-xs shadow-sm backdrop-blur
+                          dark:border-[color:var(--accent)]/25 dark:bg-gray-900/70">
+                Allow cookies to play this video.
+                <div class="mt-2 flex justify-center gap-2">
+                  <button type="button" @click="openPrefs()" class="rounded bg-[color:var(--accent)] px-3 py-1.5 text-white">Preferences</button>
+                  <button type="button" @click="tryLoadAnyway()" class="rounded border px-3 py-1.5 dark:border-gray-700">I accepted</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+            <div class="font-medium truncate">{{ $v['title'] }}</div>
+            <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold
+                         {{ $vis==='public'
+                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200'
+                            : 'bg-rose-50 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200' }}">
+              {{ $vis==='public' ? 'PUBLIC' : 'PRIVATE' }}
+            </span>
+          </div>
+        </div>
+      @endforeach
+    </div>
+  </div>
+@endif
 
   {{-- Alpine helper per i video (consent-aware) --}}
   <script>
