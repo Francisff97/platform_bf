@@ -99,174 +99,149 @@
     </aside>
   </div>
 
- {{-- ====== COSTRUISCO L’ELENCO VIDEO ====== --}}
-@php
-  $isBuyer = auth()->check() && method_exists(auth()->user(),'hasPurchasedPack')
-    ? auth()->user()->hasPurchasedPack($pack->id)
-    : false;
+  {{-- ====== COSTRUISCO L’ELENCO VIDEO ====== --}}
+  @php
+    $isBuyer = auth()->check() && method_exists(auth()->user(),'hasPurchasedPack')
+      ? auth()->user()->hasPurchasedPack($pack->id)
+      : false;
 
-  $tutorials = $isBuyer
-    ? $pack->tutorials()->orderBy('sort_order')->get()
-    : $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->get();
+    $tutorials = $isBuyer
+      ? $pack->tutorials()->orderBy('sort_order')->get()
+      : $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->get();
 
-  $videos = collect();
+    $videos = collect();
 
-  // Fallback “Overview” dal Pack
-  $fallbackUrl = $isBuyer ? ($pack->private_video_url ?? $pack->video_url) : $pack->video_url;
-  if (!empty($fallbackUrl)) {
-    $embed = \App\Support\VideoEmbed::from($fallbackUrl);
-    if ($embed) {
-      $vis = ($isBuyer && $pack->private_video_url && $fallbackUrl === $pack->private_video_url) ? 'private' : 'public';
-      $videos->push(['title'=>'Overview', 'embed'=>$embed, 'visibility'=>$vis]);
+    // Fallback “Overview” dal Pack
+    $fallbackUrl = $isBuyer ? ($pack->private_video_url ?? $pack->video_url) : $pack->video_url;
+    if (!empty($fallbackUrl)) {
+      $embed = \App\Support\VideoEmbed::from($fallbackUrl);
+      if ($embed) {
+        $vis = ($isBuyer && $pack->private_video_url && $fallbackUrl === $pack->private_video_url) ? 'private' : 'public';
+        $videos->push(['title'=>'Overview', 'embed'=>$embed, 'visibility'=>$vis]);
+      }
     }
-  }
 
-  // Tutorial collegati
-  foreach ($tutorials as $t) {
-    if (!$t->video_url) continue;
-    $embed = \App\Support\VideoEmbed::from($t->video_url);
-    if ($embed) {
-      $videos->push([
-        'title'      => $t->title ?: 'Tutorial',
-        'embed'      => $embed,
-        'visibility' => $t->is_public ? 'public' : 'private',
-      ]);
+    // Tutorial collegati
+    foreach ($tutorials as $t) {
+      if (!$t->video_url) continue;
+      $embed = \App\Support\VideoEmbed::from($t->video_url);
+      if ($embed) {
+        $videos->push([
+          'title'      => $t->title ?: 'Tutorial',
+          'embed'      => $embed,
+          'visibility' => $t->is_public ? 'public' : 'private',
+        ]);
+      }
     }
-  }
 
-  // deduplica
-  $videos = $videos->unique('embed')->values();
-@endphp
+    // Deduplica
+    $videos = $videos->unique('embed')->values();
+  @endphp
 
-@if($videos->count())
-  <div class="mx-auto max-w-6xl px-4 pb-10 pt-6"
-       x-data="videoRail({{ $videos->toJson() }})"
-       x-init="init()">
+  @if($videos->count())
+    <div class="mx-auto max-w-6xl px-4 pb-10 pt-6"
+         x-data="videoRail(@json($videos))"
+         x-init="init()">
 
-    <div class="mb-3 flex items-center justify-between">
-      <h3 class="text-lg font-semibold">More videos</h3>
-      <div class="text-xs text-gray-500 sm:hidden">Swipe to watch more →</div>
-    </div>
+      <div class="mb-3 flex items-center justify-between">
+        <h3 class="text-lg font-semibold">More videos</h3>
+        <div class="text-xs text-gray-500 sm:hidden">Swipe to watch more →</div>
+      </div>
 
-    {{-- Rail orizzontale: mobile 1 card, desktop 3 (50% + 25% + 25%) --}}
-    <div class="relative">
-      <div class="-mx-4 overflow-x-auto px-4" x-ref="scroller" @scroll.passive="onScroll">
-        <div class="flex items-stretch gap-4 snap-x snap-mandatory" x-ref="track">
-          @foreach($videos as $i => $v)
-            <div class="snap-start shrink-0"
-                 :style="itemWidth({{ $i }})"
-                 x-ref="item{{ $i }}">
-              <div
-                x-data="videoPlayer('{{ $v['embed'] }}')"
-                x-init="init()"
-                class="relative overflow-hidden rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-black/5 backdrop-blur
-                       dark:border-gray-800 dark:bg-gray-900/60 dark:ring-white/10">
+      {{-- Rail orizzontale: mobile 1 card, desktop 3 (50% + 25% + 25%) --}}
+      <div class="relative">
+        <div class="-mx-4 overflow-x-auto px-4" x-ref="scroller" @scroll.passive="onScroll">
+          <div class="flex items-stretch gap-4 snap-x snap-mandatory" x-ref="track">
+            @foreach($videos as $i => $v)
+              <div class="snap-start shrink-0"
+                   :style="itemWidth({{ $i }})"
+                   x-ref="item{{ $i }}">
+                <div
+                  x-data="videoPlayer('{{ $v['embed'] }}')"
+                  x-init="init()"
+                  class="relative overflow-hidden rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-black/5 backdrop-blur
+                         dark:border-gray-800 dark:bg-gray-900/60 dark:ring-white/10">
 
-                {{-- 16:9 --}}
-                <div class="relative w-full" style="padding-top:56.25%">
-                  <iframe x-ref="frame" title="Video {{ $i+1 }}"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                          allowfullscreen loading="lazy"
-                          style="position:absolute;inset:0;width:100%;height:100%;border:0;display:block"
-                          x-show="canPlay"></iframe>
+                  {{-- 16:9 --}}
+                  <div class="relative w-full" style="padding-top:56.25%">
+                    <iframe x-ref="frame" title="Video {{ $i+1 }}"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowfullscreen loading="lazy"
+                            style="position:absolute;inset:0;width:100%;height:100%;border:0;display:block"
+                            x-show="canPlay"></iframe>
 
-                  {{-- Placeholder se mancano i consensi --}}
-                  <div x-show="!canPlay" class="absolute inset-0 grid place-items-center p-3">
-                    <div class="w-full max-w-sm rounded-xl border border-[color:var(--accent)]/30 bg-white/85 p-4 text-center text-xs shadow-sm backdrop-blur
-                                dark:border-[color:var(--accent)]/25 dark:bg-gray-900/70">
-                      Allow cookies to play this video.
-                      <div class="mt-2 flex justify-center gap-2">
-                        <button type="button" @click="openPrefs()" class="rounded bg-[color:var(--accent)] px-3 py-1.5 text-white">Preferences</button>
-                        <button type="button" @click="tryLoadAnyway()" class="rounded border px-3 py-1.5 dark:border-gray-700">I accepted</button>
+                    {{-- Placeholder se mancano i consensi --}}
+                    <div x-show="!canPlay" class="absolute inset-0 grid place-items-center p-3">
+                      <div class="w-full max-w-sm rounded-xl border border-[color:var(--accent)]/30 bg-white/85 p-4 text-center text-xs shadow-sm backdrop-blur
+                                  dark:border-[color:var(--accent)]/25 dark:bg-gray-900/70">
+                        Allow cookies to play this video.
+                        <div class="mt-2 flex justify-center gap-2">
+                          <button type="button" @click="openPrefs()" class="rounded bg-[color:var(--accent)] px-3 py-1.5 text-white">Preferences</button>
+                          <button type="button" @click="tryLoadAnyway()" class="rounded border px-3 py-1.5 dark:border-gray-700">I accepted</button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {{-- footer card: titolo + chip --}}
-                <div class="flex items-center justify-between gap-3 border-t border-black/5 px-3 py-2 text-sm dark:border-white/10">
-                  <div class="font-medium truncate">{{ $v['title'] }}</div>
-                  @php $vis = $v['visibility'] ?? 'public'; @endphp
-                  <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold
-                               {{ $vis==='public'
-                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200'
-                                  : 'bg-rose-50 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200' }}">
-                    {{ $vis==='public' ? 'PUBLIC' : 'PRIVATE' }}
-                  </span>
+                  {{-- footer card: titolo + chip --}}
+                  <div class="flex items-center justify-between gap-3 border-t border-black/5 px-3 py-2 text-sm dark:border-white/10">
+                    <div class="font-medium truncate">{{ $v['title'] }}</div>
+                    @php $vis = $v['visibility'] ?? 'public'; @endphp
+                    <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold
+                                 {{ $vis==='public'
+                                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200'
+                                    : 'bg-rose-50 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200' }}">
+                      {{ $vis==='public' ? 'PUBLIC' : 'PRIVATE' }}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          @endforeach
+            @endforeach
+          </div>
         </div>
+
+        {{-- bordo sfumato a destra per indicare scroll (solo mobile) --}}
+        <div class="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-[var(--bg-light)]/90 to-transparent dark:from-[var(--bg-dark)]/90 sm:hidden"></div>
       </div>
-
-      {{-- bordo sfumato a destra per indicare scroll (solo mobile) --}}
-      <div class="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-[var(--bg-light)]/90 to-transparent dark:from-[var(--bg-dark)]/90 sm:hidden"></div>
     </div>
-  </div>
-@endif
+  @endif
 
-<script>
-  // Rail responsiva: desktop 3 visibili (50% + 25% + 25%), mobile 1 card
-  function videoRail(videos){
-    return {
-      videos,
-      featuredIndex: 0,
-      scroller: null,
-      items: [],
-      init(){
-        this.scroller = this.$refs.scroller;
-        // raccogli riferimenti item
-        this.items = Array.from({length: this.videos.length}, (_,i)=> this.$refs['item'+i]);
-
-        // iniziale
-        this.updateFeatured();
-
-        // ricalcola su resize
-        window.addEventListener('resize', () => {
-          this.updateFeatured(true);
-        }, { passive: true });
-      },
-      // calcola la larghezza di ogni item in base al breakpoint e all’indice evidenziato
-      itemWidth(i){
-        const isDesktop = window.innerWidth >= 640; // sm
-        if (!isDesktop) {
-          return 'width: 85%'; // mobile: quasi full, per vedere che c'è altro
-        }
-        return `width: ${this.featuredIndex === i ? '50%' : '25%'}`;
-      },
-      // quando si scrolla trova l’elemento più a sinistra (vicino a scrollLeft)
-      onScroll(){
-        this.updateFeatured();
-      },
-      updateFeatured(force = false){
-        const isDesktop = window.innerWidth >= 640;
-        if (!isDesktop || !this.scroller) {
-          this.featuredIndex = 0;
-          return;
-        }
-        const left = this.scroller.scrollLeft;
-        let best = 0, bestDelta = Infinity;
-
-        this.items.forEach((el, idx) => {
-          if (!el) return;
-          const rect = el.getBoundingClientRect();
+  <script>
+    // Rail responsiva: desktop 3 visibili (50% + 25% + 25%), mobile 1 card
+    function videoRail(videos){
+      return {
+        videos,
+        featuredIndex: 0,
+        scroller: null,
+        items: [],
+        init(){
+          this.scroller = this.$refs.scroller;
+          this.items = Array.from({length: this.videos.length}, (_,i)=> this.$refs['item'+i]);
+          this.updateFeatured();
+          window.addEventListener('resize', () => this.updateFeatured(true), { passive: true });
+        },
+        itemWidth(i){
+          const isDesktop = window.innerWidth >= 640; // sm
+          if (!isDesktop) return 'width: 85%';
+          return `width: ${this.featuredIndex === i ? '50%' : '25%'}`;
+        },
+        onScroll(){ this.updateFeatured(); },
+        updateFeatured(force = false){
+          const isDesktop = window.innerWidth >= 640;
+          if (!isDesktop || !this.scroller) { this.featuredIndex = 0; return; }
+          let best = 0, bestDelta = Infinity;
           const parentRect = this.scroller.getBoundingClientRect();
-          const delta = Math.abs(rect.left - parentRect.left); // distanza dal bordo sinistro visibile
-          if (delta < bestDelta) { bestDelta = delta; best = idx; }
-        });
-
-        if (force || best !== this.featuredIndex) {
-          this.featuredIndex = best;
-          // forza un re-render della larghezza aggiornando lo style via Alpine
-          this.$nextTick(() => {});
+          this.items.forEach((el, idx) => {
+            if (!el) return;
+            const delta = Math.abs(el.getBoundingClientRect().left - parentRect.left);
+            if (delta < bestDelta) { bestDelta = delta; best = idx; }
+          });
+          if (force || best !== this.featuredIndex) { this.featuredIndex = best; this.$nextTick(() => {}); }
         }
       }
     }
-  }
-</script>
+  </script>
 
-            
   {{-- Alpine helper per i video (consent-aware) --}}
   <script>
     function videoPlayer(src){
