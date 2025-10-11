@@ -1,5 +1,6 @@
 {{-- resources/views/public/packs/show.blade.php --}}
 <x-app-layout>
+    @php($seoSubject = $pack)
   @php
     $catColor = $pack->category->color ?? 'indigo';
 
