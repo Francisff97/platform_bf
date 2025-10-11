@@ -116,24 +116,69 @@
   <div class="flex min-h-[calc(100vh-3.5rem)]">
     {{-- SIDEBAR --}}
     @php
-      $items = [
-        ['label'=>'Dashboard',       'route'=>'admin.dashboard',        'match'=>['admin.dashboard']],
-        ['label'=>'Packs',           'route'=>'admin.packs.index',      'match'=>['admin.packs.*']],
-        ['label'=>'Coupons',           'route'=>'admin.coupons.index',      'match'=>['admin.coupons.*']],
-        ['label'=>'Categories Pack', 'route'=>'admin.categories.index', 'match'=>['admin.categories.*']],
-        ['label'=>'About page',      'route'=>'admin.about.index',      'match'=>['admin.about.*']],
-        ['label'=>'Services',        'route'=>'admin.services.index',   'match'=>['admin.services.*']],
-        ['label'=>'Builders',        'route'=>'admin.builders.index',   'match'=>['admin.builders.*']],
-        ['label'=>'Coaches',         'route'=>'admin.coaches.index',    'match'=>['admin.coaches.*']],
-        ['label'=>'Partners',         'route'=>'admin.partners.index',    'match'=>['admin.partners.*']],
-        ['label'=>'Sliders',         'route'=>'admin.slides.index',     'match'=>['admin.slides.*']],
-        ['label'=>'Hero Sections',   'route'=>'admin.heroes.index',     'match'=>['admin.heroes.*']],
-        ['label'=>'Orders',          'route'=>'admin.orders.index',     'match'=>['admin.orders.*']],
-        ['label'=>'Appearance',      'route'=>'admin.appearance.edit',  'match'=>['admin.appearance.*']],
-        ['label'=>'Platform info',   'route'=>'admin.platform.info',    'match'=>['admin.platform.*']],
-        ['label'=>'Privacy e Cookies','route'=>'admin.privacy.edit',   'match'=>['admin.privacy.*']],
-        ['label'=>'Google Analytics','route'=>'admin.analytics.edit',   'match'=>['admin.analytics.*']],
-      ];
+        $groups = [
+        [
+          'label' => 'Admin',
+          'key' => 'admin',
+         'items' => [
+        ['label'=>'Dashboard', 'route'=>'admin.dashboard', 'match'=>['admin.dashboard']],
+        ]
+        ],
+          [
+            'label' => 'Content',
+            'key'   => 'content',
+            'items' => [
+              ['label'=>'Packs', 'route'=>'admin.packs.index', 'match'=>['admin.packs.*']],
+              ['label'=>'Categories Pack', 'route'=>'admin.categories.index', 'match'=>['admin.categories.*']],
+              ['label'=>'Services', 'route'=>'admin.services.index', 'match'=>['admin.services.*']],
+              ['label'=>'About page', 'route'=>'admin.about.index', 'match'=>['admin.about.*']],
+            ],
+          ],
+          [
+            'label' => 'People',
+            'key'   => 'people',
+            'items' => [
+              ['label'=>'Builders', 'route'=>'admin.builders.index', 'match'=>['admin.builders.*']],
+              ['label'=>'Coaches',  'route'=>'admin.coaches.index',  'match'=>['admin.coaches.*']],
+              ['label'=>'Partners', 'route'=>'admin.partners.index', 'match'=>['admin.partners.*']],
+            ],
+          ],
+          [
+            'label' => 'Presentation',
+            'key'   => 'presentation',
+            'items' => [
+              ['label'=>'Hero Sections', 'route'=>'admin.heroes.index', 'match'=>['admin.heroes.*']],
+              ['label'=>'Sliders', 'route'=>'admin.slides.index', 'match'=>['admin.slides.*']],
+            ],
+          ],
+          [
+            'label' => 'Commerce',
+            'key'   => 'commerce',
+            'items' => [
+              ['label'=>'Orders', 'route'=>'admin.orders.index', 'match'=>['admin.orders.*']],
+              ['label'=>'Coupons', 'route'=>'admin.coupons.index', 'match'=>['admin.coupons.*']],
+            ],
+          ],
+          [
+            'label' => 'SEO',
+            'key'   => 'seo',
+            'items' => [
+              ['label'=>'Pages', 'route'=>'admin.seo.pages.index', 'match'=>['admin.seo.pages.*']],
+              ['label'=>'Media', 'route'=>'admin.seo.media.index', 'match'=>['admin.seo.media.*']],
+            ],
+          ],
+          [
+            'label' => 'Platform',
+            'key'   => 'platform',
+            'items' => [
+              ['label'=>'Appearance', 'route'=>'admin.appearance.edit', 'match'=>['admin.appearance.*']],
+              ['label'=>'Platform info', 'route'=>'admin.platform.info', 'match'=>['admin.platform.*']],
+              ['label'=>'Google Analytics','route'=>'admin.analytics.edit', 'match'=>['admin.analytics.*']],
+              ['label'=>'Privacy e Cookies','route'=>'admin.privacy.edit', 'match'=>['admin.privacy.*']],
+            ],
+          ],
+        ];
+      @endphp
 
       // ------------------------------
       // SLUG + FLAGS (come richiesto)
