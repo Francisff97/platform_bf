@@ -99,25 +99,26 @@
     </aside>
   </div>
 
-  {{-- ====== VIDEO / TUTORIALS: mostra solo se add-on attivo ====== --}}
+  {{-- ====== VIDEO / TUTORIALS: mostra solo se add-on attivo (FeatureFlags) ====== --}}
 @php
-  // Flag add-on tutorials (false di default)
-  $showTutorialsUI =
-      (bool) (
-        // config/addons.php => ['tutorials' => true]
-        (config('addons.tutorials') ?? null) ?:
-        // .env => ADDONS_TUTORIALS=true
-        (env('ADDONS_TUTORIALS', false) ?: null) ?:
-        // eventuale helper tipo feature('addons.tutorials') / feature('tutorials')
-        (function_exists('feature') ? (feature('addons.tutorials') || feature('tutorials')) : null) ?:
-        // eventuale classe centralizzata \App\Support\Features
-        ((class_exists(\App\Support\Features::class) && method_exists(\App\Support\Features::class,'enabled'))
-            ? \App\Support\Features::enabled('tutorials')
-            : null)
-      );
+  // Usa il tuo toggler
+  $tutorialsEnabled = false;
+  if (class_exists(\App\Support\FeatureFlags::class)) {
+      $FF = \App\Support\FeatureFlags::class;
+
+      // Prova chiavi comuni per sicurezza
+      foreach (['tutorials','addons.tutorials','video_tutorials'] as $key) {
+          if (
+              (method_exists($FF,'enabled')   && $FF::enabled($key)) ||
+              (method_exists($FF,'isEnabled') && $FF::isEnabled($key)) ||
+              (method_exists($FF,'on')        && $FF::on($key)) ||
+              (method_exists($FF,'get')       && $FF::get($key))
+          ) { $tutorialsEnabled = true; break; }
+      }
+  }
 @endphp
 
-@if($showTutorialsUI)
+@if($tutorialsEnabled)
 
   {{-- ====== COSTRUISCO L’ELENCO VIDEO ====== --}}
   @php
