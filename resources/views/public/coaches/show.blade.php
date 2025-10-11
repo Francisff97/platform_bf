@@ -1,4 +1,5 @@
 <x-app-layout>
+    @php($seoSubject = $coach)
   @php
     // utility per prezzo minimo (se serve evidenziarlo in header)
     $minPrice = optional($coach->prices->sortBy('price_cents')->first());
