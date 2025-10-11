@@ -119,26 +119,37 @@
       </div>
 
       {{-- PLAYER --}}
-      @php
-        use App\Support\VideoEmbed;
-        use App\Support\Purchases;
+@php
+  $isBuyer = auth()->check() && (
+    method_exists(\App\Support\Purchases::class, 'userHasCoach')
+    && \App\Support\Purchases::userHasCoach(auth()->id(), $coach->id)
+  );
 
-        $isBuyer = auth()->check() && (
-          (method_exists(\App\Support\Purchases::class,'userHasCoach') && Purchases::userHasCoach(auth()->id(), $coach->id))
-        );
+  $primaryTutorial = $isBuyer
+    ? $coach->tutorials()->orderBy('sort_order')->first()
+    : $coach->tutorials()->where('is_public', true)->orderBy('sort_order')->first();
 
-        $primaryTutorial = $isBuyer
-          ? $coach->tutorials()->orderBy('sort_order')->first()
-          : $coach->tutorials()->where('is_public', true)->orderBy('sort_order')->first();
+  $embedUrl = null;
+  if ($primaryTutorial && $primaryTutorial->video_url) {
+    $embedUrl = \App\Support\VideoEmbed::from($primaryTutorial->video_url);
+  }
+  if (!$embedUrl && !empty($coach->video_url)) {
+    $embedUrl = \App\Support\VideoEmbed::from($coach->video_url);
+  }
+@endphp
 
-        $embedUrl = null;
-        if ($primaryTutorial && $primaryTutorial->video_url) {
-          $embedUrl = VideoEmbed::from($primaryTutorial->video_url);
-        }
-        if (!$embedUrl && !empty($coach->video_url)) {
-          $embedUrl = VideoEmbed::from($coach->video_url);
-        }
-      @endphp
+@if($embedUrl)
+  <div class="mt-6 overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
+    <iframe
+      src="{{ $embedUrl }}"
+      class="h-[360px] w-full sm:h-[420px]"
+      frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      allowfullscreen
+      loading="lazy"
+    ></iframe>
+  </div>
+@endif
 
       @if($embedUrl)
         <div class="mt-6 overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
