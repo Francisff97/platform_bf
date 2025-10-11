@@ -100,39 +100,37 @@
   </div>
 
   {{-- ====== COSTRUISCO L’ELENCO VIDEO ====== --}}
-  @php
-    use App\Support\VideoEmbed;
+@php
+  $isBuyer = auth()->check() && method_exists(auth()->user(),'hasPurchasedPack')
+    ? auth()->user()->hasPurchasedPack($pack->id)
+    : false;
 
-    $isBuyer = auth()->check() && method_exists(auth()->user(),'hasPurchasedPack')
-      ? auth()->user()->hasPurchasedPack($pack->id)
-      : false;
+  $tutorials = $isBuyer
+    ? $pack->tutorials()->orderBy('sort_order')->get()
+    : $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->get();
 
-    $tutorials = $isBuyer
-      ? $pack->tutorials()->orderBy('sort_order')->get()
-      : $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->get();
+  $videos = collect();
 
-    $videos = collect();
+  // 1) fallback dal Pack (messo in testa se c'è)
+  $fallbackUrl = $isBuyer ? ($pack->private_video_url ?? $pack->video_url) : $pack->video_url;
+  if (!empty($fallbackUrl)) {
+    $embed = \App\Support\VideoEmbed::from($fallbackUrl);
+    if ($embed) $videos->push(['title'=>'Overview', 'embed'=>$embed]);
+  }
 
-    // 1) fallback dal Pack (messo in testa se c'è)
-    $fallbackUrl = $isBuyer ? ($pack->private_video_url ?? $pack->video_url) : $pack->video_url;
-    if (!empty($fallbackUrl)) {
-      $embed = VideoEmbed::from($fallbackUrl);
-      if ($embed) $videos->push(['title'=>'Overview', 'embed'=>$embed]);
-    }
+  // 2) tutti i tutorial
+  foreach ($tutorials as $t) {
+    if (!$t->video_url) continue;
+    $embed = \App\Support\VideoEmbed::from($t->video_url);
+    if ($embed) $videos->push(['title'=>$t->title ?? 'Tutorial', 'embed'=>$embed]);
+  }
 
-    // 2) tutti i tutorial
-    foreach ($tutorials as $t) {
-      if (!$t->video_url) continue;
-      $embed = VideoEmbed::from($t->video_url);
-      if ($embed) $videos->push(['title'=>$t->title ?? 'Tutorial', 'embed'=>$embed]);
-    }
+  // 3) deduplica per embed URL
+  $videos = $videos->unique('embed')->values();
 
-    // 3) deduplica per embed URL
-    $videos = $videos->unique('embed')->values();
-
-    $featured = $videos->first();
-    $others   = $videos->slice(1);
-  @endphp
+  $featured = $videos->first();
+  $others   = $videos->slice(1);
+@endphp
 
   {{-- ====== FEATURED PLAYER (grande) ====== --}}
   @if($featured)
