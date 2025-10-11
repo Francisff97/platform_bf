@@ -124,7 +124,7 @@
         ['label'=>'Dashboard', 'route'=>'admin.dashboard', 'match'=>['admin.dashboard']],
         ]
         ],
-      ],
+      ]
       $items = [
         ['label'=>'Dashboard',       'route'=>'admin.dashboard',        'match'=>['admin.dashboard']],
         ['label'=>'Packs',           'route'=>'admin.packs.index',      'match'=>['admin.packs.*']],
