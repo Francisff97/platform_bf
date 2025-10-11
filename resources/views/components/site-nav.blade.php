@@ -18,9 +18,9 @@
     ['label'=>'Home',     'route'=>'home',            'match'=>['home']],
     ['label'=>'About',    'route'=>'about',           'match'=>['about']],
     ['label'=>'Packs',    'route'=>'packs.public',    'match'=>['packs.*']],
-['label'=>'Coaches',  'route'=>'coaches.index',   'match'=>['coaches.index','coaches.show']],
-    ['label'=>'Services', 'route'=>'services.public', 'match'=>['services.public']],
+    ['label'=>'Coaches',  'route'=>'coaches.index',   'match'=>['coaches.index','coaches.show']],
     ['label'=>'Builders', 'route'=>'builders.index',  'match'=>['builders.index','builders.show']],
+    ['label'=>'Services', 'route'=>'services.public', 'match'=>['services.public']],
     ['label'=>'Contacts', 'route'=>'contacts',        'match'=>['contacts']],
   ];
 
