@@ -101,12 +101,9 @@
 
   {{-- ====== VIDEO / TUTORIALS: mostra solo se add-on attivo (FeatureFlags) ====== --}}
 @php
-  // Usa il tuo toggler
   $tutorialsEnabled = false;
   if (class_exists(\App\Support\FeatureFlags::class)) {
       $FF = \App\Support\FeatureFlags::class;
-
-      // Prova chiavi comuni per sicurezza
       foreach (['tutorials','addons.tutorials','video_tutorials'] as $key) {
           if (
               (method_exists($FF,'enabled')   && $FF::enabled($key)) ||
@@ -119,7 +116,6 @@
 @endphp
 
 @if($tutorialsEnabled)
-
   {{-- ====== COSTRUISCO L’ELENCO VIDEO ====== --}}
   @php
     $isBuyer = auth()->check() && method_exists(auth()->user(),'hasPurchasedPack')
@@ -177,22 +173,23 @@
               <div class="snap-start shrink-0"
                    :style="itemWidth({{ $i }})"
                    x-ref="item{{ $i }}">
+                {{-- Wrapper SENZA overflow-hidden (per non “clippare” i modali esterni) --}}
                 <div
                   x-data="videoPlayer(@js($v['embed']))"
                   x-init="init()"
-                  class="relative overflow-hidden rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-black/5 backdrop-blur
+                  class="relative rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-black/5 backdrop-blur
                          dark:border-gray-800 dark:bg-gray-900/60 dark:ring-white/10">
 
-                  {{-- 16:9 --}}
-                  <div class="relative w-full" style="padding-top:56.25%">
+                  {{-- 16:9 (qui mettiamo overflow-hidden per i bordi arrotondati) --}}
+                  <div class="relative w-full overflow-hidden rounded-t-2xl" style="padding-top:56.25%">
                     <iframe x-ref="frame" title="Video {{ $i+1 }}"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                             allowfullscreen loading="lazy"
                             style="position:absolute;inset:0;width:100%;height:100%;border:0;display:block"
-                            x-show="canPlay"></iframe>
+                            x-show="canPlay" x-cloak></iframe>
 
                     {{-- Placeholder se mancano i consensi --}}
-                    <div x-show="!canPlay" class="absolute inset-0 grid place-items-center p-3">
+                    <div x-show="!canPlay" x-cloak class="absolute inset-0 grid place-items-center p-3">
                       <div class="w-full max-w-sm rounded-xl border border-[color:var(--accent)]/30 bg-white/85 p-4 text-center text-xs shadow-sm backdrop-blur
                                   dark:border-[color:var(--accent)]/25 dark:bg-gray-900/70">
                         Allow cookies to play this video.
@@ -200,12 +197,13 @@
                           <button type="button" @click="openPrefs()" class="rounded bg-[color:var(--accent)] px-3 py-1.5 text-white">Preferences</button>
                           <button type="button" @click="tryLoadAnyway()" class="rounded border px-3 py-1.5 dark:border-gray-700">I accepted</button>
                         </div>
+                        <p class="mt-2 text-[11px] text-gray-500 dark:text-gray-400">Tip: if you don’t accept cookies you might not see embedded videos.</p>
                       </div>
                     </div>
                   </div>
 
                   {{-- footer card: titolo + chip --}}
-                  <div class="flex items-center justify-between gap-3 border-t border-black/5 px-3 py-2 text-sm dark:border-white/10">
+                  <div class="flex items-center justify-between gap-3 border-t border-black/5 px-3 py-2 text-sm dark:border-white/10 rounded-b-2xl">
                     <div class="font-medium truncate">{{ $v['title'] }}</div>
                     @php $vis = $v['visibility'] ?? 'public'; @endphp
                     <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold
@@ -263,43 +261,50 @@
     }
   </script>
 
-  {{-- JS: player con consenso Iubenda --}}
+  {{-- JS: player con consenso Iubenda (robusto, con “ready-poll” e più eventi) --}}
   <script>
     function videoPlayer(src){
       return {
-        src, canPlay: false,
+        src, canPlay: false, _readyTries: 0, _maxTries: 30,
         init(){
+          // prova ad attendere l'API di Iubenda (fino a ~3s)
+          const waitApi = () => {
+            const ok = !!(window._iub && _iub.cs && _iub.cs.api);
+            if (ok || this._readyTries >= this._maxTries) {
+              this.evaluateConsent();
+              this.bindConsentEvents();
+              if (this.canPlay) this.$nextTick(() => this.attach());
+              return;
+            }
+            this._readyTries++;
+            setTimeout(waitApi, 100);
+          };
+          waitApi();
+        },
+        evaluateConsent(){
           try {
             if (window._iub && _iub.cs && _iub.cs.api) {
+              // prova più API/versioni
               const ok =
                 (_iub.cs.api.getConsentFor && (_iub.cs.api.getConsentFor('experience') || _iub.cs.api.getConsentFor('marketing'))) ||
                 (_iub.cs.api.getConsentForPurpose && (_iub.cs.api.getConsentForPurpose(3) || _iub.cs.api.getConsentForPurpose(4)));
               this.canPlay = !!ok;
-              document.addEventListener('iubenda_consent_given', () => { this.load(); }, { once:true });
-              document.addEventListener('iubenda_updated',      () => { this.load(); });
             } else {
-              this.canPlay = true;
+              this.canPlay = true; // nessun Iubenda => non bloccare
             }
           } catch(e){ this.canPlay = true; }
-          if (this.canPlay) this.$nextTick(() => this.attach());
+        },
+        bindConsentEvents(){
+          const rel = () => { this.evaluateConsent(); if (this.canPlay) this.attach(); }
+          // copriamo vari nomi evento (Iubenda può differire per versione)
+          ['iubenda_consent_given','iubenda_consent_updated','iubenda_preferences_updated','iubenda_updated']
+            .forEach(ev => document.addEventListener(ev, rel));
         },
         attach(){ if (this.$refs.frame && !this.$refs.frame.src) this.$refs.frame.src = this.src; },
-        load(){
-          try{
-            const ok =
-              (window._iub && _iub.cs && _iub.cs.api)
-                ? ((_iub.cs.api.getConsentFor && (_iub.cs.api.getConsentFor('experience') || _iub.cs.api.getConsentFor('marketing')))
-                    || (_iub.cs.api.getConsentForPurpose && (_iub.cs.api.getConsentForPurpose(3) || _iub.cs.api.getConsentForPurpose(4))))
-                : true;
-            this.canPlay = !!ok;
-            if (this.canPlay) this.attach();
-          }catch(e){ this.canPlay = true; this.attach(); }
-        },
-        openPrefs(){ try{ _iub.cs.api.openPreferences(); }catch(e){} },
-        tryLoadAnyway(){ this.load(); }
+        openPrefs(){ try { _iub.cs.api.openPreferences(); } catch(e){} },
+        tryLoadAnyway(){ this.evaluateConsent(); if (this.canPlay) this.attach(); }
       }
     }
   </script>
-
 @endif
 </x-app-layout>
