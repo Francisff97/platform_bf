@@ -160,7 +160,7 @@
         'key'   => 'admin',
         'items' => [
           ['label'=>'Dashboard', 'route'=>'admin.dashboard', 'match'=>['admin.dashboard']],
-        ['label'=>'Img optimizer', 'route'=>'admin.webp', 'match'=>['admin.webp']],
+        ['label'=>'Img optimizer', 'route'=>'admin.webp.index', 'match'=>['admin.webp.*']],
         ],
       ],
       [
