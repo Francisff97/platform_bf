@@ -162,33 +162,30 @@
         </div>
       </div>
 
-        @php
-  use App\Support\VideoEmbed;
-  use App\Support\Purchases;
-
-  $publicVideo  = VideoEmbed::from($coach->video_url ?? null);
+        {{-- VIDEO (dentro la colonna destra) --}}
+@php
+  $publicVideo  = \App\Support\VideoEmbed::from($coach->video_url ?? null);
   $privateVideo = null;
 
-  $canSeePrivate = auth()->check() && Purchases::userHasCoach(auth()->id(), $coach->id);
+  $canSeePrivate = auth()->check() && \App\Support\Purchases::userHasCoach(auth()->id(), $coach->id);
 
   if ($canSeePrivate && !empty($coach->private_video_url)) {
-      $privateVideo = VideoEmbed::from($coach->private_video_url);
+      $privateVideo = \App\Support\VideoEmbed::from($coach->private_video_url);
   }
   $embedUrl = $privateVideo ?: $publicVideo;
 @endphp
 
-@if($embedUrl)
+@if(!empty($embedUrl))
   <div class="mt-6 overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
     <iframe src="{{ $embedUrl }}" class="h-[360px] w-full sm:h-[420px]" frameborder="0" allowfullscreen loading="lazy"></iframe>
   </div>
 @endif
-        
-     @php
+
+@php
   $public  = $coach->tutorials()->where('is_public', true)->orderBy('sort_order')->get();
-  $private = collect();
-  if ($canSeePrivate) {
-    $private = $coach->tutorials()->where('is_public', false)->orderBy('sort_order')->get();
-  }
+  $private = $canSeePrivate
+      ? $coach->tutorials()->where('is_public', false)->orderBy('sort_order')->get()
+      : collect();
 @endphp
 
 @if($public->count() || $private->count() || $coach->tutorials()->where('is_public', false)->exists())
@@ -197,7 +194,9 @@
 
     @if($public->count())
       <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        @foreach($public as $t) <x-tutorial-card :tutorial="$t" /> @endforeach
+        @foreach($public as $t)
+          <x-tutorial-card :tutorial="$t" />
+        @endforeach
       </div>
     @endif
 
@@ -205,7 +204,9 @@
       <div class="mt-8 border-t pt-4 dark:border-gray-800">
         <div class="mb-3 text-sm text-gray-500">Exclusive for buyers</div>
         <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          @foreach($private as $t) <x-tutorial-card :tutorial="$t" /> @endforeach
+          @foreach($private as $t)
+            <x-tutorial-card :tutorial="$t" />
+          @endforeach
         </div>
       </div>
     @elseif($coach->tutorials()->where('is_public', false)->exists())
@@ -215,4 +216,6 @@
     @endif
   </div>
 @endif
+</section> {{-- chiude .md:col-span-2 --}}
+</div>     {{-- chiude la grid a 3 colonne --}}
 </x-app-layout>
