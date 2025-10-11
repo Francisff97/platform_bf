@@ -2,20 +2,19 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
   <head>
 @php
-  // in ogni view public passiamo (se c’è) $seoCtx dal controller
-  $meta = \App\Support\SeoManager::pageMeta(null, null, $seoCtx ?? []);
+  use App\Support\SeoManager;
+  $meta = SeoManager::pageMeta(null, null, $seoCtx ?? []);
 @endphp
 
 <title>{{ $meta['title'] ?? config('app.name') }}</title>
 @if(!empty($meta['description']))
   <meta name="description" content="{{ $meta['description'] }}">
 @endif
-
-<meta property="og:title" content="{{ $meta['title'] ?? config('app.name') }}">
-<meta property="og:description" content="{{ $meta['description'] ?? '' }}">
 @if(!empty($meta['og_image']))
   <meta property="og:image" content="{{ $meta['og_image'] }}">
 @endif
+<meta property="og:title" content="{{ $meta['title'] ?? config('app.name') }}">
+<meta property="og:description" content="{{ $meta['description'] ?? '' }}">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 
