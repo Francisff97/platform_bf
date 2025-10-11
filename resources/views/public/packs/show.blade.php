@@ -60,44 +60,6 @@
     </div>
   @endif
 
-  {{-- SCELTA VIDEO DA MOSTRARE --}}
-@php
-  $isBuyer = auth()->check() && (
-    method_exists(\App\Support\Purchases::class, 'userHasPack')
-    && \App\Support\Purchases::userHasPack(auth()->id(), $pack->id)
-  );
-
-  // Tutorial primario: se acquirente prendo anche i privati, altrimenti solo pubblici
-  $primaryTutorial = $isBuyer
-    ? $pack->tutorials()->orderBy('sort_order')->first()
-    : $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->first();
-
-  $embedUrl = null;
-  if ($primaryTutorial && $primaryTutorial->video_url) {
-    $embedUrl = \App\Support\VideoEmbed::from($primaryTutorial->video_url);
-  }
-  // fallback sul campo video_url del pack
-  if (!$embedUrl && !empty($pack->video_url)) {
-    $embedUrl = \App\Support\VideoEmbed::from($pack->video_url);
-  }
-@endphp
-
-{{-- PLAYER (solo se URL valido) --}}
-@if($embedUrl)
-  <div class="mx-auto max-w-6xl px-4 pt-6">
-    <div class="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
-      <iframe
-        src="{{ $embedUrl }}"
-        class="h-[360px] w-full sm:h-[420px]"
-        frameborder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowfullscreen
-        loading="lazy"
-      ></iframe>
-    </div>
-  </div>
-@endif
-
   {{-- BODY + BUYBOX --}}
   <div class="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 py-10 md:grid-cols-3">
     <section class="md:col-span-2">
@@ -137,93 +99,83 @@
     </aside>
   </div>
 
-  {{-- ====== VIDEO (pubblico/privato) ====== --}}
+  {{-- ====== VIDEO PLAYER (consent-aware) ====== --}}
 @php
-  /** Decidi se l’utente è buyer */
-  $isBuyer = auth()->check() && method_exists(auth()->user(), 'hasPurchasedPack')
+  // Sei acquirente?
+  $isBuyer = auth()->check() && method_exists(auth()->user(),'hasPurchasedPack')
     ? auth()->user()->hasPurchasedPack($pack->id)
     : false;
 
-  // 1) Se esistono tutorial: scegli il "primario"
-  //    - buyer: qualsiasi (anche privati), ordinati
-  //    - non buyer: solo pubblici, ordinati
+  // Scegli la sorgente video: 1) tutorial principale (rispettando public/private) 2) fallback campi sul pack
   $primaryTutorial = $isBuyer
     ? $pack->tutorials()->orderBy('sort_order')->first()
     : $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->first();
 
-  // 2) Se non trovi tutorial, fallback ai campi sul Pack (se li usi)
-  $rawUrl = null;
-  if ($primaryTutorial && !empty($primaryTutorial->video_url)) {
-    $rawUrl = $primaryTutorial->video_url;
-  } else {
-    // eventuali campi video sul pack
-    $rawUrl = $isBuyer
-      ? ($pack->private_video_url ?? $pack->video_url ?? null)
-      : ($pack->video_url ?? null);
-  }
+  $rawUrl = $primaryTutorial?->video_url
+           ?? ($isBuyer ? ($pack->private_video_url ?? $pack->video_url) : $pack->video_url);
 
-  $embedUrl = \App\Support\VideoEmbed::from($rawUrl);
+  $embedUrl = $rawUrl ? \App\Support\VideoEmbed::from($rawUrl) : null;
 @endphp
 
 @if($embedUrl)
-  {{-- Wrapper con rapporto 16:9 che evita "altezza 0" --}}
   <div class="mx-auto max-w-6xl px-4 pt-6">
-    <div style="position:relative;width:100%;padding-top:56.25%;overflow:hidden;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.08)">
-      <iframe
-        src="{{ $embedUrl }}"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowfullscreen
-        loading="lazy"
-        style="position:absolute;top:0;left:0;width:100%;height:100%;border:0">
-      </iframe>
-    </div>
+    <div
+      x-data="videoPlayer('{{ $embedUrl }}')"
+      x-init="init()"
+      class="relative overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10 bg-white/60 dark:bg-gray-900/60">
 
-    {{-- debug temporaneo (puoi rimuoverlo) --}}
-    {{-- <div class="mt-2 text-xs text-gray-500">EMBED: {{ $embedUrl }}</div> --}}
-  </div>
-@endif
+      {{-- aspect ratio 16:9 --}}
+      <div class="relative w-full" style="padding-top:56.25%">
 
-{{-- ====== TUTORIALS GRID ====== --}}
-@php
-  $public  = $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->get();
-  $private = $isBuyer
-    ? $pack->tutorials()->where('is_public', false)->orderBy('sort_order')->get()
-    : collect();
-@endphp
+        {{-- IFRAME (si attiva solo con consenso) --}}
+        <iframe
+          x-ref="frame"
+          title="Pack video"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+          loading="lazy"
+          style="position:absolute;inset:0;width:100%;height:100%;border:0;display:block"
+          x-show="canPlay"
+        ></iframe>
 
-@if($public->count() || $private->count() || $pack->tutorials()->where('is_public', false)->exists())
-  <div class="mx-auto max-w-6xl px-4 pb-14">
-    <div class="mt-2 rounded-2xl border border-gray-100 p-6 shadow-sm dark:border-gray-800">
-      <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Tutorials</h3>
+        {{-- PLACEHOLDER se i cookie per i video non sono consentiti --}}
+        <div
+          x-show="!canPlay"
+          class="absolute inset-0 grid place-items-center p-4"
+        >
+          <div class="w-full max-w-lg rounded-xl border border-[color:var(--accent)]/30 bg-white/80 p-5 text-center shadow-sm backdrop-blur
+                      dark:border-[color:var(--accent)]/25 dark:bg-gray-900/70">
+            <div class="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-[color:var(--accent)]/10 text-[color:var(--accent)]">
+              {{-- play icon --}}
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+            <h3 class="text-base font-semibold">Enable video playback</h3>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+              To watch this video you need to allow <span class="font-medium">experience/marketing</span> cookies in the cookie preferences.
+            </p>
 
-      {{-- PUBLIC --}}
-      @if($public->count())
-        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          @foreach($public as $t)
-            <x-tutorial-card :tutorial="$t" />
-          @endforeach
-        </div>
-      @endif
+            <div class="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+              <button
+                type="button"
+                @click="openPrefs()"
+                class="w-full sm:w-auto rounded-lg bg-[color:var(--accent)] px-4 py-2 text-white shadow hover:opacity-90">
+                Open cookie preferences
+              </button>
+              <button
+                type="button"
+                @click="tryLoadAnyway()"
+                class="w-full sm:w-auto rounded-lg border px-4 py-2 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
+                I already accepted
+              </button>
+            </div>
 
-      {{-- PRIVATE (solo buyer) --}}
-      @if($private->count())
-        <div class="mt-8 border-t pt-4 dark:border-gray-800">
-          <div class="mb-3 text-sm text-gray-500">Exclusive for buyers</div>
-          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            @foreach($private as $t)
-              <x-tutorial-card :tutorial="$t" />
-            @endforeach
+            <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+              Tip: if you don’t accept cookies you might not see embedded videos.
+            </p>
           </div>
         </div>
-      @elseif($pack->tutorials()->where('is_public', false)->exists())
-        <div class="mt-8 rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
-          Some tutorials are available after 
-        </div>
-      @endif
+      </div>
     </div>
   </div>
 @endif
-                    {{-- debugging --}}
-<div class="my-2 text-sm text-red-600">EMBED URL: {{ $embedUrl ?? 'null' }}</div>
-                    <iframe src="https://www.youtube.com/embed/dRnR6oBuEYE" width="560" height="315"></iframe>
 </x-app-layout>
