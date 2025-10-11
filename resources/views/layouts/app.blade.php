@@ -100,7 +100,7 @@
   {!! $privacySettings->banner_head_code !!}
 @endif
   </head>
-
+<style>[x-cloak]{display:none!important}</style>
   <body class="min-h-screen bg-[var(--bg-light)] dark:bg-[var(--bg-dark)] text-gray-900 dark:text-gray-100 font-sans">
     @if($gtm)
       <!-- Google Tag Manager (noscript) -->
