@@ -116,15 +116,6 @@
   <div class="flex min-h-[calc(100vh-3.5rem)]">
     {{-- SIDEBAR --}}
     @php
-      $groups = [
-        [
-          'label' => 'Admin',
-          'key' => 'admin',
-         'items' => [
-        ['label'=>'Dashboard', 'route'=>'admin.dashboard', 'match'=>['admin.dashboard']],
-        ]
-        ],
-      ]
       $items = [
         ['label'=>'Dashboard',       'route'=>'admin.dashboard',        'match'=>['admin.dashboard']],
         ['label'=>'Packs',           'route'=>'admin.packs.index',      'match'=>['admin.packs.*']],
@@ -177,6 +168,27 @@
           {{ $it['label'] }}
         </a>
       @endforeach
+
+        {{ -- Cluster Content -- }}
+        @php
+        $packPageActive = request()->routeIs('admin.packs.*');
+        $builderPageActive = request()->routeIs('admin.builders.*');
+      @endphp
+      <div class="mt-3">
+        <div class="px-3 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Content</div>
+        <div class="mt-1 space-y-1 px-2">
+          <a href="{{ route('admin.packs.index') }}"
+             class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
+                    {{ $packPageActive ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
+            Packs
+          </a>
+          <a href="{{ route('admin.builders.index') }}"
+             class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
+                    {{ $builderPageActive ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
+            Builders
+          </a>
+        </div>
+      </div>
 
       {{-- Cluster SEO --}}
       @php
