@@ -177,4 +177,44 @@ class SeoManager
             ? ltrim(Str::after($url, '/storage/'), '/')
             : ltrim($url, '/');
     }
+        /**
+     * Estrae un CONTEXT dai modelli comuni (Pack/Builder/Coach o qualunque
+     * modello con campi simili). Utile per passarlo alle view come $seoCtx.
+     *
+     * Chiavi prodotte: name, title, slug, image_url, price_cents, price,
+     * price_{CURRENCY} (es. price_EUR) se presenti nel modello.
+     */
+    public static function contextFromModel($model): array
+    {
+        if (!$model) return [];
+
+        $ctx = [
+            'name'  => $model->name  ?? $model->title ?? null,
+            'title' => $model->title ?? $model->name  ?? null,
+            'slug'  => $model->slug  ?? null,
+        ];
+
+        // immagine
+        if (isset($model->image_path) && $model->image_path) {
+            try {
+                $ctx['image_url'] = \Illuminate\Support\Facades\Storage::disk('public')->url($model->image_path);
+            } catch (\Throwable $e) {
+                // ignora
+            }
+        }
+
+        // prezzo (se esiste sul modello)
+        if (isset($model->price_cents)) {
+            $currency = $model->currency ?? 'EUR';
+            $ctx['price_cents'] = (int) $model->price_cents;
+            $ctx['price'] = number_format(((int)$model->price_cents)/100, 2, '.', '');
+            $ctx['price_'.$currency] = $ctx['price'];
+            $ctx['currency'] = $currency;
+        }
+
+        // aggiungi altri campi utili qui se servono ai template
+        // es: $ctx['category'] = optional($model->category)->name ?? null;
+
+        return $ctx;
+    }
 }
