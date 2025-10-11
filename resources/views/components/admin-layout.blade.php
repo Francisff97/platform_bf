@@ -204,7 +204,7 @@
 
     {{-- DESKTOP: lista piatta --}}
     <nav class="hidden px-2 space-y-1 text-sm sm:block">
-      @foreach($items as $it)
+      @foreach($groups as $it)
         @php $active = request()->routeIs(...$it['match']); @endphp
         <a href="{{ route($it['route']) }}"
            class="group relative block rounded px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800
