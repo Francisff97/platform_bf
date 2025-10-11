@@ -169,7 +169,7 @@
         </a>
       @endforeach
 
-        {{ -- Cluster Content -- }}
+        {{-- Cluster Content --}}
         @php
         $packPageActive = request()->routeIs('admin.packs.*');
         $builderPageActive = request()->routeIs('admin.builders.*');
