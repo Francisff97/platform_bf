@@ -2,21 +2,20 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
   <head>
     @php
-  // passa qui il soggetto quando serve (es. $pack, $builder, $coach, …)
-  $seo = \App\Support\SeoManager::pageMeta(subject: $seoSubject ?? null);
+  // $seoCtx può arrivare dal controller; se non c’è, passa []
+  $meta = \App\Support\SeoManager::pageMeta(null, null, $seoCtx ?? []);
 @endphp
 
-@if($seo['title'])       <title>{{ $seo['title'] }}</title> @endif
-@if($seo['description']) <meta name="description" content="{{ $seo['description'] }}"> @endif
-
-@if($seo['title'])       <meta property="og:title" content="{{ $seo['title'] }}"> @endif
-@if($seo['description']) <meta property="og:description" content="{{ $seo['description'] }}"> @endif
+<title>{{ $meta['title'] ?? config('app.name') }}</title>
+@if(!empty($meta['description']))
+  <meta name="description" content="{{ $meta['description'] }}">
+@endif
+@if(!empty($meta['og_image']))
+  <meta property="og:image" content="{{ $meta['og_image'] }}">
+@endif
+<meta property="og:title" content="{{ $meta['title'] ?? config('app.name') }}">
+<meta property="og:description" content="{{ $meta['description'] ?? '' }}">
 <meta property="og:type" content="website">
-<meta property="og:url" content="{{ url()->current() }}">
-@if($seo['og_image'])    <meta property="og:image" content="{{ $seo['og_image'] }}"> @endif
-
-<meta name="twitter:card" content="summary_large_image">
-@if($seo['og_image'])    <meta name="twitter:image" content="{{ $seo['og_image'] }}"> @endif
 
     @php $gtm = optional(\App\Models\SiteSetting::first())->gtm_container_id; @endphp
     @if($gtm)
