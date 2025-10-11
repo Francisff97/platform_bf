@@ -9,6 +9,9 @@ use App\Http\Controllers\CheckoutCouponController;
 use App\Http\Controllers\RobotsController;
 
 
+use App\Http\Controllers\Admin\AdminUserController;
+
+
 
 //Privacy //
 use App\Http\Controllers\PrivacyPublicController;
@@ -443,3 +446,19 @@ Route::get('/cookie-policy',  [PrivacyPublicController::class, 'cookies'])->name
 // Sitemap & Robots //
 Route::get('/robots.txt', [\App\Http\Controllers\RobotsController::class, 'index']);
 Route::get('/sitemap.xml', [\App\Http\Controllers\SitemapController::class, 'index']);
+
+
+Route::middleware(['auth', AdminOnly::class]) // oppure il tuo middleware d'admin
+    ->prefix('admin/users')
+    ->as('admin.users.')
+    ->group(function () {
+        Route::get('/',            [AdminUserController::class,'index'])->name('index');
+        Route::get('/export.csv',  [AdminUserController::class,'export'])->name('export');
+
+        Route::get('/create',      [AdminUserController::class,'create'])->name('create');
+        Route::post('/',           [AdminUserController::class,'store'])->name('store');
+
+        Route::get('/{user}',      [AdminUserController::class,'show'])->name('show');
+        Route::get('/{user}/edit', [AdminUserController::class,'edit'])->name('edit');
+        Route::put('/{user}',      [AdminUserController::class,'update'])->name('update');
+    });
