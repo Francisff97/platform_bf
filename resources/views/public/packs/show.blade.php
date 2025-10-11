@@ -118,7 +118,22 @@
       </div>
     </aside>
   </div>
+    {{-- VIDEO embed (se presente) --}}
+@php
+    $embedUrl = \App\Support\VideoEmbed::from($pack->video_url ?? null);
+@endphp
 
+@if($embedUrl)
+  <div class="mx-auto max-w-6xl px-4 pt-6">
+    <div class="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
+      <iframe src="{{ $embedUrl }}"
+              class="h-[360px] w-full sm:h-[420px]"
+              frameborder="0"
+              allowfullscreen
+              loading="lazy"></iframe>
+    </div>
+  </div>
+@endif
   {{-- Tutorials --}}
   @php
     $public = $pack->tutorials()->where('is_public', true)->get();
