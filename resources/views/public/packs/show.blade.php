@@ -315,41 +315,40 @@
     </div>
   @endif
 
-  {{-- ====== JS player (consent-aware) — identico, ma più robusto nel ready ====== --}}
+    {{-- Alpine helper per i video (consent-aware) --}}
   <script>
     function videoPlayer(src){
       return {
-        src, canPlay: false, _try: 0, _max: 30,
+        src, canPlay: false,
         init(){
-          const wait = () => {
-            const apiReady = !!(window._iub && _iub.cs && _iub.cs.api);
-            if (apiReady || this._try >= this._max) {
-              this.evaluate(); this.bind();
-              if (this.canPlay) this.$nextTick(()=>this.attach());
-              return;
-            }
-            this._try++; setTimeout(wait,100);
-          };
-          wait();
-        },
-        evaluate(){
-          try{
+          try {
             if (window._iub && _iub.cs && _iub.cs.api) {
               const ok =
                 (_iub.cs.api.getConsentFor && (_iub.cs.api.getConsentFor('experience') || _iub.cs.api.getConsentFor('marketing'))) ||
                 (_iub.cs.api.getConsentForPurpose && (_iub.cs.api.getConsentForPurpose(3) || _iub.cs.api.getConsentForPurpose(4)));
               this.canPlay = !!ok;
-            } else { this.canPlay = true; }
-          }catch(e){ this.canPlay = true; }
-        },
-        bind(){
-          const reload = () => { this.evaluate(); if (this.canPlay) this.attach(); };
-          ['iubenda_consent_given','iubenda_consent_updated','iubenda_preferences_updated','iubenda_updated']
-            .forEach(ev => document.addEventListener(ev, reload));
+              document.addEventListener('iubenda_consent_given', () => { this.load(); }, { once:true });
+              document.addEventListener('iubenda_updated',      () => { this.load(); });
+            } else {
+              this.canPlay = true;
+            }
+          } catch(e){ this.canPlay = true; }
+          if (this.canPlay) this.$nextTick(() => this.attach());
         },
         attach(){ if (this.$refs.frame && !this.$refs.frame.src) this.$refs.frame.src = this.src; },
-        openPrefs(){ try { _iub.cs.api.openPreferences(); } catch(e){} },
-        tryLoadAnyway(){ this.evaluate(); if (this.canPlay) this.attach(); }
+        load(){
+          try{
+            const ok =
+              (window._iub && _iub.cs && _iub.cs.api)
+                ? ((_iub.cs.api.getConsentFor && (_iub.cs.api.getConsentFor('experience') || _iub.cs.api.getConsentFor('marketing')))
+                    || (_iub.cs.api.getConsentForPurpose && (_iub.cs.api.getConsentForPurpose(3) || _iub.cs.api.getConsentForPurpose(4))))
+                : true;
+            this.canPlay = !!ok;
+            if (this.canPlay) this.attach();
+          }catch(e){ this.canPlay = true; this.attach(); }
+        },
+        openPrefs(){ try{ _iub.cs.api.openPreferences(); }catch(e){} },
+        tryLoadAnyway(){ this.load(); }
       }
     }
   </script>
