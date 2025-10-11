@@ -1,29 +1,12 @@
 <x-admin-layout title="Edit Coach">
-  <x-slot name="header">
-    <h1 class="text-xl font-bold">Edit Coach</h1>
-  </x-slot>
+  <x-slot name="header"><h1 class="text-xl font-bold">Edit Coach</h1></x-slot>
 
-  {{-- Definizione UNA SOLA VOLTA della factory per il repeater --}}
-  @once
-    <script>
-      (function () {
-        if (window.pricesRepeater) return;
-        window.pricesRepeater = function(initial, defCurrency){
-          const norm = (x)=>({
-            duration:    x && x.duration     ? x.duration     : '',
-            price_cents: x && x.price_cents  ? x.price_cents  : '',
-            currency:    x && x.currency     ? x.currency     : defCurrency
-          });
-          const rows = Array.isArray(initial) ? initial.map(norm) : [];
-          if (rows.length === 0) rows.push(norm({}));
-          return {
-            rows,
-            add(){ this.rows.push(norm({})) }
-          }
-        }
-      })();
-    </script>
-  @endonce
+  @php
+    $siteCurrency = \App\Support\Currency::site()['code'];
+    $rows = collect(old('prices', $coach->prices ?? []))
+      ->map(fn($p) => is_object($p) ? ['duration'=>$p->duration,'price_cents'=>$p->price_cents,'currency'=>$p->currency] : $p)
+      ->values();
+  @endphp
 
   <form class="mx-auto grid w-full max-w-2xl gap-5 rounded-2xl border border-[color:var(--accent)]/30 bg-white/70 p-6 shadow-sm backdrop-blur
                dark:border-[color:var(--accent)]/30 dark:bg-gray-900/70"
@@ -38,13 +21,11 @@
              class="w-full rounded-xl border border-[color:var(--accent)] bg-white/90 p-2 text-sm text-black outline-none transition
                     file:mr-3 file:rounded-lg file:border-0 file:bg-[color:var(--accent)] file:px-3 file:py-2 file:text-white
                     hover:border-[color:var(--accent)]/80 focus:ring-2 focus:ring-[color:var(--accent)]
-                    dark:bg-black/80 dark:text-white" />
+                    dark:bg-black/80 dark:text-white"/>
       @if($coach->image_path)
         <img src="{{ Storage::url($coach->image_path) }}" class="mt-3 h-36 w-full rounded-lg object-cover ring-1 ring-black/5 dark:ring-white/10">
       @endif
-      <template x-if="preview">
-        <img :src="preview" class="mt-3 h-36 w-full rounded-lg object-cover ring-1 ring-black/5 dark:ring-white/10" alt="Preview">
-      </template>
+      <template x-if="preview"><img :src="preview" class="mt-3 h-36 w-full rounded-lg object-cover ring-1 ring-black/5 dark:ring-white/10" alt="Preview"></template>
     </div>
 
     <x-input name="name"  label="Name" required :value="old('name',$coach->name)" />
@@ -53,22 +34,24 @@
     <x-input name="skills" label="Skills" placeholder="Comma separated"
              :value="old('skills', $coach->skills ? implode(', ',$coach->skills) : '')" />
 
-    {{-- Prepara righe iniziali lato PHP --}}
-    @php
-      $siteCurrency = \App\Support\Currency::site()['code'];
-      $rows = collect(old('prices', $coach->prices ?? []))
-        ->map(fn($p) => is_object($p)
-              ? ['duration'=>$p->duration,'price_cents'=>$p->price_cents,'currency'=>$p->currency]
-              : $p)
-        ->values();
-    @endphp
-
-    {{-- Prices repeater (EDIT) --}}
-    <div x-data="pricesRepeater(@json($rows), @json($siteCurrency))" class="mt-2">
+    {{-- Prices repeater (no globals) --}}
+    <div
+      x-data="(()=>{ 
+        const defCurrency = @json($siteCurrency);
+        const initial = @json($rows);
+        const norm = (x)=>({ duration: x?.duration ?? '', price_cents: x?.price_cents ?? '', currency: (x?.currency ?? defCurrency).toUpperCase() });
+        const rows = Array.isArray(initial) && initial.length ? initial.map(norm) : [norm({})];
+        return {
+          rows,
+          add(){ this.rows.push(norm({})) }
+        }
+      })()"
+      class="mt-2"
+    >
       <div class="mb-1 text-sm font-medium text-gray-800 dark:text-gray-200">Prices</div>
 
       <template x-for="(row, i) in rows" :key="i">
-        <div class="mb-2 grid grid-cols-12 gap-2">
+        <div class="mb-2 grid grid-cols-12 gap-2" x-cloak>
           <input class="col-span-6 h-11 rounded-xl border border-[color:var(--accent)] bg-white/90 px-3 text-sm dark:bg-black/80 dark:text-white"
                  type="text" :name="`prices[${i}][duration]`" x-model="row.duration" placeholder="Duration (ex: 30 mins)">
           <input class="col-span-4 h-11 rounded-xl border border-[color:var(--accent)] bg-white/90 px-3 text-sm dark:bg-black/80 dark:text-white"
@@ -79,9 +62,8 @@
       </template>
 
       <div class="flex gap-2">
-        <button type="button" @click="add()"
-                class="rounded-xl bg-[var(--accent)] px-3 py-2 text-sm text-white hover:opacity-90">+ Add price</button>
-        <button type="button" @click="rows=[]; add()"
+        <button type="button" @click="add()" class="rounded-xl bg-[var(--accent)] px-3 py-2 text-sm text-white hover:opacity-90">+ Add price</button>
+        <button type="button" @click="rows=[{duration:'',price_cents:'',currency:@json($siteCurrency)}]"
                 class="rounded-xl border px-3 py-2 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">Clear</button>
       </div>
     </div>
