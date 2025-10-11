@@ -1,17 +1,15 @@
 {{-- resources/views/public/packs/show.blade.php --}}
 <x-app-layout>
   @php
-    // Per SEO (placeholders)
     ($seoSubject = $pack);
 
     $catColor = $pack->category->color ?? 'indigo';
-
     $titleColorMap = [
-      'indigo'  => 'text-indigo-600 dark:text-indigo-300',
-      'emerald' => 'text-emerald-600 dark:text-emerald-300',
-      'amber'   => 'text-amber-600 dark:text-amber-300',
-      'rose'    => 'text-rose-600 dark:text-rose-300',
-      'sky'     => 'text-sky-600 dark:text-sky-300',
+      'indigo'=>'text-indigo-600 dark:text-indigo-300',
+      'emerald'=>'text-emerald-600 dark:text-emerald-300',
+      'amber'=>'text-amber-600 dark:text-amber-300',
+      'rose'=>'text-rose-600 dark:text-rose-300',
+      'sky'=>'text-sky-600 dark:text-sky-300',
     ];
     $titleColor = $titleColorMap[$catColor] ?? 'text-gray-900 dark:text-gray-100';
 
@@ -29,8 +27,7 @@
       'rose'=>'dark:bg-rose-900 dark:text-rose-100',
       'sky'=>'dark:bg-sky-900 dark:text-sky-100',
     ];
-    $badgeCls = ($badgeLight[$catColor] ?? 'bg-gray-100 text-gray-700')
-              .' '.($badgeDark[$catColor] ?? 'dark:bg-gray-800 dark:text-gray-100');
+    $badgeCls = ($badgeLight[$catColor] ?? 'bg-gray-100 text-gray-700').' '.($badgeDark[$catColor] ?? 'dark:bg-gray-800 dark:text-gray-100');
   @endphp
 
   {{-- HERO --}}
@@ -56,7 +53,7 @@
     </div>
   </section>
 
-  {{-- COVER / MEDIA --}}
+  {{-- COVER --}}
   @if($pack->image_path)
     <div class="mx-auto max-w-6xl px-4 pt-6">
       <div class="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
@@ -65,14 +62,11 @@
     </div>
   @endif
 
-  {{-- BODY: 2 colonne --}}
+  {{-- BODY --}}
   <div class="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 py-10 md:grid-cols-3">
-    {{-- Colonna testo --}}
     <section class="md:col-span-2">
       @if($pack->excerpt)
-        <p class="mb-4 text-lg text-gray-700 dark:text-gray-200">
-          {{ $pack->excerpt }}
-        </p>
+        <p class="mb-4 text-lg text-gray-700 dark:text-gray-200">{{ $pack->excerpt }}</p>
       @endif
 
       <div class="rounded-2xl border border-gray-100 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/60">
@@ -82,7 +76,6 @@
       </div>
     </section>
 
-    {{-- Buy Box (sticky) --}}
     <aside class="md:col-span-1">
       <div class="md:sticky md:top-24">
         <div class="overflow-hidden rounded-2xl border border-[color:var(--accent)]/30 bg-white/80 p-5 shadow-sm backdrop-blur dark:border-[color:var(--accent)]/30 dark:bg-gray-900/60">
@@ -93,45 +86,42 @@
 
           <form method="POST" action="{{ route('cart.add.pack',$pack) }}" class="mt-5">
             @csrf
-            <button
-              class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-white shadow
-                     transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
-              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M3 3h2l.4 2M7 13h10l3-6H6.4M7 13l-2 7h14M10 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/>
-              </svg>
+            <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-white shadow transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3h2l.4 2M7 13h10l3-6H6.4M7 13l-2 7h14M10 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm8 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/></svg>
               Add to cart
             </button>
           </form>
 
           <ul class="mt-5 space-y-2 text-sm text-gray-600 dark:text-gray-300">
-            <li class="flex items-center gap-2">
-              <span class="inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent)]"></span>
-              Instant download after purchase
-            </li>
-            <li class="flex items-center gap-2">
-              <span class="inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent)]"></span>
-              Secure checkout via PayPal
-            </li>
+            <li class="flex items-center gap-2"><span class="inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent)]"></span>Instant download after purchase</li>
+            <li class="flex items-center gap-2"><span class="inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent)]"></span>Secure checkout via PayPal</li>
           </ul>
         </div>
       </div>
     </aside>
   </div>
 
-  {{-- VIDEO --}}
+  {{-- VIDEO (pubblico o privato se acquistato) --}}
   @php
-    $publicVideo  = \App\Support\VideoEmbed::from($pack->video_url ?? null);
-    $privateVideo = null;
-
     $canSeePrivate = auth()->check() && \App\Support\Purchases::userHasPack(auth()->id(), $pack->id);
 
-    if ($canSeePrivate && !empty($pack->private_video_url)) {
-        $privateVideo = \App\Support\VideoEmbed::from($pack->private_video_url);
+    $publicVideo  = \App\Support\VideoEmbed::from($pack->video_url ?? null);
+    $privateVideo = $canSeePrivate ? \App\Support\VideoEmbed::from($pack->private_video_url ?? null) : null;
+
+    // Se non c'è un video definito su Pack, prendo il primo tutorial corrispondente
+    if (!$publicVideo) {
+      $t = $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->first();
+      $publicVideo = $t?->embed_url;
     }
+    if (!$privateVideo && $canSeePrivate) {
+      $t = $pack->tutorials()->where('is_public', false)->orderBy('sort_order')->first();
+      $privateVideo = $t?->embed_url;
+    }
+
     $embedUrl = $privateVideo ?: $publicVideo;
   @endphp
 
-  @if(!empty($embedUrl))
+  @if($embedUrl)
     <div class="mx-auto max-w-6xl px-4 pt-6">
       <div class="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
         <iframe src="{{ $embedUrl }}" class="h-[360px] w-full sm:h-[420px]" frameborder="0" allowfullscreen loading="lazy"></iframe>
@@ -141,10 +131,8 @@
 
   {{-- TUTORIALS --}}
   @php
-    $public  = $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->get();
-    $private = $canSeePrivate
-        ? $pack->tutorials()->where('is_public', false)->orderBy('sort_order')->get()
-        : collect();
+    $public  = $pack->tutorials()->where('is_public', true)->get();
+    $private = $canSeePrivate ? $pack->tutorials()->where('is_public', false)->get() : collect();
   @endphp
 
   @if($public->count() || $private->count() || $pack->tutorials()->where('is_public', false)->exists())
