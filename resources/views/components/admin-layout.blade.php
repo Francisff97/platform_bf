@@ -147,6 +147,95 @@
   $features = \App\Support\FeatureFlags::all($slug);
   $addonsEnabled = (!empty($features['addons'])) && collect($features)->contains(true);
     @endphp
+      @php
+        $groups = [
+        [
+          'label' => 'Admin',
+          'key' => 'admin',
+         'items' => [
+        ['label'=>'Dashboard', 'route'=>'admin.dashboard', 'match'=>['admin.dashboard']],
+        ]
+        ],
+          [
+            'label' => 'Content',
+            'key'   => 'content',
+            'items' => [
+              ['label'=>'Packs', 'route'=>'admin.packs.index', 'match'=>['admin.packs.*']],
+              ['label'=>'Categories Pack', 'route'=>'admin.categories.index', 'match'=>['admin.categories.*']],
+              ['label'=>'Services', 'route'=>'admin.services.index', 'match'=>['admin.services.*']],
+              ['label'=>'About page', 'route'=>'admin.about.index', 'match'=>['admin.about.*']],
+            ],
+          ],
+          [
+            'label' => 'People',
+            'key'   => 'people',
+            'items' => [
+              ['label'=>'Builders', 'route'=>'admin.builders.index', 'match'=>['admin.builders.*']],
+              ['label'=>'Coaches',  'route'=>'admin.coaches.index',  'match'=>['admin.coaches.*']],
+              ['label'=>'Partners', 'route'=>'admin.partners.index', 'match'=>['admin.partners.*']],
+            ],
+          ],
+          [
+            'label' => 'Presentation',
+            'key'   => 'presentation',
+            'items' => [
+              ['label'=>'Hero Sections', 'route'=>'admin.heroes.index', 'match'=>['admin.heroes.*']],
+              ['label'=>'Sliders', 'route'=>'admin.slides.index', 'match'=>['admin.slides.*']],
+            ],
+          ],
+          [
+            'label' => 'Commerce',
+            'key'   => 'commerce',
+            'items' => [
+              ['label'=>'Orders', 'route'=>'admin.orders.index', 'match'=>['admin.orders.*']],
+              ['label'=>'Coupons', 'route'=>'admin.coupons.index', 'match'=>['admin.coupons.*']],
+            ],
+          ],
+          [
+            'label' => 'SEO',
+            'key'   => 'seo',
+            'items' => [
+              ['label'=>'Pages', 'route'=>'admin.seo.pages.index', 'match'=>['admin.seo.pages.*']],
+              ['label'=>'Media', 'route'=>'admin.seo.media.index', 'match'=>['admin.seo.media.*']],
+            ],
+          ],
+          [
+            'label' => 'Platform',
+            'key'   => 'platform',
+            'items' => [
+              ['label'=>'Appearance', 'route'=>'admin.appearance.edit', 'match'=>['admin.appearance.*']],
+              ['label'=>'Platform info', 'route'=>'admin.platform.info', 'match'=>['admin.platform.*']],
+              ['label'=>'Google Analytics','route'=>'admin.analytics.edit', 'match'=>['admin.analytics.*']],
+              ['label'=>'Privacy e Cookies','route'=>'admin.privacy.edit', 'match'=>['admin.privacy.*']],
+            ],
+          ],
+        ];
+      @endphp
+
+      @foreach($groups as $g)
+        @php $isAnyActive = collect($g['items'])->contains(fn($it)=>request()->routeIs(...$it['match'])); @endphp
+        <section class="overflow-hidden rounded-xl border bg-white/70 dark:border-gray-800 dark:bg-gray-900/60"
+                 data-acc-group="{{ $g['key'] }}">
+          <button type="button"
+                  class="flex w-full items-center justify-between px-3 py-2 text-sm font-semibold"
+                  data-acc-toggle>
+            <span class="uppercase tracking-wide text-gray-700 dark:text-gray-300">{{ $g['label'] }}</span>
+            <svg class="h-4 w-4 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+          <div class="grid gap-1 px-2 pb-2" data-acc-panel style="display: {{ $isAnyActive ? 'grid' : 'none' }}">
+            @foreach($g['items'] as $it)
+              @php $active = request()->routeIs(...$it['match']); @endphp
+              <a href="{{ route($it['route']) }}"
+                 class="block rounded px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800
+                        {{ $active ? 'bg-gray-100 dark:bg-gray-800 text-[var(--accent)] font-semibold' : '' }}">
+                {{ $it['label'] }}
+              </a>
+            @endforeach
+          </div>
+        </section>
+      @endforeach
 
     <!-- Aggiungo solo un id per pilotare la sidebar da JS -->
     <aside id="adminSidebar"
