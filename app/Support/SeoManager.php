@@ -3,10 +3,10 @@
 namespace App\Support;
 
 use App\Models\SeoPage;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
+use App\Models\MediaAsset;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class SeoManager
 {
@@ -16,7 +16,8 @@ class SeoManager
     }
 
     /**
-     * Ritorna meta già compilati con le variabili di $ctx.
+     * Recupera i meta per route/path e compila i placeholder con $ctx.
+     * Esempi placeholder: {name}, {title}, {slug}, {builder_name}, {price}, {image_url}...
      */
     public static function pageMeta(?string $route = null, ?string $path = null, array $ctx = []): array
     {
@@ -28,117 +29,144 @@ class SeoManager
         $path  = $path  ?? '/'.ltrim(request()->path(), '/');
 
         $page = SeoPage::query()
-            ->when($route, fn($q) => $q->where('route_name',$route))
-            ->when(!$route && $path, fn($q) => $q->orWhere('path',$path))
+            ->when($route, fn($q)=>$q->where('route_name',$route))
+            ->when(!$route && $path, fn($q)=>$q->orWhere('path',$path))
             ->first();
 
-        $rawTitle = $page?->meta_title;
-        $rawDesc  = $page?->meta_description;
-        $rawImg   = $page?->og_image_path;
+        // Normalizza contesto (aggiunge alias e fallback utili)
+        $vars = static::normalizeContext($ctx);
 
-        $imgUrl = null;
-        if ($rawImg) {
-            $imgUrl = Str::startsWith($rawImg, ['http://','https://'])
-                ? $rawImg
-                : Storage::disk('public')->url($rawImg);
+        // Compila titoli/descrizioni con placeholder
+        $title = static::compile($page?->meta_title, $vars);
+        $desc  = static::compile($page?->meta_description, $vars);
+
+        // Risolvi immagine OG: 1) campo su tabella  2) image_url dal ctx  3) null
+        $og = null;
+        if ($page?->og_image_path) {
+            $og = Str::startsWith($page->og_image_path, ['http://','https://'])
+                ? $page->og_image_path
+                : Storage::disk('public')->url(ltrim($page->og_image_path,'/'));
+        } elseif (!empty($vars['image_url'])) {
+            $og = $vars['image_url'];
         }
-
-        $base = [
-            'app_name' => config('app.name'),
-            'url'      => url()->current(),
-        ];
-
-        $vars = array_merge($base, $ctx, [
-            'image_url' => $ctx['image_url'] ?? $imgUrl,
-        ]);
 
         return [
-            'title'       => static::compile($rawTitle, $vars),
-            'description' => static::compile($rawDesc,  $vars),
-            'og_image'    => $vars['image_url'] ?? null,
+            'title'       => $title,
+            'description' => $desc,
+            'og_image'    => $og,
         ];
     }
 
     /**
-     * Sostituisce {token} con i valori in $vars (supporta dot-notation).
+     * Compilatore placeholder molto permissivo: sostituisce {key} con $vars[key] (string),
+     * ignora le chiavi mancanti (toglie le graffe).
      */
-    public static function compile(?string $template, array $vars): ?string
+    public static function compile(?string $tpl, array $vars): ?string
     {
-        if (!$template) return $template;
+        if ($tpl === null || $tpl === '') return $tpl;
 
-        return preg_replace_callback('/\{([a-z0-9_.-]+)\}/i', function ($m) use ($vars) {
-            $key = $m[1];
-            $val = Arr::get($vars, $key);
-            if (is_null($val)) {
-                $val = Arr::get($vars, str_replace('_','.', $key));
-            }
-            return is_scalar($val) ? (string) $val : $m[0];
-        }, $template);
+        // {price_cents} ecc. -> cast a stringa
+        $replace = [];
+        foreach ($vars as $k => $v) {
+            if (is_scalar($v))        $replace['{'.$k.'}'] = (string) $v;
+            elseif (method_exists($v, '__toString')) $replace['{'.$k.'}'] = (string) $v;
+        }
+        $out = strtr($tpl, $replace);
+
+        // Pulisci placeholder rimasti (chiavi mancanti)
+        $out = preg_replace('/\{[a-z0-9_\.\-]+\}/i', '', $out);
+        // Spazi multipli dopo pulizia
+        return trim(preg_replace('/\s{2,}/', ' ', $out));
     }
 
     /**
-     * Crea un contesto standard da un modello (Pack/Builder/Coach…)
+     * Normalizza il contesto per Pack/Builder/Coach o generico Eloquent Model.
+     * - name/title fallback
+     * - slug
+     * - description/excerpt
+     * - image_url (da molti possibili campi)
+     * - builder_name (se relazione esiste)
      */
-    public static function contextFromModel(object $model): array
+    public static function normalizeContext(array $ctx): array
     {
-        $ctx = [];
-        foreach (['id','name','title','slug','excerpt','description'] as $k) {
-            if (isset($model->{$k})) $ctx[$k] = $model->{$k};
-        }
+        $out = $ctx;
 
-        if (!empty($model->image_path)) {
-            $ctx['image_url'] = Storage::disk('public')->url($model->image_path);
-        }
+        // Se arriva un modello, prendi gli attributi
+        if (isset($ctx['_model']) && is_object($ctx['_model'])) {
+            $m   = $ctx['_model'];
+            $arr = method_exists($m, 'toArray') ? $m->toArray() : [];
 
-        if (isset($model->price_cents)) {
-            $currency          = $model->currency ?? 'EUR';
-            $ctx['price_cents'] = (int) $model->price_cents;
-            $ctx['currency']    = $currency;
-            $ctx['price_eur']   = number_format($model->price_cents / 100, 2).' '.$currency;
-        }
+            // name/title
+            $name  = $arr['name']  ?? $arr['title'] ?? $arr['slug'] ?? null;
+            $title = $arr['title'] ?? $arr['name']  ?? null;
+            $slug  = $arr['slug']  ?? null;
 
-        if (method_exists($model, 'builder')) {
-            $builder = $model->builder;
-            if ($builder) {
-                $ctx['builder'] = [
-                    'name' => $builder->name ?? null,
-                    'slug' => $builder->slug ?? null,
-                ];
-                $ctx['builder_name'] = $builder->name ?? null;
+            // description
+            $desc  = $arr['meta_description'] ?? $arr['description'] ?? $arr['excerpt'] ?? null;
+
+            // image path candidates
+            $imgPath = $arr['og_image_path']
+                ?? $arr['image_path']
+                ?? $arr['cover_path']
+                ?? $arr['thumbnail_path']
+                ?? null;
+
+            // builder name se relazione esiste
+            $builderName = null;
+            if (method_exists($m, 'builder')) {
+                try {
+                    $builder = $m->builder;
+                    $builderName = $builder?->name ?? $builder?->title ?? null;
+                } catch (\Throwable $e) {}
             }
+
+            // absolute image url
+            $imageUrl = null;
+            if ($imgPath) {
+                $imageUrl = Str::startsWith($imgPath, ['http://','https://'])
+                    ? $imgPath
+                    : Storage::disk('public')->url(ltrim($imgPath,'/'));
+            }
+
+            $out = array_merge([
+                'name'         => $name,
+                'title'        => $title ?? $name,
+                'slug'         => $slug,
+                'description'  => $desc,
+                'builder_name' => $builderName,
+                'image_url'    => $imageUrl,
+            ], $out);
         }
 
-        return $ctx;
+        // Coerenza alias espliciti se passati manualmente
+        if (!empty($out['title']) && empty($out['name']))  $out['name']  = $out['title'];
+        if (!empty($out['name'])  && empty($out['title'])) $out['title'] = $out['name'];
+
+        return $out;
     }
 
-    /* ============================
-       🔽  Metodi ripristinati  🔽
-       ============================ */
-
-    /** Restituisce alt/lazy da tabella media_assets (se presente) a partire da una URL */
+    /**
+     * Alt + lazy per immagini (usato dai componenti).
+     */
     public static function imgAttrsByUrl(string $url): array
     {
+        if (!static::enabled()) return ['alt'=>null,'lazy'=>true];
+
         $path = static::toStoragePath($url);
-        if (!$path) return ['alt'=>null,'lazy'=>true];
+        $m = $path ? MediaAsset::where('path',$path)->first() : null;
 
-        $m = class_exists(\App\Models\MediaAsset::class)
-            ? \App\Models\MediaAsset::where('path',$path)->first()
-            : null;
-
-        // supporta sia alt che alt_text / is_lazy
-        $alt  = $m?->alt ?? $m?->alt_text ?? null;
-        $lazy = $m?->is_lazy ?? true;
-
-        return ['alt'=>$alt, 'lazy'=>$lazy];
+        return [
+            'alt'  => $m?->alt ?? $m?->alt_text ?? null,
+            'lazy' => $m?->is_lazy ?? true,
+        ];
     }
 
-    /** Converte una URL /storage/... o assoluta -> path relativo sul disk ('public') */
     public static function toStoragePath(string $url): ?string
     {
         if (Str::startsWith($url, ['http://','https://'])) {
-            $p = parse_url($url, PHP_URL_PATH) ?? '';
-            if (Str::contains($p, '/storage/')) {
-                return ltrim(Str::after($p, '/storage/'), '/');
+            $parsed = parse_url($url, PHP_URL_PATH) ?? '';
+            if (Str::contains($parsed, '/storage/')) {
+                return ltrim(Str::after($parsed, '/storage/'), '/');
             }
             return null;
         }
@@ -148,34 +176,11 @@ class SeoManager
         return ltrim($url, '/');
     }
 
-    /** Opzionale: arricchisce <img> in HTML con alt/lazy dal catalogo */
-    public static function enrichHtmlImages(string $html): string
+    /**
+     * Helper per creare un contesto standard da un modello.
+     */
+    public static function contextFromModel($model): array
     {
-        if (!static::enabled()) return $html;
-
-        return preg_replace_callback('#<img\s+[^>]*src=["\']([^"\']+)["\'][^>]*>#i', function($m){
-            $src   = $m[1];
-            $attrs = static::imgAttrsByUrl($src);
-            $tag   = $m[0];
-
-            if (($attrs['alt'] ?? null) !== null) {
-                if (preg_match('/\salt=["\']/i', $tag)) {
-                    $tag = preg_replace('/alt=["\'][^"\']*["\']/', 'alt="'.e($attrs['alt']).'"', $tag);
-                } else {
-                    $tag = rtrim($tag, '>'); $tag .= ' alt="'.e($attrs['alt']).'">';
-                }
-            }
-
-            $lazy = $attrs['lazy'] ?? true;
-            if ($lazy) {
-                if (preg_match('/\sloading=["\']/i', $tag)) {
-                    $tag = preg_replace('/loading=["\'][^"\']*["\']/', 'loading="lazy"', $tag);
-                } else {
-                    $tag = rtrim($tag, '>'); $tag .= ' loading="lazy">';
-                }
-            }
-
-            return $tag;
-        }, $html);
+        return ['_model' => $model];
     }
 }
