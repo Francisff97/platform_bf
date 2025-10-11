@@ -118,29 +118,20 @@
       </div>
     </aside>
   </div>
-    {{-- Video Embed (pubblico o riservato) --}}
+ {{-- VIDEO embed (se presente) --}}
 @php
-    $publicVideo = \App\Support\VideoEmbed::from($coach->video_url ?? null);
-    $privateVideo = null;
-
-    $canSeePrivate = auth()->check()
-      && method_exists(auth()->user(), 'hasPurchasedCoach')
-      && auth()->user()->hasPurchasedCoach($coach->id);
-
-    if ($canSeePrivate && !empty($coach->private_video_url)) {
-        $privateVideo = \App\Support\VideoEmbed::from($coach->private_video_url);
-    }
-
-    $embedUrl = $privateVideo ?: $publicVideo;
+    $embedUrl = \App\Support\VideoEmbed::from($pack->video_url ?? null);
 @endphp
 
 @if($embedUrl)
-  <div class="mt-6 overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
-    <iframe src="{{ $embedUrl }}"
-            class="h-[360px] w-full sm:h-[420px]"
-            frameborder="0"
-            allowfullscreen
-            loading="lazy"></iframe>
+  <div class="mx-auto max-w-6xl px-4 pt-6">
+    <div class="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
+      <iframe src="{{ $embedUrl }}"
+              class="h-[360px] w-full sm:h-[420px]"
+              frameborder="0"
+              allowfullscreen
+              loading="lazy"></iframe>
+    </div>
   </div>
 @endif
   {{-- Tutorials --}}
