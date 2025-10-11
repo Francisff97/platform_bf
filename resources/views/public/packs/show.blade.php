@@ -178,4 +178,5 @@
   @endif
                     {{-- debugging --}}
 <div class="my-2 text-sm text-red-600">EMBED URL: {{ $embedUrl ?? 'null' }}</div>
+                    <iframe src="https://www.youtube.com/embed/dRnR6oBuEYE" width="560" height="315"></iframe>
 </x-app-layout>
