@@ -154,70 +154,92 @@
          dark:bg-gray-900/70 dark:border-gray-800">
 
   @php
-    $groups = [
-      [
-        'label' => 'Admin',
-        'key'   => 'admin',
-        'items' => [
-          ['label'=>'Dashboard', 'route'=>'admin.dashboard', 'match'=>['admin.dashboard']],
-        ['label'=>'Img optimizer', 'route'=>'admin.webp.index', 'match'=>['admin.webp.*']],
-        ],
+  // ==== feature flags + route existence ====
+  $slug = request('installation')
+      ? strtolower(trim(request('installation')))
+      : (optional(\App\Models\SiteSetting::first())->flags_installation_slug
+          ?: (config('flags.installation_slug') ?: config('flags.default_slug','demo')));
+
+  $features = \App\Support\FeatureFlags::all($slug);
+
+  $hasEmailTemplates = \Illuminate\Support\Facades\Route::has('admin.addons.email-templates');
+  $hasDiscord        = \Illuminate\Support\Facades\Route::has('admin.addons.discord');
+  $hasTutorials      = \Illuminate\Support\Facades\Route::has('admin.addons.tutorials');
+
+  // Costruisci dinamicamente gli item degli Add-ons in base a FLAGS + route esistenti
+  $addOnItems = [];
+  if (!empty($features['email_templates']) && $hasEmailTemplates) {
+    $addOnItems[] = ['label'=>'Email templates','route'=>'admin.addons.email-templates','match'=>['admin.addons.email-templates*']];
+  }
+  if (!empty($features['discord_integration']) && $hasDiscord) {
+    $addOnItems[] = ['label'=>'Discord integration','route'=>'admin.addons.discord','match'=>['admin.addons.discord*']];
+  }
+  if (!empty($features['tutorials']) && $hasTutorials) {
+    $addOnItems[] = ['label'=>'Videos','route'=>'admin.addons.tutorials','match'=>['admin.addons.tutorials*']];
+  }
+
+  // ==== gruppi sidebar (accordion) ====
+  $groups = [
+    [
+      'label' => 'Admin','key'=>'admin',
+      'items' => [
+        ['label'=>'Dashboard', 'route'=>'admin.dashboard', 'match'=>['admin.dashboard']],
       ],
-      [
-        'label' => 'Content',
-        'key'   => 'content',
-        'items' => [
-          ['label'=>'Packs', 'route'=>'admin.packs.index', 'match'=>['admin.packs.*']],
-          ['label'=>'Categories Pack', 'route'=>'admin.categories.index', 'match'=>['admin.categories.*']],
-          ['label'=>'Services', 'route'=>'admin.services.index', 'match'=>['admin.services.*']],
-          ['label'=>'About page', 'route'=>'admin.about.index', 'match'=>['admin.about.*']],
-        ],
+    ],
+    [
+      'label'=>'Content','key'=>'content',
+      'items'=>[
+        ['label'=>'Packs', 'route'=>'admin.packs.index', 'match'=>['admin.packs.*']],
+        ['label'=>'Categories Pack', 'route'=>'admin.categories.index', 'match'=>['admin.categories.*']],
+        ['label'=>'Services', 'route'=>'admin.services.index', 'match'=>['admin.services.*']],
+        ['label'=>'About page', 'route'=>'admin.about.index', 'match'=>['admin.about.*']],
       ],
-      [
-        'label' => 'People',
-        'key'   => 'people',
-        'items' => [
-          ['label'=>'Builders', 'route'=>'admin.builders.index', 'match'=>['admin.builders.*']],
-          ['label'=>'Coaches',  'route'=>'admin.coaches.index',  'match'=>['admin.coaches.*']],
-          ['label'=>'Partners', 'route'=>'admin.partners.index', 'match'=>['admin.partners.*']],
-        ],
+    ],
+    [
+      'label'=>'People','key'=>'people',
+      'items'=>[
+        ['label'=>'Builders', 'route'=>'admin.builders.index', 'match'=>['admin.builders.*']],
+        ['label'=>'Coaches',  'route'=>'admin.coaches.index',  'match'=>['admin.coaches.*']],
+        ['label'=>'Partners', 'route'=>'admin.partners.index', 'match'=>['admin.partners.*']],
       ],
-      [
-        'label' => 'Presentation',
-        'key'   => 'presentation',
-        'items' => [
-          ['label'=>'Hero Sections', 'route'=>'admin.heroes.index', 'match'=>['admin.heroes.*']],
-          ['label'=>'Sliders', 'route'=>'admin.slides.index', 'match'=>['admin.slides.*']],
-        ],
+    ],
+    [
+      'label'=>'Presentation','key'=>'presentation',
+      'items'=>[
+        ['label'=>'Hero Sections', 'route'=>'admin.heroes.index', 'match'=>['admin.heroes.*']],
+        ['label'=>'Sliders', 'route'=>'admin.slides.index', 'match'=>['admin.slides.*']],
       ],
-      [
-        'label' => 'Commerce',
-        'key'   => 'commerce',
-        'items' => [
-          ['label'=>'Orders', 'route'=>'admin.orders.index', 'match'=>['admin.orders.*']],
-          ['label'=>'Coupons', 'route'=>'admin.coupons.index', 'match'=>['admin.coupons.*']],
-        ],
+    ],
+    [
+      'label'=>'Commerce','key'=>'commerce',
+      'items'=>[
+        ['label'=>'Orders', 'route'=>'admin.orders.index', 'match'=>['admin.orders.*']],
+        ['label'=>'Coupons', 'route'=>'admin.coupons.index', 'match'=>['admin.coupons.*']],
       ],
-      [
-        'label' => 'SEO',
-        'key'   => 'seo',
-        'items' => [
-          ['label'=>'Pages', 'route'=>'admin.seo.pages.index', 'match'=>['admin.seo.pages.*']],
-          ['label'=>'Media', 'route'=>'admin.seo.media.index', 'match'=>['admin.seo.media.*']],
-        ],
+    ],
+    [
+      'label'=>'SEO','key'=>'seo',
+      'items'=>[
+        ['label'=>'Pages', 'route'=>'admin.seo.pages.index', 'match'=>['admin.seo.pages.*']],
+        ['label'=>'Media', 'route'=>'admin.seo.media.index', 'match'=>['admin.seo.media.*']],
       ],
-      [
-        'label' => 'Platform',
-        'key'   => 'platform',
-        'items' => [
-          ['label'=>'Appearance', 'route'=>'admin.appearance.edit', 'match'=>['admin.appearance.*']],
-          ['label'=>'Platform info', 'route'=>'admin.platform.info', 'match'=>['admin.platform.*']],
-          ['label'=>'Google Analytics','route'=>'admin.analytics.edit', 'match'=>['admin.analytics.*']],
-          ['label'=>'Privacy e Cookies','route'=>'admin.privacy.edit', 'match'=>['admin.privacy.*']],
-        ],
+    ],
+    [
+      'label'=>'Platform','key'=>'platform',
+      'items'=>[
+        ['label'=>'Appearance', 'route'=>'admin.appearance.edit', 'match'=>['admin.appearance.*']],
+        ['label'=>'Platform info', 'route'=>'admin.platform.info', 'match'=>['admin.platform.*']],
+        ['label'=>'Google Analytics','route'=>'admin.analytics.edit', 'match'=>['admin.analytics.*']],
+        ['label'=>'Privacy e Cookies','route'=>'admin.privacy.edit', 'match'=>['admin.privacy.*']],
       ],
-    ];
-  @endphp
+    ],
+    // Aggiungi il gruppo Add-ons SOLO se ci sono item validi
+    count($addOnItems) ? ['label'=>'Add-ons','key'=>'addons','items'=>$addOnItems] : null,
+  ];
+
+  // rimuovi i gruppi null (quando non ci sono add-ons)
+  $groups = array_values(array_filter($groups));
+@endphp
 
   <div class="overflow-y-auto px-2 py-4 space-y-3">
     @foreach($groups as $g)
