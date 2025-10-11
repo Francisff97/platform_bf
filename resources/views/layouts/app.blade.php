@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
   <head>
-    @php
-  // $seoCtx può arrivare dal controller; se non c’è, passa []
+@php
+  // in ogni view public passiamo (se c’è) $seoCtx dal controller
   $meta = \App\Support\SeoManager::pageMeta(null, null, $seoCtx ?? []);
 @endphp
 
@@ -10,12 +10,14 @@
 @if(!empty($meta['description']))
   <meta name="description" content="{{ $meta['description'] }}">
 @endif
+
+<meta property="og:title" content="{{ $meta['title'] ?? config('app.name') }}">
+<meta property="og:description" content="{{ $meta['description'] ?? '' }}">
 @if(!empty($meta['og_image']))
   <meta property="og:image" content="{{ $meta['og_image'] }}">
 @endif
-<meta property="og:title" content="{{ $meta['title'] ?? config('app.name') }}">
-<meta property="og:description" content="{{ $meta['description'] ?? '' }}">
 <meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
 
     @php $gtm = optional(\App\Models\SiteSetting::first())->gtm_container_id; @endphp
     @if($gtm)
