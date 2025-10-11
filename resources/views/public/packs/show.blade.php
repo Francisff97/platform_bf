@@ -61,45 +61,42 @@
   @endif
 
   {{-- SCELTA VIDEO DA MOSTRARE --}}
-  @php
-    use App\Support\VideoEmbed;
-    use App\Support\Purchases;
+@php
+  $isBuyer = auth()->check() && (
+    method_exists(\App\Support\Purchases::class, 'userHasPack')
+    && \App\Support\Purchases::userHasPack(auth()->id(), $pack->id)
+  );
 
-    $isBuyer = auth()->check() && (
-      (method_exists(\App\Support\Purchases::class,'userHasPack') && Purchases::userHasPack(auth()->id(), $pack->id))
-    );
+  // Tutorial primario: se acquirente prendo anche i privati, altrimenti solo pubblici
+  $primaryTutorial = $isBuyer
+    ? $pack->tutorials()->orderBy('sort_order')->first()
+    : $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->first();
 
-    // Tutorial primario: se acquirente prendo anche i privati, altrimenti solo pubblici
-    $primaryTutorial = $isBuyer
-      ? $pack->tutorials()->orderBy('sort_order')->first()
-      : $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->first();
+  $embedUrl = null;
+  if ($primaryTutorial && $primaryTutorial->video_url) {
+    $embedUrl = \App\Support\VideoEmbed::from($primaryTutorial->video_url);
+  }
+  // fallback sul campo video_url del pack
+  if (!$embedUrl && !empty($pack->video_url)) {
+    $embedUrl = \App\Support\VideoEmbed::from($pack->video_url);
+  }
+@endphp
 
-    $embedUrl = null;
-    if ($primaryTutorial && $primaryTutorial->video_url) {
-      $embedUrl = VideoEmbed::from($primaryTutorial->video_url);
-    }
-
-    // fallback sul campo video_url del pack
-    if (!$embedUrl && !empty($pack->video_url)) {
-      $embedUrl = VideoEmbed::from($pack->video_url);
-    }
-  @endphp
-
-  {{-- PLAYER (solo se URL valido) --}}
-  @if($embedUrl)
-    <div class="mx-auto max-w-6xl px-4 pt-6">
-      <div class="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
-        <iframe
-          src="{{ $embedUrl }}"
-          class="h-[360px] w-full sm:h-[420px]"
-          frameborder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowfullscreen
-          loading="lazy"
-        ></iframe>
-      </div>
+{{-- PLAYER (solo se URL valido) --}}
+@if($embedUrl)
+  <div class="mx-auto max-w-6xl px-4 pt-6">
+    <div class="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
+      <iframe
+        src="{{ $embedUrl }}"
+        class="h-[360px] w-full sm:h-[420px]"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen
+        loading="lazy"
+      ></iframe>
     </div>
-  @endif
+  </div>
+@endif
 
   {{-- BODY + BUYBOX --}}
   <div class="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 py-10 md:grid-cols-3">
@@ -132,7 +129,7 @@
           </form>
 
           <ul class="mt-5 space-y-2 text-sm text-gray-600 dark:text-gray-300">
-            <li class="flex items-center gap-2"><span class="inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent)]"></span>Instant download after purchase</li>
+            <li class="flex items-center gap-2"><span class="inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent)]"></span>We contact you after payment</li>
             <li class="flex items-center gap-2"><span class="inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent)]"></span>Secure checkout via PayPal</li>
           </ul>
         </div>
