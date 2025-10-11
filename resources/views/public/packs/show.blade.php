@@ -139,88 +139,68 @@
 
   {{-- ====== VIDEO (pubblico/privato) ====== --}}
 @php
-  /** Decidi se l’utente è buyer */
-  $isBuyer = auth()->check() && method_exists(auth()->user(), 'hasPurchasedPack')
-    ? auth()->user()->hasPurchasedPack($pack->id)
+  $isBuyer = auth()->check() && method_exists(auth()->user(),'hasPurchasedCoach')
+    ? auth()->user()->hasPurchasedCoach($coach->id)
     : false;
 
-  // 1) Se esistono tutorial: scegli il "primario"
-  //    - buyer: qualsiasi (anche privati), ordinati
-  //    - non buyer: solo pubblici, ordinati
   $primaryTutorial = $isBuyer
-    ? $pack->tutorials()->orderBy('sort_order')->first()
-    : $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->first();
+    ? $coach->tutorials()->orderBy('sort_order')->first()
+    : $coach->tutorials()->where('is_public', true)->orderBy('sort_order')->first();
 
-  // 2) Se non trovi tutorial, fallback ai campi sul Pack (se li usi)
   $rawUrl = null;
   if ($primaryTutorial && !empty($primaryTutorial->video_url)) {
     $rawUrl = $primaryTutorial->video_url;
   } else {
-    // eventuali campi video sul pack
     $rawUrl = $isBuyer
-      ? ($pack->private_video_url ?? $pack->video_url ?? null)
-      : ($pack->video_url ?? null);
+      ? ($coach->private_video_url ?? $coach->video_url ?? null)
+      : ($coach->video_url ?? null);
   }
 
   $embedUrl = \App\Support\VideoEmbed::from($rawUrl);
 @endphp
 
 @if($embedUrl)
-  {{-- Wrapper con rapporto 16:9 che evita "altezza 0" --}}
-  <div class="mx-auto max-w-6xl px-4 pt-6">
-    <div style="position:relative;width:100%;padding-top:56.25%;overflow:hidden;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.08)">
-      <iframe
-        src="{{ $embedUrl }}"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowfullscreen
-        loading="lazy"
-        style="position:absolute;top:0;left:0;width:100%;height:100%;border:0">
-      </iframe>
-    </div>
-
-    {{-- debug temporaneo (puoi rimuoverlo) --}}
-    {{-- <div class="mt-2 text-xs text-gray-500">EMBED: {{ $embedUrl }}</div> --}}
+  <div class="mt-6" style="position:relative;width:100%;padding-top:56.25%;overflow:hidden;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.08)">
+    <iframe
+      src="{{ $embedUrl }}"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      allowfullscreen
+      loading="lazy"
+      style="position:absolute;top:0;left:0;width:100%;height:100%;border:0">
+    </iframe>
   </div>
 @endif
 
 {{-- ====== TUTORIALS GRID ====== --}}
 @php
-  $public  = $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->get();
+  $public  = $coach->tutorials()->where('is_public', true)->orderBy('sort_order')->get();
   $private = $isBuyer
-    ? $pack->tutorials()->where('is_public', false)->orderBy('sort_order')->get()
+    ? $coach->tutorials()->where('is_public', false)->orderBy('sort_order')->get()
     : collect();
 @endphp
 
-@if($public->count() || $private->count() || $pack->tutorials()->where('is_public', false)->exists())
-  <div class="mx-auto max-w-6xl px-4 pb-14">
-    <div class="mt-2 rounded-2xl border border-gray-100 p-6 shadow-sm dark:border-gray-800">
-      <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Tutorials</h3>
+@if($public->count() || $private->count() || $coach->tutorials()->where('is_public', false)->exists())
+  <div class="mt-10 rounded-2xl border border-gray-100 p-6 shadow-sm dark:border-gray-800">
+    <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Tutorials</h3>
 
-      {{-- PUBLIC --}}
-      @if($public->count())
+    @if($public->count())
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        @foreach($public as $t) <x-tutorial-card :tutorial="$t" /> @endforeach
+      </div>
+    @endif
+
+    @if($private->count())
+      <div class="mt-8 border-t pt-4 dark:border-gray-800">
+        <div class="mb-3 text-sm text-gray-500">Exclusive for buyers</div>
         <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          @foreach($public as $t)
-            <x-tutorial-card :tutorial="$t" />
-          @endforeach
+          @foreach($private as $t) <x-tutorial-card :tutorial="$t" /> @endforeach
         </div>
-      @endif
-
-      {{-- PRIVATE (solo buyer) --}}
-      @if($private->count())
-        <div class="mt-8 border-t pt-4 dark:border-gray-800">
-          <div class="mb-3 text-sm text-gray-500">Exclusive for buyers</div>
-          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            @foreach($private as $t)
-              <x-tutorial-card :tutorial="$t" />
-            @endforeach
-          </div>
-        </div>
-      @elseif($pack->tutorials()->where('is_public', false)->exists())
-        <div class="mt-8 rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
-          Some tutorials are available after purchase.
-        </div>
-      @endif
-    </div>
+      </div>
+    @elseif($coach->tutorials()->where('is_public', false)->exists())
+      <div class="mt-8 rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
+        Some tutorials are available after purcha.
+      </div>
+    @endif
   </div>
 @endif
                     {{-- debugging --}}
