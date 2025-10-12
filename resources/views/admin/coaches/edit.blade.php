@@ -27,7 +27,7 @@
       @endif
       <template x-if="preview"><img :src="preview" class="mt-3 h-36 w-full rounded-lg object-cover ring-1 ring-black/5 dark:ring-white/10" alt="Preview"></template>
     </div>
-
+    <x-admin.image-hint field="avatar"/>
     <x-input name="name"  label="Name" required :value="old('name',$coach->name)" />
     <x-input name="slug"  label="Slug"          :value="old('slug',$coach->slug)" />
     <x-input name="team"  label="Team"          :value="old('team',$coach->team)" />
