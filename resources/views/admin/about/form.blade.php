@@ -68,7 +68,7 @@
           @endif
         </div>
       </div>
-
+       <x-admin.image-hint field="card"/>
       <script>
         document.addEventListener('DOMContentLoaded', () => {
           const input = document.getElementById('imageInput');
