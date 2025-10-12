@@ -28,7 +28,7 @@
              class="mt-3 h-36 w-full rounded-lg object-cover ring-1 ring-black/5 dark:ring-white/10" />
       </template>
     </div>
-
+    <x-admin.image-hint :model="$service ?? \App\Models\Service::class" field="image_path"/>
     {{-- Name --}}
     <div>
       <label class="mb-1 block text-sm font-medium text-gray-800 dark:text-gray-200">Name</label>
