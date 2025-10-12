@@ -52,7 +52,7 @@
              class="w-full rounded-xl border border-gray-300 bg-white p-2 text-sm
                     file:mr-3 file:rounded-lg file:border-0 file:bg-[color:var(--accent)] file:px-3 file:py-2 file:text-white
                     dark:border-gray-700 dark:bg-black/70 dark:text-white"/>
-
+      <x-admin.image-hint :model="$hero ?? \App\Models\Hero::class" field="image_path"/>
       {{-- Overlay picker --}}
       <div class="mt-5">
         <label class="mb-1 block text-sm font-medium dark:text-gray-200">Overlay</label>
