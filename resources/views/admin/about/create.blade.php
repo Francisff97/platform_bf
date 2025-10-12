@@ -67,7 +67,7 @@
       </div>
       @error('image')<p class="mt-2 text-sm text-rose-600">{{ $message }}</p>@enderror
     </div>
-
+    <x-admin.image-hint field="card"/>
     {{-- Flags --}}
     <div class="grid gap-4 sm:grid-cols-2">
       <label class="inline-flex items-center justify-between gap-3 rounded-xl border bg-white/70 px-4 py-3 dark:border-gray-800 dark:bg-gray-900/60">
