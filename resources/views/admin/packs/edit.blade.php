@@ -32,6 +32,7 @@
         <img src="{{ asset('storage/'.$pack->image_path) }}" class="h-24 mt-3 rounded-lg ring-1 ring-black/5 dark:ring-white/10"/>
       @endif
     </div>
+    <x-admin.image-hint :model="$pack ?? \App\Models\Pack::class" field="image_path"/>
 
     <x-input label="Title" name="title" value="{{ old('title',$pack->title) }}" />
     <x-input label="Slug" name="slug" value="{{ old('slug',$pack->slug) }}" />
