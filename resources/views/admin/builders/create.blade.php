@@ -71,7 +71,7 @@
         <img :src="preview" class="mt-3 h-36 w-full rounded-lg object-cover ring-1 ring-black/5 dark:ring-white/10" alt="Preview">
       </template>
     </div>
-
+    <x-admin.image-hint field="avatar"/>
     {{-- Actions --}}
     <div class="mt-2 flex items-center gap-3">
       <button class="inline-flex items-center justify-center rounded-xl bg-[color:var(--accent)] px-5 py-2.5 text-white transition hover:opacity-90">Save</button>
