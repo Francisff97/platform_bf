@@ -46,7 +46,7 @@
                     hover:border-[color:var(--accent)] focus:ring-2 focus:ring-[color:var(--accent)]
                     dark:bg-black/70 dark:text-white">
       @error('logo')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
-
+      <x-admin.image-hint field="logo"/>
       <template x-if="preview">
         <img :src="preview" alt="Preview"
              class="mt-3 h-24 w-24 rounded-full object-cover ring-1 ring-black/5 dark:ring-white/10" />
