@@ -114,7 +114,7 @@
             </label>
           </div>
         </div>
-
+        <x-admin.image-hint field="logo"/>
         {{-- Colors --}}
         <div class="rounded-2xl border bg-white/80 p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900/60">
           <div class="mb-3 text-sm font-semibold">Colors</div>
