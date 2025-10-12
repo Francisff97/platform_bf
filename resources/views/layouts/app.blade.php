@@ -40,6 +40,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+<script type="text/javascript" src="https://cdn.iubenda.com/cs/iubenda_cs.js" charset="UTF-8" defer></script>
+
     <!-- THEME BOOTSTRAP (safe, no listeners) -->
 <script>
 (function () {
