@@ -2,7 +2,7 @@
 @props([
   'hero'      => null,
 
-  // fallback (se non passi un modello)
+  // fallback se non passi un modello
   'title'     => null,
   'subtitle'  => null,
   'image'     => null,
@@ -12,14 +12,6 @@
   // layout
   'height'    => '60vh',
   'fullBleed' => true,
-
-  // LCP / Priority
-  //  - 'high'  -> loading="eager" + fetchpriority="high"
-  //  - 'low'   -> loading="lazy"  + fetchpriority="low"
-  //  - 'auto'  -> decide in base alla pagina (default = lazy/low)
-  'priority'  => 'auto',
-  // opzionale: forza il loading (es. 'eager' o 'lazy'); se nullo, decide 'priority'
-  'loading'   => null,
 ])
 
 @php
@@ -32,35 +24,40 @@
   $fb = isset($hero) ? (bool)$hero->full_bleed : (bool)$fullBleed;
   $fullCls = $fb ? 'full-bleed' : '';
 
-  // Priority / loading
-  $p = strtolower((string)$priority);
-  if ($loading) {
-    $loadingAttr = in_array($loading, ['eager','lazy'], true) ? $loading : 'lazy';
-    $fetchAttr   = $loadingAttr === 'eager' ? 'high' : 'low';
-  } else {
-    if ($p === 'high') { $loadingAttr = 'eager'; $fetchAttr = 'high'; }
-    elseif ($p === 'low') { $loadingAttr = 'lazy'; $fetchAttr = 'low'; }
-    else { $loadingAttr = 'lazy'; $fetchAttr = 'low'; } // auto -> lazy/low di default
-  }
-
-  // sizes responsive (se full-bleed usa 100vw, altrimenti max 1200px)
+  // sizes responsive
   $sizes = $fb ? '100vw' : '(max-width: 1280px) 100vw, 1200px';
 
-  // opzionali width/height per ridurre CLS (se conosci le dimensioni reali puoi impostarle nel model)
+  // opzionali width/height per ridurre CLS (se noti layout shift puoi aggiungerli nel model)
   $w = $hero->image_width  ?? null;
   $hImg = $hero->image_height ?? null;
 @endphp
 
 <style>
-  .full-bleed{width:100vw;position:relative;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw}
-  .hero-controls .swiper-button-next, 
-  .hero-controls .swiper-button-prev { color:#fff; }
-  .hero-controls .swiper-pagination-bullet{ background:rgba(255,255,255,.6); opacity:1; }
-  .hero-controls .swiper-pagination-bullet-active{ background:#fff; }
+  .full-bleed {
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+  }
 
-  /* altezza mobile compatta */
-  @media (max-width: 767px){
-    .hero-viewport{ height: 250px !important; }
+  .hero-controls .swiper-button-next, 
+  .hero-controls .swiper-button-prev {
+    color: #fff;
+  }
+
+  .hero-controls .swiper-pagination-bullet {
+    background: rgba(255, 255, 255, .6);
+    opacity: 1;
+  }
+
+  .hero-controls .swiper-pagination-bullet-active {
+    background: #fff;
+  }
+
+  @media (max-width: 767px) {
+    .hero-viewport { height: 250px !important; }
   }
 </style>
 
@@ -71,8 +68,8 @@
         src="{{ $imgUrl }}"
         alt="{{ $altText }}"
         class="absolute inset-0 h-full w-full object-cover"
-        loading="{{ $loadingAttr }}"
-        fetchpriority="{{ $fetchAttr }}"
+        loading="eager"
+        fetchpriority="high"
         decoding="async"
         sizes="{{ $sizes }}"
         @if($w) width="{{ (int)$w }}" @endif
@@ -82,7 +79,7 @@
       <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
     @endif
 
-    {{-- overlay gradiente per leggibilità --}}
+    {{-- overlay gradiente --}}
     <div class="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/60"></div>
 
     {{-- contenuto --}}
