@@ -184,7 +184,7 @@
       'label' => 'Admin','key'=>'admin',
       'items' => [
         ['label'=>'Dashboard', 'route'=>'admin.dashboard', 'match'=>['admin.dashboard']],
-        ['label'=>'Image optimizer', 'route'=>'admin.webp', 'match'=>['admin.webp.*']],
+        ['label'=>'Image optimizer', 'route'=>'admin.webp.index', 'match'=>['admin.webp.*']],
       ],
     ],
     [
