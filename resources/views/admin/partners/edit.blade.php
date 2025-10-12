@@ -51,7 +51,7 @@
         </label>
       </div>
     </div>
-
+    <x-admin.image-hint field="logo"/>
     {{-- Upload new + live preview --}}
     <div x-data="{ preview: null }">
       <label class="mb-1 block text-sm font-medium text-gray-800 dark:text-gray-200">Upload new logo</label>
