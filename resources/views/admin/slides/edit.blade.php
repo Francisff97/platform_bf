@@ -70,7 +70,7 @@
         </div>
       </div>
     </div>
-
+   <x-admin.image-hint field="hero"/>
     {{-- Card: meta --}}
     <div class="rounded-2xl border bg-white/70 p-5 shadow-sm ring-1 ring-black/5 backdrop-blur
                 dark:border-gray-800 dark:bg-gray-900/70 dark:ring-white/10">
