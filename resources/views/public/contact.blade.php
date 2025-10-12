@@ -1,6 +1,6 @@
 {{-- resources/views/public/contact.blade.php --}}
 <x-app-layout>
-  <x-auto-hero priority="high"/>
+  <x-auto-hero/>
 
   {{-- ===== Heading ===== --}}
   <section class="mx-auto mt-14 max-w-6xl px-4 text-center">
