@@ -30,7 +30,7 @@
       @error('image') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
       <template x-if="preview"><img :src="preview" alt="Preview" class="mt-3 h-36 w-full rounded-lg object-cover ring-1 ring-black/5 dark:ring-white/10"/></template>
     </div>
-
+    <x-admin.image-hint field="avatar"/>
     <x-input name="name"   label="Name" required placeholder="Coach name" :value="old('name')" />
     <x-input name="slug"   label="Slug (optional)" placeholder="auto or custom" :value="old('slug')" />
     <x-input name="team"   label="Team" :value="old('team')" />
