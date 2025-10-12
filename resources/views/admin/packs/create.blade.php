@@ -37,7 +37,7 @@
                     hover:border-[color:var(--accent)]/80 focus:ring-2 focus:ring-[color:var(--accent)]
                     dark:bg-black/80 dark:text-white" />
     </div>
-
+    <x-admin.image-hint :model="$pack ?? \App\Models\Pack::class" field="image_path"/>
     <div class="grid gap-3 md:grid-cols-2">
       <x-input label="Price (in cents)" name="price_cents" type="number" value="{{ old('price_cents',0) }}" min="0" required />
       <div>
