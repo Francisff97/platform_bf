@@ -1,5 +1,5 @@
 <x-app-layout>
-  <x-auto-hero priority="high"/>
+ <x-auto-hero/>
 
   {{-- INTRO --}}
   <section class="relative mx-auto mt-[60px] max-w-4xl text-center px-4">
