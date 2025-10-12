@@ -1,6 +1,6 @@
 {{-- resources/views/public/about.blade.php --}}
 <x-app-layout>
- <x-auto-hero />
+ <x-auto-hero priority="high"/>
 
   @php
     // Evita "Undefined variable" e normalizza a Collection
