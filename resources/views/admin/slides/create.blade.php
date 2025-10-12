@@ -55,7 +55,7 @@
                  class="w-full rounded-xl border px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white file:mr-3 file:rounded-lg file:border-0 file:bg-[color:var(--accent)] file:px-3 file:py-2 file:text-white" />
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">JPG/PNG/WebP, max 8MB</p>
         </div>
-
+        <x-admin.image-hint field="hero"/>
         <div class="w-full md:w-1/2">
           <div class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Preview</div>
           <div class="relative aspect-[16/9] w-full overflow-hidden rounded-xl ring-1 ring-black/5 dark:ring-white/10">
