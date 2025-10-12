@@ -1,5 +1,5 @@
 <x-app-layout>
-  <x-auto-hero priority="high"/>
+  <x-auto-hero/>
 
   {{-- FILTER BAR – identica alla tua, puoi tenerla o semplificarla --}}
   <div x-data="{ open: true }" class="sticky top-2 z-30 mt-[100px] mb-10">
