@@ -69,7 +69,7 @@
         <img :src="preview" class="mt-3 h-24 rounded-lg object-cover ring-1 ring-black/5 dark:ring-white/10" alt="Preview">
       </template>
     </div>
-
+    <x-admin.image-hint field="avatar"/>
     <div class="mt-1 flex items-center gap-3">
       <button class="rounded-xl bg-[var(--accent)] px-5 py-2.5 text-white hover:opacity-90">Update</button>
       <a href="{{ route('admin.builders.index') }}" class="text-gray-600 hover:underline dark:text-gray-300">Cancel</a>
