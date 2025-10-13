@@ -75,10 +75,23 @@
   {{-- Iubenda (only if used) --}}
   <script async src="https://embeds.iubenda.com/widgets/4ba02f66-006a-4b4e-85e2-42db144dcce2.js"></script>
 
-  {{-- Optional extra CSS (lazy) --}}
-  <link rel="preload" href="{{ Vite::asset('resources/css/optional.css') }}"
+  {{-- Optional extra CSS: include only if present in Vite manifest --}}
+@php
+  $viteManifestPath = public_path('build/manifest.json');
+  $viteHasOptional = false;
+  if (is_file($viteManifestPath)) {
+      $mf = json_decode(file_get_contents($viteManifestPath), true) ?: [];
+      $viteHasOptional = array_key_exists('resources/css/optional.css', $mf);
+  }
+@endphp
+@if($viteHasOptional)
+  <link rel="preload"
+        href="{{ Vite::asset('resources/css/optional.css') }}"
         as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="{{ Vite::asset('resources/css/optional.css') }}"></noscript>
+  <noscript>
+    <link rel="stylesheet" href="{{ Vite::asset('resources/css/optional.css') }}">
+  </noscript>
+@endif
 
   {{-- Theme bootstrap (kept) --}}
   <script>
