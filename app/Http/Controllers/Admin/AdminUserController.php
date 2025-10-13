@@ -12,32 +12,85 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class AdminUserController extends Controller
 {
     public function index(Request $request)
-    {
-        $q    = trim($request->get('q', ''));
-        $char = $request->get('char');
+{
+    $q      = trim($request->get('q', ''));
+    $char   = $request->get('char');
+    $buyers = $request->boolean('buyers'); // ?buyers=1 per filtrare solo i buyer
 
-        $users = User::query()
-            ->when(true, fn($qq) =>
-                // ruolo “user” — adatta se il tuo campo si chiama diversamente
-                $qq->where('role', 'user')
-            )
-            ->when($q !== '', function($qq) use ($q) {
-                $qq->where(function($w) use ($q){
-                    $w->where('name','like',"%{$q}%")
-                      ->orWhere('email','like',"%{$q}%");
-                });
-            })
-            ->when($char, function($qq) use ($char){
-                $qq->where('name','like', $char.'%');
-            })
-            ->orderBy('name')
-            ->paginate(30)
-            ->withQueryString();
+    $base = User::query()
+        ->where('role', 'user')
+        ->when($q !== '', function($qq) use ($q) {
+            $qq->where(function($w) use ($q){
+                $w->where('name','like',"%{$q}%")
+                  ->orWhere('email','like',"%{$q}%");
+            });
+        })
+        ->when($char, fn($qq) => $qq->where('name','like',$char.'%'));
 
-        $letters = range('A','Z');
-
-        return view('admin/users/index', compact('users','q','letters','char'));
+    if ($buyers) {
+        $base->whereHas('orders', function($oq){
+            $oq->where('status','paid')
+               ->where(function($w){
+                   $w->whereNotNull('pack_id')
+                     ->orWhereNotNull('coach_id');
+               });
+        });
     }
+
+    $users = $base->orderBy('name')->paginate(30)->withQueryString();
+
+    // ====== Aggrego ordini per gli utenti in pagina ======
+    $userIds = $users->pluck('id')->all();
+
+    $orders = Order::query()
+        ->whereIn('user_id', $userIds)
+        ->where('status','paid')
+        ->where(function($w){
+            $w->whereNotNull('pack_id')->orWhereNotNull('coach_id');
+        })
+        ->get(['user_id','pack_id','coach_id']);
+
+    // mappe user_id => [ids...]
+    $packIdsByUser  = [];
+    $coachIdsByUser = [];
+
+    foreach ($orders as $o) {
+        $uid = $o->user_id;
+
+        // legacy: INT singolo
+        if (!is_null($o->pack_id)) {
+            $packIdsByUser[$uid][] = (int) $o->pack_id;
+        }
+        if (!is_null($o->coach_id)) {
+            $coachIdsByUser[$uid][] = (int) $o->coach_id;
+        }
+    }
+
+    // dedup
+    foreach ($packIdsByUser as $uid => $arr)  { $packIdsByUser[$uid]  = array_values(array_unique(array_filter($arr))); }
+    foreach ($coachIdsByUser as $uid => $arr) { $coachIdsByUser[$uid] = array_values(array_unique(array_filter($arr))); }
+
+    // carico titoli per chip
+    $allPackIds   = array_values(array_unique(array_merge(...array_values($packIdsByUser ?: [[]]))));
+    $allCoachIds  = array_values(array_unique(array_merge(...array_values($coachIdsByUser ?: [[]]))));
+
+    $packsMap  = $allPackIds  ? Pack::whereIn('id',$allPackIds)->pluck('title','id')->all() : [];
+    $coachMap  = $allCoachIds ? Coach::whereIn('id',$allCoachIds)->pluck('name','id')->all()  : [];
+
+    $letters = range('A','Z');
+
+    return view('admin/users/index', [
+        'users'          => $users,
+        'q'              => $q,
+        'letters'        => $letters,
+        'char'           => $char,
+        'buyers'         => $buyers,
+        'packIdsByUser'  => $packIdsByUser,
+        'coachIdsByUser' => $coachIdsByUser,
+        'packsMap'       => $packsMap,
+        'coachMap'       => $coachMap,
+    ]);
+}
 
     public function export(Request $request): StreamedResponse
     {
