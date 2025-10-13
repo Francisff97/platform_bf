@@ -359,10 +359,25 @@
       askedOnce: false,
 
       init(){
-        this.updateConsent();
-        document.addEventListener('iubenda_consent_given', () => this.updateConsent());
-        document.addEventListener('iubenda_updated', () => this.updateConsent());
-      },
+  // prova a leggere consenso subito
+  this.canPlay = this.hasConsent();
+  if (this.canPlay) {
+    this.$nextTick(() => this.attach());
+    return;
+  }
+
+  // 🔁 ascolta cambi di consenso
+  document.addEventListener('iubenda_consent_given', () => this.load(), { once: true });
+  document.addEventListener('iubenda_updated', () => this.load());
+
+  // ⏱ fallback: se iubenda non spara nulla entro 1 secondo, prova comunque
+  setTimeout(() => {
+    if (!this.canPlay) {
+      this.canPlay = this.hasConsent();
+      if (this.canPlay) this.$nextTick(() => this.attach());
+    }
+  }, 1000);
+},
 
       updateConsent(){
         this.canPlay = this.hasConsent();
