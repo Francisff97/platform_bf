@@ -1,6 +1,24 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
   <head>
+    {{-- === Performance Hints === --}}
+{{-- DNS + Preconnect (max 4 è l’ideale) --}}
+<link rel="dns-prefetch" href="//fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link rel="dns-prefetch" href="//unpkg.com">
+<link rel="preconnect" href="https://unpkg.com" crossorigin>
+
+{{-- YouTube preview/thumbnail --}}
+<link rel="dns-prefetch" href="//i.ytimg.com">
+<link rel="preconnect" href="https://i.ytimg.com" crossorigin>
+<link rel="dns-prefetch" href="//img.youtube.com">
+<link rel="preconnect" href="https://img.youtube.com" crossorigin>
+
+{{-- Iubenda (se resta) --}}
+<link rel="dns-prefetch" href="//embeds.iubenda.com">
+<link rel="preconnect" href="https://embeds.iubenda.com" crossorigin>
 @php
   use App\Support\SeoManager;
   $meta = SeoManager::pageMeta(null, null, $seoCtx ?? []);
@@ -31,16 +49,32 @@
       <!-- End Google Tag Manager -->
     @endif
    {{-- Google Fonts: Orbitron --}}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&display=swap" rel="stylesheet">
-      <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preload"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript>
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
+</noscript>
 
-<script type="text/javascript" src="https://cdn.iubenda.com/cs/iubenda_cs.js" charset="UTF-8" defer></script>
+<link rel="preload"
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&display=swap"
+      as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript>
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&display=swap">
+</noscript>
+
+<link rel="preload" href="https://unpkg.com/swiper@10.3.1/swiper-bundle.min.css"
+      as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript>
+  <link rel="stylesheet" href="https://unpkg.com/swiper@10.3.1/swiper-bundle.min.css">
+</noscript>
+{{-- Swiper JS --}}
+<script defer src="https://unpkg.com/swiper@10.3.1/swiper-bundle.min.js"></script>
+
+{{-- Iubenda (se rimane in pagina) --}}
+<script async src="https://embeds.iubenda.com/widgets/4ba02f66-006a-4b4e-85e2-42db144dcce2.js"></script>
 
     <!-- THEME BOOTSTRAP (safe, no listeners) -->
 <script>
