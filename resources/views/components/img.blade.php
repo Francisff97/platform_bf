@@ -8,28 +8,39 @@
 ])
 
 @php
-  // Prendi i valori dal catalogo SEO per questa URL (alt, lazy di default)
+  use Illuminate\Support\Str;
+
+  // 🔍 Verifica se siamo su una pagina "show"
+  $routeName = optional(request()->route())->getName();
+  $isShowPage = $routeName && Str::is(['*.show', 'packs.show', 'coaches.show', 'services.show', 'builders.show', 'partners.show'], $routeName);
+
+  // 🧠 Recupera attributi SEO
   $attrs = \App\Support\SeoManager::imgAttrsByUrl($src);
 
-  // ALT: se passo un alt esplicito lo uso, altrimenti quello del catalogo, altrimenti stringa vuota
-  $altFinal = (isset($alt) && $alt !== null && $alt !== '')
-    ? $alt
-    : (isset($attrs['alt']) ? $attrs['alt'] : '');
+  // 🖼 ALT finale
+  $altFinal = filled($alt) ? $alt : ($attrs['alt'] ?? '');
 
-  // LAZY: se passo loading esplicito lo rispetto, altrimenti fallback al catalogo (default: true)
+  // 💤 Loading
   if ($loading === 'lazy' || $loading === 'eager') {
-    $lazyFlag = ($loading === 'lazy');
-  } elseif ($loading === true || $loading === false) {
-    $lazyFlag = (bool) $loading;
+      $finalLoading = $loading;
+  } elseif (is_bool($loading)) {
+      $finalLoading = $loading ? 'lazy' : 'eager';
   } else {
-    $lazyFlag = isset($attrs['lazy']) ? (bool)$attrs['lazy'] : true;
+      $finalLoading = $isShowPage ? 'eager' : (($attrs['lazy'] ?? true) ? 'lazy' : 'eager');
   }
+
+  // ⚡ Fetchpriority
+  $fetchPriority = $isShowPage ? 'high' : null;
+
+  // 📐 Dimensioni (solo per show se non passate)
+  $finalWidth  = $width  ?? ($isShowPage ? 1200 : null);
+  $finalHeight = $height ?? ($isShowPage ? 630  : null);
 @endphp
 
 <img src="{{ $src }}"
      @if($altFinal !== '') alt="{{ $altFinal }}" @endif
-     @if(!empty($width))  width="{{ $width }}"   @endif
-     @if(!empty($height)) height="{{ $height }}"  @endif
-     loading="{{ $lazyFlag ? 'lazy' : 'eager' }}"
-     fetchpriority="high"
+     @if($finalWidth)  width="{{ $finalWidth }}"   @endif
+     @if($finalHeight) height="{{ $finalHeight }}" @endif
+     loading="{{ $finalLoading }}"
+     @if($fetchPriority) fetchpriority="{{ $fetchPriority }}" @endif
      class="{{ $class }}">
