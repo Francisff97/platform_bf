@@ -351,41 +351,39 @@
   @endif
 
     {{-- Alpine helper per i video (consent-aware) --}}
-  <script>
-    function videoPlayer(src){
-      return {
-        src, canPlay: false,
-        init(){
-          try {
-            if (window._iub && _iub.cs && _iub.cs.api) {
-              const ok =
-                (_iub.cs.api.getConsentFor && (_iub.cs.api.getConsentFor('experience') || _iub.cs.api.getConsentFor('marketing'))) ||
-                (_iub.cs.api.getConsentForPurpose && (_iub.cs.api.getConsentForPurpose(3) || _iub.cs.api.getConsentForPurpose(4)));
-              this.canPlay = !!ok;
-              document.addEventListener('iubenda_consent_given', () => { this.load(); }, { once:true });
-              document.addEventListener('iubenda_updated',      () => { this.load(); });
-            } else {
-              this.canPlay = true;
-            }
-          } catch(e){ this.canPlay = true; }
-          if (this.canPlay) this.$nextTick(() => this.attach());
-        },
-        attach(){ if (this.$refs.frame && !this.$refs.frame.src) this.$refs.frame.src = this.src; },
-        load(){
-          try{
-            const ok =
-              (window._iub && _iub.cs && _iub.cs.api)
-                ? ((_iub.cs.api.getConsentFor && (_iub.cs.api.getConsentFor('experience') || _iub.cs.api.getConsentFor('marketing')))
-                    || (_iub.cs.api.getConsentForPurpose && (_iub.cs.api.getConsentForPurpose(3) || _iub.cs.api.getConsentForPurpose(4))))
-                : true;
-            this.canPlay = !!ok;
-            if (this.canPlay) this.attach();
-          }catch(e){ this.canPlay = true; this.attach(); }
-        },
-        openPrefs(){ try{ _iub.cs.api.openPreferences(); }catch(e){} },
-        tryLoadAnyway(){ this.load(); }
+ <script>
+  // Semplice: cover immagine + play = carica iframe YouTube con autoplay.
+  // Accetta embed tipo: https://www.youtube.com/embed/VIDEOID?...  (quello che già passi in $v['embed'])
+  function videoPlayer(src){
+    return {
+      src,
+      loaded: false,
+
+      init(){
+        // niente Iubenda, niente consensi: mostrati cover e basta
+        // se vuoi auto-load per chi è già buyer, potresti fare: if(...) this.play()
+      },
+
+      // Estrae l'ID da URL YouTube/youtu.be e ritorna l'anteprima HQ
+      thumb(){
+        try {
+          const s = this.src || '';
+          let m = s.match(/\/embed\/([A-Za-z0-9_-]{6,})/);
+          if (!m) m = s.match(/[?&]v=([A-Za-z0-9_-]{6,})/);
+          if (!m) m = s.match(/youtu\.be\/([A-Za-z0-9_-]{6,})/);
+          const id = m ? m[1] : null;
+          return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : '';
+        } catch(e){ return ''; }
+      },
+
+      play(){
+        if (this.loaded || !this.$refs.frame) return;
+        const sep = this.src.includes('?') ? '&' : '?';
+        this.$refs.frame.src = `${this.src}${sep}autoplay=1&rel=0`;
+        this.loaded = true;
       }
     }
-  </script>
+  }
+</script>
 @endif
 </x-app-layout>
