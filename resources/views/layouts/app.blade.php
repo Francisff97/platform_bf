@@ -75,7 +75,9 @@
 
 {{-- Iubenda (se rimane in pagina) --}}
 <script async src="https://embeds.iubenda.com/widgets/4ba02f66-006a-4b4e-85e2-42db144dcce2.js"></script>
-
+<link rel="preload" href="{{ Vite::asset('resources/css/optional.css') }}"
+      as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="{{ Vite::asset('resources/css/optional.css') }}"></noscript>
     <!-- THEME BOOTSTRAP (safe, no listeners) -->
 <script>
 (function () {
