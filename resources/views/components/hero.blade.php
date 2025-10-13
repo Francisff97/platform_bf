@@ -16,15 +16,25 @@
   $full = $fb ? 'full-bleed' : '';
 
   // robust source resolution
-  $src = (isset($hero) && !empty($hero->image_path))
-          ? Storage::url($hero->image_path)
-          : ($image ?: null);
+  $src = null;
+  if (isset($hero) && !empty($hero->image_path)) {
+      // ✅ controlla se il file esiste nello storage pubblico o già in /public
+      $path = $hero->image_path;
+      if (Str::startsWith($path, ['http://', 'https://', '/'])) {
+          $src = asset(ltrim($path, '/'));
+      } elseif (Storage::disk('public')->exists($path)) {
+          $src = Storage::url($path);
+      } else {
+          $src = asset('storage/'.$path);
+      }
+  } elseif (!empty($image)) {
+      $src = $image;
+  }
 
   // optional modern formats (only swap extension, don't break if missing)
   $srcWebp = $src ? preg_replace('/\.(png|jpe?g)$/i', '.webp', $src) : null;
   $srcAvif = $src ? preg_replace('/\.(png|jpe?g|webp)$/i', '.avif', $src) : null;
 
-  // responsive hints (works with services that accept ?w=)
   $widths = [480, 768, 1024, 1440, 1920];
   $maxW   = max($widths);
   $srcset = $src
