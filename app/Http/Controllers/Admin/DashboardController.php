@@ -9,7 +9,7 @@ use Illuminate\Support\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function __invoke()
     {
         // finestre temporali
         $now    = now();
