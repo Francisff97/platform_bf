@@ -352,80 +352,46 @@
 
     {{-- Alpine helper per i video (consent-aware) --}}
 <script>
-  function videoPlayer(src){
-    return {
-      src,
-      canPlay: false,
-      askedOnce: false,
+function videoPlayer(src){
+  return {
+    src,
+    canPlay: false,
+    init(){
+      this.tryLoad();
+      document.addEventListener('iubenda_consent_given', () => this.tryLoad());
+      document.addEventListener('iubenda_updated', () => this.tryLoad());
+      setTimeout(() => this.tryLoad(), 1500); // fallback auto
+    },
+    tryLoad(){
+      try {
+        const api = window._iub?.cs?.api;
+        if (!api) { this.canPlay = true; return this.attach(); }
 
-      init(){
-  // prova a leggere consenso subito
-  this.canPlay = this.hasConsent();
-  if (this.canPlay) {
-    this.$nextTick(() => this.attach());
-    return;
-  }
+        const allowed =
+          api.getConsentFor('necessary') ||
+          api.getConsentFor('technical') ||
+          api.getConsentFor('experience') ||
+          api.getConsentFor('marketing') ||
+          api.getConsentForPurpose?.(3) ||
+          api.getConsentForPurpose?.(4) ||
+          api.getConsentForPurpose?.(5);
 
-  // 🔁 ascolta cambi di consenso
-  document.addEventListener('iubenda_consent_given', () => this.load(), { once: true });
-  document.addEventListener('iubenda_updated', () => this.load());
-
-  // ⏱ fallback: se iubenda non spara nulla entro 1 secondo, prova comunque
-  setTimeout(() => {
-    if (!this.canPlay) {
-      this.canPlay = this.hasConsent();
-      if (this.canPlay) this.$nextTick(() => this.attach());
-    }
-  }, 1000);
-},
-
-      updateConsent(){
-        this.canPlay = this.hasConsent();
-        if (this.canPlay) this.$nextTick(() => this.attach());
-      },
-
-      hasConsent(){
-        try {
-          const api = window._iub?.cs?.api;
-          if (!api) return true; // no iubenda loaded → allow playback
-
-          // ✅ se Youtube è nei "necessari", sempre permesso
-          if (api.getConsentFor('necessary') || api.getConsentFor('technical')) {
-            return true;
-          }
-
-          // fallback per configurazioni standard
-          return (
-            api.getConsentFor('experience') ||
-            api.getConsentFor('preferences') ||
-            api.getConsentFor('statistics') ||
-            api.getConsentFor('measurement') ||
-            api.getConsentFor('marketing') ||
-            api.getConsentForPurpose(3) ||
-            api.getConsentForPurpose(4) ||
-            api.getConsentForPurpose(5)
-          );
-        } catch (e) {
-          return true;
-        }
-      },
-
-      attach(){
-        if (this.$refs.frame && !this.$refs.frame.src) {
-          this.$refs.frame.src = this.src;
-        }
-      },
-
-      openPrefs(){
-        try { window._iub?.cs?.api?.openPreferences(); } catch(e){}
-      },
-
-      tryLoadAnyway(){
+        this.canPlay = !!allowed;
+        if (this.canPlay) this.attach();
+      } catch(e){
         this.canPlay = true;
         this.attach();
       }
-    }
+    },
+    attach(){
+      if (this.$refs.frame && !this.$refs.frame.src) {
+        this.$refs.frame.src = this.src;
+      }
+    },
+    openPrefs(){ try{ _iub.cs.api.openPreferences(); }catch(e){} },
+    tryLoadAnyway(){ this.canPlay = true; this.attach(); }
   }
+}
 </script>
 @endif
 </x-app-layout>
