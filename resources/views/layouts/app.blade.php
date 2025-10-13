@@ -8,17 +8,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-  {{-- ✅ Content Security Policy: blocca inline script malevoli ma permette GTM/Iubenda/YT --}}
-  <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self';
-                 script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://embeds.iubenda.com https://cdn.iubenda.com https://unpkg.com;
-                 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com;
-                 img-src 'self' data: blob: https://i.ytimg.com https://img.youtube.com https://cdn.iubenda.com https://*.base-forge.com;
-                 font-src 'self' https://fonts.gstatic.com;
-                 connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com;
-                 frame-src https://www.youtube.com https://player.vimeo.com https://www.googletagmanager.com https://embeds.iubenda.com;
-                 upgrade-insecure-requests;">
-
+  <!-- Content-Security-Policy (client-side) -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  img-src 'self' data: blob: https:;
+  font-src 'self' data: https:;
+  media-src 'self' https:;
+  style-src 'self' 'unsafe-inline' https:;
+  script-src 'self' 'unsafe-inline' 'unsafe-eval' https: https://www.googletagmanager.com;
+  connect-src 'self' https: 
+    https://embeds.iubenda.com https://cdn.iubenda.com https://ldb.iubenda.com
+    https://www.youtube.com https://www.youtube-nocookie.com
+    https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com
+    https://i.ytimg.com https://img.youtube.com;
+  frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com;
+  object-src 'none';
+  base-uri 'self';
+  upgrade-insecure-requests
+">
   {{-- ✅ HSTS: forza HTTPS (solo se il dominio ha HTTPS attivo!) --}}
   <meta http-equiv="Strict-Transport-Security" content="max-age=63072000; includeSubDomains; preload">
 
