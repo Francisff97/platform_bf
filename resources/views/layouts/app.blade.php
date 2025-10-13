@@ -9,7 +9,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
   <!-- Content-Security-Policy (client-side) -->
-<meta http-equiv="Content-Security-Policy" content="
+<!-- <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
   img-src 'self' data: blob: https:;
   font-src 'self' data: https:;
@@ -25,7 +25,8 @@
   object-src 'none';
   base-uri 'self';
   upgrade-insecure-requests
-">
+"> 
+-->
   {{-- ✅ HSTS: forza HTTPS (solo se il dominio ha HTTPS attivo!) --}}
   <meta http-equiv="Strict-Transport-Security" content="max-age=63072000; includeSubDomains; preload">
 
