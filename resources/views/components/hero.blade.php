@@ -44,7 +44,13 @@
     : '';
   $sizes = '(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1200px';
 @endphp
-
+@if(isset($hero) && !empty($hero->image_path))
+  <div style="background: #111; color: #0f0; font-size: 12px; padding:4px">
+    Hero path: {{ $hero->image_path }}<br>
+    Storage::exists? {{ Storage::disk('public')->exists($hero->image_path) ? '✅ yes' : '❌ no' }}<br>
+    URL: {{ Storage::url($hero->image_path) }}
+  </div>
+@endif
 <style>
   .full-bleed{width:100vw;position:relative;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw}
   .hero-controls .swiper-button-next,.hero-controls .swiper-button-prev{color:#fff}
