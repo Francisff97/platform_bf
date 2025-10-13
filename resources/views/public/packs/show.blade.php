@@ -351,41 +351,71 @@
   @endif
 
     {{-- Alpine helper per i video (consent-aware) --}}
-  <script>
-    function videoPlayer(src){
-      return {
-        src, canPlay: false,
-        init(){
-          try {
-            if (window._iub && _iub.cs && _iub.cs.api) {
-              const ok =
-                (_iub.cs.api.getConsentFor && (_iub.cs.api.getConsentFor('experience') || _iub.cs.api.getConsentFor('marketing'))) ||
-                (_iub.cs.api.getConsentForPurpose && (_iub.cs.api.getConsentForPurpose(3) || _iub.cs.api.getConsentForPurpose(4)));
-              this.canPlay = !!ok;
-              document.addEventListener('iubenda_consent_given', () => { this.load(); }, { once:true });
-              document.addEventListener('iubenda_updated',      () => { this.load(); });
-            } else {
-              this.canPlay = true;
-            }
-          } catch(e){ this.canPlay = true; }
-          if (this.canPlay) this.$nextTick(() => this.attach());
-        },
-        attach(){ if (this.$refs.frame && !this.$refs.frame.src) this.$refs.frame.src = this.src; },
-        load(){
-          try{
-            const ok =
-              (window._iub && _iub.cs && _iub.cs.api)
-                ? ((_iub.cs.api.getConsentFor && (_iub.cs.api.getConsentFor('experience') || _iub.cs.api.getConsentFor('marketing')))
-                    || (_iub.cs.api.getConsentForPurpose && (_iub.cs.api.getConsentForPurpose(3) || _iub.cs.api.getConsentForPurpose(4))))
-                : true;
-            this.canPlay = !!ok;
-            if (this.canPlay) this.attach();
-          }catch(e){ this.canPlay = true; this.attach(); }
-        },
-        openPrefs(){ try{ _iub.cs.api.openPreferences(); }catch(e){} },
-        tryLoadAnyway(){ this.load(); }
+ <script>
+  function videoPlayer(src){
+    return {
+      src,
+      isReady: false,   // iframe montato?
+      poster: '',       // URL anteprima
+      init(){
+        // Calcola poster ora: supporto YouTube; fallback a immagine generica
+        this.poster = this.thumbFromSrc(this.src) || this.placeholder();
+
+        // Non montiamo mai l'iframe in auto: è un facade.
+        // Se vuoi auto-play quando c'è consenso, scommenta queste 2 righe:
+        // if (this.hasConsent()) { this.attach(); }
+        
+        // Se cambia il consenso mentre sei sulla pagina, il prossimo click funzionerà.
+        document.addEventListener('iubenda_consent_given', () => {}, { once:true });
+        document.addEventListener('iubenda_updated',      () => {});
+      },
+      onPlay(){
+        // Se non c'è consenso, apri preferenze
+        if (!this.hasConsent()) {
+          try { _iub.cs.api.openPreferences(); } catch(e){}
+          return;
+        }
+        // Ok: monta iframe
+        this.attach();
+      },
+      attach(){
+        if (this.$refs.frame && !this.$refs.frame.src) {
+          this.$refs.frame.src = this.src;
+        }
+        this.isReady = true;
+      },
+      hasConsent(){
+        try {
+          if (window._iub && _iub.cs && _iub.cs.api) {
+            return !!(
+              (_iub.cs.api.getConsentFor && (_iub.cs.api.getConsentFor('experience') || _iub.cs.api.getConsentFor('marketing'))) ||
+              (_iub.cs.api.getConsentForPurpose && (_iub.cs.api.getConsentForPurpose(3) || _iub.cs.api.getConsentForPurpose(4)))
+            );
+          }
+        } catch(e){}
+        return true; // se Iubenda non c'è, consenti
+      },
+      thumbFromSrc(url){
+        // YouTube: https://www.youtube.com/embed/VIDEO_ID[?...]
+        try {
+          const m = String(url).match(/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/);
+          if (m && m[1]) return `https://i.ytimg.com/vi/${m[1]}/hqdefault.jpg`;
+        } catch(e){}
+        return null;
+      },
+      placeholder(){
+        // sfumatura neutra (data-uri SVG) così niente richiesta extra
+        return 'data:image/svg+xml;utf8,' + encodeURIComponent(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720">
+             <defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+               <stop offset="0" stop-color="#0f172a"/><stop offset="1" stop-color="#111827"/>
+             </linearGradient></defs>
+             <rect width="100%" height="100%" fill="url(#g)"/>
+           </svg>`
+        );
       }
     }
-  </script>
+  }
+</script>
 @endif
 </x-app-layout>
