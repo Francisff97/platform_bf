@@ -8,8 +8,10 @@ class Order extends Model
 {
     protected $fillable = [
         'user_id',
-        'pack_id',          // TEXT: può contenere "23" oppure "[23,41]"
-        'coach_id',         // TEXT: idem
+        'pack_id',          // legacy scalar (int)
+        'coach_id',         // legacy scalar (int)
+        'pack_id_json',     // nuovo JSON (array di int)
+        'coach_id_json',    // nuovo JSON (array di int)
         'amount_cents',
         'currency',
         'status',
@@ -26,96 +28,75 @@ class Order extends Model
         'items'             => 'array',
         'meta'              => 'array',
         'provider_response' => 'array',
+        'pack_id_json'      => 'array',
+        'coach_id_json'     => 'array',
     ];
 
-    // ---------------- Relations (compat scalar) ----------------
+    // ------------ Relazioni (legacy per compat) ------------
     public function user()  { return $this->belongsTo(User::class); }
-    public function pack()  { return $this->belongsTo(Pack::class,  'pack_id'); }
+    public function pack()  { return $this->belongsTo(Pack::class, 'pack_id'); }
     public function coach() { return $this->belongsTo(Coach::class, 'coach_id'); }
 
-    // ---------------- Accessors: array sempre ----------------
+    // ------------ Accessor comodi: sempre array normalizzati ------------
     public function getPackIdsAttribute(): array
     {
-        $v = $this->getRawOriginal('pack_id');
-        if ($v === null) return [];
-        if (is_array($v)) return $this->normalizeIdArray($v);
-        if (is_numeric($v)) return [(int)$v];
-        if (is_string($v)) {
-            $dec = json_decode($v, true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($dec)) {
-                return $this->normalizeIdArray($dec);
-            }
-            if (is_numeric($v)) return [(int)$v];
-        }
-        return [];
+        $arr = is_array($this->pack_id_json) ? $this->pack_id_json : [];
+        if ($this->pack_id) $arr[] = (int)$this->pack_id;
+        return $this->normalizeIdArray($arr);
     }
 
     public function getCoachIdsAttribute(): array
     {
-        $v = $this->getRawOriginal('coach_id');
-        if ($v === null) return [];
-        if (is_array($v)) return $this->normalizeIdArray($v);
-        if (is_numeric($v)) return [(int)$v];
-        if (is_string($v)) {
-            $dec = json_decode($v, true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($dec)) {
-                return $this->normalizeIdArray($dec);
-            }
-            if (is_numeric($v)) return [(int)$v];
-        }
-        return [];
+        $arr = is_array($this->coach_id_json) ? $this->coach_id_json : [];
+        if ($this->coach_id) $arr[] = (int)$this->coach_id;
+        return $this->normalizeIdArray($arr);
     }
 
-    // ---------------- Mutators: accettano null|int|array ----------------
-    public function setPackIdAttribute($value): void
+    // ------------ Mutators (accettano int|array|null) ------------
+    // setPackIds()/setCoachIds() sono metodi helper *non* magici: chiamali tu nel controller
+    public function setPackIds(array|int|null $value): void
     {
-        $this->attributes['pack_id'] = $this->prepareIdForStorage($value);
-    }
-    public function setCoachIdAttribute($value): void
-    {
-        $this->attributes['coach_id'] = $this->prepareIdForStorage($value);
+        [$legacy, $json] = $this->splitLegacyVsJson($value);
+        $this->attributes['pack_id'] = $legacy;
+        $this->attributes['pack_id_json'] = $json;
     }
 
-    // ---------------- Helpers ----------------
+    public function setCoachIds(array|int|null $value): void
+    {
+        [$legacy, $json] = $this->splitLegacyVsJson($value);
+        $this->attributes['coach_id'] = $legacy;
+        $this->attributes['coach_id_json'] = $json;
+    }
+
+    // ------------ Helpers ------------
     protected function normalizeIdArray(array $arr): array
     {
-        $out = array_map('intval', $arr);
-        $out = array_filter($out, fn($v) => $v > 0);
+        $out = array_values(array_filter(array_map('intval', $arr), fn($v) => $v > 0));
         return array_values(array_unique($out));
     }
 
-    protected function prepareIdForStorage($value)
+    /** Se 0/1 elemento => legacy int; se >1 => legacy NULL + JSON array */
+    protected function splitLegacyVsJson(array|int|null $value): array
     {
-        if ($value === null || $value === []) return null;
+        if ($value === null) return [null, null];
 
-        if (is_array($value)) {
-            $norm = $this->normalizeIdArray($value);
-            if (!$norm) return null;
-            if (count($norm) === 1) return (string)$norm[0];        // scalar compat
-            return json_encode(array_values($norm));                 // array JSON
-        }
+        if (is_int($value)) return [$value, null];
 
-        if (is_numeric($value)) return (string) ((int)$value);       // scalar compat
-
-        if (is_string($value)) {
-            $dec = json_decode($value, true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($dec)) {
-                return $this->prepareIdForStorage($dec);
-            }
-        }
-
-        return null;
+        $ids = $this->normalizeIdArray($value);
+        if (count($ids) === 0) return [null, null];
+        if (count($ids) === 1) return [$ids[0], null];
+        return [null, $ids]; // JSON only
     }
 
-    // Comodi per caricare più modelli
+    // Convenience
     public function packModels()
     {
         $ids = $this->pack_ids;
-        return $ids ? Pack::whereIn('id', $ids)->get() : collect();
+        return empty($ids) ? collect([]) : Pack::whereIn('id', $ids)->get();
     }
     public function coachModels()
     {
         $ids = $this->coach_ids;
-        return $ids ? Coach::whereIn('id', $ids)->get() : collect();
+        return empty($ids) ? collect([]) : Coach::whereIn('id', $ids)->get();
     }
 }
