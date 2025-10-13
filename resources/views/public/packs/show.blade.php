@@ -168,16 +168,38 @@
         class="relative rounded-2xl ring-1 ring-black/5 dark:ring-white/10 bg-white/60 dark:bg-gray-900/60">
 
         {{-- aspect 16:9 con overflow solo qui (bordi arrotondati) --}}
-        <div class="relative w-full overflow-hidden rounded-2xl" style="padding-top:56.25%">
-          <iframe
-            x-ref="frame"
-            title="Featured video"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowfullscreen
-            loading="lazy"
-            style="position:absolute;inset:0;width:100%;height:100%;border:0;display:block"
-            x-show="canPlay" x-cloak
-          ></iframe>
+       {{-- aspect 16:9 con overflow solo qui (bordi arrotondati) --}}
+<div class="relative w-full overflow-hidden rounded-2xl" style="padding-top:56.25%">
+  {{-- POSTER + PLAY (facade) --}}
+  <button
+    type="button"
+    x-show="!isReady"
+    x-cloak
+    @click="onPlay()"
+    class="group absolute inset-0 block"
+    aria-label="Play video"
+  >
+    <img :src="poster" alt="" class="h-full w-full object-cover">
+    <div class="absolute inset-0 bg-black/35 transition group-hover:bg-black/40"></div>
+    <div class="absolute inset-0 grid place-items-center">
+      <div class="rounded-full bg-white/90 p-4 shadow-lg transition group-hover:scale-105">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </div>
+    </div>
+  </button>
+
+  {{-- IFRAME vero (montato solo al click + consenso) --}}
+  <iframe
+    x-ref="frame"
+    x-show="isReady"
+    x-cloak
+    title="Featured video"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    allowfullscreen
+    loading="lazy"
+    style="position:absolute;inset:0;width:100%;height:100%;border:0;display:block"
+  ></iframe>
+</div>
 
           {{-- Placeholder consenso --}}
           <div x-show="!canPlay" x-cloak class="absolute inset-0 grid place-items-center p-4">
@@ -237,24 +259,37 @@
                   class="relative overflow-hidden rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-black/5 backdrop-blur
                          dark:border-gray-800 dark:bg-gray-900/60 dark:ring-white/10">
 
-                  <div class="relative w-full overflow-hidden rounded-t-2xl" style="padding-top:56.25%">
-                    <iframe x-ref="frame" title="Video {{ $i+1 }}"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                            allowfullscreen loading="lazy"
-                            style="position:absolute;inset:0;width:100%;height:100%;border:0;display:block"
-                            x-show="canPlay" x-cloak></iframe>
+                 <div class="relative w-full overflow-hidden rounded-t-2xl" style="padding-top:56.25%">
+  {{-- POSTER + PLAY --}}
+  <button
+    type="button"
+    x-show="!isReady"
+    x-cloak
+    @click="onPlay()"
+    class="group absolute inset-0 block"
+    aria-label="Play video"
+  >
+    <img :src="poster" alt="" class="h-full w-full object-cover">
+    <div class="absolute inset-0 bg-black/30 transition group-hover:bg-black/35"></div>
+    <div class="absolute inset-0 grid place-items-center">
+      <div class="rounded-full bg-white/90 p-3 shadow-lg transition group-hover:scale-105">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </div>
+    </div>
+  </button>
 
-                    <div x-show="!canPlay" x-cloak class="absolute inset-0 grid place-items-center p-3">
-                      <div class="w-full max-w-sm rounded-xl border border-[color:var(--accent)]/30 bg-white/85 p-4 text-center text-xs shadow-sm backdrop-blur
-                                  dark:border-[color:var(--accent)]/25 dark:bg-gray-900/70">
-                        Allow cookies to play this video.
-                        <div class="mt-2 flex justify-center gap-2">
-                          <button type="button" @click="openPrefs()" class="rounded bg-[color:var(--accent)] px-3 py-1.5 text-white">Preferences</button>
-                          <button type="button" @click="tryLoadAnyway()" class="rounded border px-3 py-1.5 dark:border-gray-700">I accepted</button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+  {{-- IFRAME --}}
+  <iframe
+    x-ref="frame"
+    x-show="isReady"
+    x-cloak
+    title="Video"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    allowfullscreen
+    loading="lazy"
+    style="position:absolute;inset:0;width:100%;height:100%;border:0;display:block"
+  ></iframe>
+</div>
 
                   <div class="flex items-center justify-between gap-3 border-t border-black/5 px-3 py-2 text-sm dark:border-white/10">
                     <div class="font-medium truncate">{{ $v['title'] }}</div>
