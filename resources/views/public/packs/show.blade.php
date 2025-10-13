@@ -163,7 +163,7 @@
     <div class="mx-auto max-w-6xl px-4 pt-6">
       {{-- wrapper senza overflow per non “tagliare” eventuali modali esterni --}}
       <div
-        x-data="videoPlayer('{{ $featured['embed'] }}')"
+        x-data="{ canPlay: true }"
         x-init="init()"
         class="relative rounded-2xl ring-1 ring-black/5 dark:ring-white/10 bg-white/60 dark:bg-gray-900/60">
 
@@ -249,7 +249,7 @@
             @foreach($others as $i => $v)
               <div class="w-[85%] shrink-0 snap-start">
                 <div
-                  x-data="videoPlayer('{{ $v['embed'] }}')"
+                  x-data="{ canPlay: true }"
                   x-init="init()"
                   class="relative overflow-hidden rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-black/5 backdrop-blur
                          dark:border-gray-800 dark:bg-gray-900/60 dark:ring-white/10">
@@ -302,7 +302,7 @@
       <div class="hidden sm:grid grid-cols-3 gap-6">
         @foreach($others as $i => $v)
           <div
-            x-data="videoPlayer('{{ $v['embed'] }}')"
+            x-data="{ canPlay: true }"
             x-init="init()"
             class="relative overflow-hidden rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-black/5 backdrop-blur
                    dark:border-gray-800 dark:bg-gray-900/60 dark:ring-white/10">
@@ -313,7 +313,7 @@
                       style="position:absolute;inset:0;width:100%;height:100%;border:0;display:block"
                       x-show="canPlay" x-cloak></iframe>
 
-              <div x-show="!canPlay" x-cloak class="absolute inset-0 grid place-items-center p-3">
+             
                 <div class="w-full max-w-sm rounded-xl border border-[color:var(--accent)]/30 bg-white/85 p-4 text-center text-xs shadow-sm backdrop-blur
                             dark:border-[color:var(--accent)]/25 dark:bg-gray-900/70">
                   Allow cookies to play this video.
@@ -322,7 +322,6 @@
                     <button type="button" @click="tryLoadAnyway()" class="rounded border px-3 py-1.5 dark:border-gray-700">I accepted</button>
                   </div>
                 </div>
-              </div>
             </div>
             <div class="flex items-center justify-between gap-3 border-t border-black/5 px-3 py-2 text-sm dark:border-white/10">
               <div class="font-medium truncate">{{ $v['title'] }}</div>
