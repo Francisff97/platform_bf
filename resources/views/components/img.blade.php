@@ -31,5 +31,5 @@
      @if(!empty($width))  width="{{ $width }}"   @endif
      @if(!empty($height)) height="{{ $height }}"  @endif
      loading="{{ $lazyFlag ? 'lazy' : 'eager' }}"
-     ferchpriority="high"
+     fetchpriority="high"
      class="{{ $class }}">
