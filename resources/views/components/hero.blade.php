@@ -51,7 +51,7 @@
   fetchpriority="high"
   loading="eager"
   decoding="async"
-  width="{{ $w }}
+  width="{{ $w }}"
 />
       </picture>
     @endif
