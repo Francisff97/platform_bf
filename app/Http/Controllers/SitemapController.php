@@ -32,9 +32,15 @@ class SitemapController extends Controller
             foreach (\App\Models\Coach::cursor() as $c) {
                 $urls[] = ['loc'=>route('coaches.show',$c->slug),'lastmod'=>optional($c->updated_at)->toAtomString(),'prio'=>'0.6'];
             }
-            foreach (\App\Models\Service::cursor() as $s) {
-                $urls[] = ['loc'=>route('services.show', $s->slug ?? $s->id),'lastmod'=>optional($s->updated_at)->toAtomString(),'prio'=>'0.5'];
-            }
+            if (\Route::has('services.show')) {
+    foreach (\App\Models\Service::cursor() as $s) {
+        $urls[] = [
+            'loc' => route('services.show', $s->slug ?? $s->id),
+            'lastmod' => optional($s->updated_at)->toAtomString(),
+            'prio' => '0.5'
+        ];
+    }
+}
 
             $body = view('sitemap.xml', compact('urls'))->render();
             return '<?xml version="1.0" encoding="UTF-8"?>'."\n".$body;
