@@ -355,56 +355,86 @@
   function videoPlayer(src){
     return {
       src,
-      isReady: false,   // iframe montato?
-      poster: '',       // URL anteprima
+      isReady: false,
+      poster: '',
+      askedOnce: false,
+
       init(){
-        // Calcola poster ora: supporto YouTube; fallback a immagine generica
         this.poster = this.thumbFromSrc(this.src) || this.placeholder();
 
-        // Non montiamo mai l'iframe in auto: è un facade.
-        // Se vuoi auto-play quando c'è consenso, scommenta queste 2 righe:
-        // if (this.hasConsent()) { this.attach(); }
-        
-        // Se cambia il consenso mentre sei sulla pagina, il prossimo click funzionerà.
-        document.addEventListener('iubenda_consent_given', () => {}, { once:true });
-        document.addEventListener('iubenda_updated',      () => {});
+        // Se Iubenda aggiorna i consensi durante la sessione, prova ad attaccare
+        document.addEventListener('iubenda_consent_given', () => { if (!this.isReady && this.hasConsent(true)) this.attach(); }, { once:true });
+        document.addEventListener('iubenda_updated',      () => { if (!this.isReady && this.hasConsent(true)) this.attach(); });
       },
+
       onPlay(){
-        // Se non c'è consenso, apri preferenze
-        if (!this.hasConsent()) {
-          try { _iub.cs.api.openPreferences(); } catch(e){}
+        // 1) se c'è consenso attacca subito
+        if (this.hasConsent(true)) { this.attach(); return; }
+
+        // 2) se NON c'è consenso ed è la prima volta, apri preferenze
+        if (!this.askedOnce) {
+          this.askedOnce = true;
+          try { if (window._iub?.cs?.api?.openPreferences) _iub.cs.api.openPreferences(); } catch(e){}
           return;
         }
-        // Ok: monta iframe
-        this.attach();
+
+        // 3) l'utente ha già gestito il popup: ricontrolla e, se ok, attacca
+        if (this.hasConsent(true)) this.attach();
       },
+
       attach(){
         if (this.$refs.frame && !this.$refs.frame.src) {
           this.$refs.frame.src = this.src;
+          this.isReady = true;
         }
-        this.isReady = true;
       },
-      hasConsent(){
-        try {
-          if (window._iub && _iub.cs && _iub.cs.api) {
-            return !!(
-              (_iub.cs.api.getConsentFor && (_iub.cs.api.getConsentFor('experience') || _iub.cs.api.getConsentFor('marketing'))) ||
-              (_iub.cs.api.getConsentForPurpose && (_iub.cs.api.getConsentForPurpose(3) || _iub.cs.api.getConsentForPurpose(4)))
-            );
-          }
-        } catch(e){}
-        return true; // se Iubenda non c'è, consenti
-      },
+
+      // Verifica consenso in modo "compatibile":
+      // - categorie standard Iubenda: 'preferences' (o 'funzionalità'), 'experience', 'marketing', 'measurement'/'statistics'
+      // - purposes più comuni 3/4/5 (misurazione/esperienza/marketing) se configurati
+      hasConsent(strict = false){
+  try {
+    const api = window._iub?.cs?.api;
+    if (!api) return true;                 // se Iubenda non è caricato, consenti
+
+    // 🔑 Se YouTube è sotto "Necessari / Technical", non serve consenso.
+    if (api.getConsentFor && (api.getConsentFor('necessary') || api.getConsentFor('technical'))) {
+      return true;
+    }
+
+    // fallback: per chi NON lo ha messo nei necessari (copre le altre config)
+    const catOk =
+      (api.getConsentFor && (
+        api.getConsentFor('preferences') ||
+        api.getConsentFor('experience')  ||
+        api.getConsentFor('statistics')  ||
+        api.getConsentFor('measurement') ||
+        api.getConsentFor('marketing')
+      ));
+
+    const purOk =
+      (api.getConsentForPurpose && (
+        api.getConsentForPurpose(3) ||  // functional/experience
+        api.getConsentForPurpose(4) ||  // measurement/analytics
+        api.getConsentForPurpose(5)     // marketing
+      ));
+
+    return !!(catOk || purOk);
+  } catch(e){
+    return true; // in caso di errore, non bloccare
+  }
+},
+
+      // === utilità preview ===
       thumbFromSrc(url){
-        // YouTube: https://www.youtube.com/embed/VIDEO_ID[?...]
         try {
+          // https://www.youtube.com/embed/VIDEO_ID
           const m = String(url).match(/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/);
           if (m && m[1]) return `https://i.ytimg.com/vi/${m[1]}/hqdefault.jpg`;
         } catch(e){}
         return null;
       },
       placeholder(){
-        // sfumatura neutra (data-uri SVG) così niente richiesta extra
         return 'data:image/svg+xml;utf8,' + encodeURIComponent(
           `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720">
              <defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
