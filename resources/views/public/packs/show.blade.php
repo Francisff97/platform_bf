@@ -351,98 +351,63 @@
   @endif
 
     {{-- Alpine helper per i video (consent-aware) --}}
- <script>
+<script>
   function videoPlayer(src){
     return {
       src,
-      isReady: false,
-      poster: '',
+      canPlay: false,
       askedOnce: false,
 
       init(){
-        this.poster = this.thumbFromSrc(this.src) || this.placeholder();
-
-        // Se Iubenda aggiorna i consensi durante la sessione, prova ad attaccare
-        document.addEventListener('iubenda_consent_given', () => { if (!this.isReady && this.hasConsent(true)) this.attach(); }, { once:true });
-        document.addEventListener('iubenda_updated',      () => { if (!this.isReady && this.hasConsent(true)) this.attach(); });
+        this.updateConsent();
+        document.addEventListener('iubenda_consent_given', () => this.updateConsent());
+        document.addEventListener('iubenda_updated', () => this.updateConsent());
       },
 
-      onPlay(){
-        // 1) se c'è consenso attacca subito
-        if (this.hasConsent(true)) { this.attach(); return; }
+      updateConsent(){
+        this.canPlay = this.hasConsent();
+        if (this.canPlay) this.$nextTick(() => this.attach());
+      },
 
-        // 2) se NON c'è consenso ed è la prima volta, apri preferenze
-        if (!this.askedOnce) {
-          this.askedOnce = true;
-          try { if (window._iub?.cs?.api?.openPreferences) _iub.cs.api.openPreferences(); } catch(e){}
-          return;
+      hasConsent(){
+        try {
+          const api = window._iub?.cs?.api;
+          if (!api) return true; // no iubenda loaded → allow playback
+
+          // ✅ se Youtube è nei "necessari", sempre permesso
+          if (api.getConsentFor('necessary') || api.getConsentFor('technical')) {
+            return true;
+          }
+
+          // fallback per configurazioni standard
+          return (
+            api.getConsentFor('experience') ||
+            api.getConsentFor('preferences') ||
+            api.getConsentFor('statistics') ||
+            api.getConsentFor('measurement') ||
+            api.getConsentFor('marketing') ||
+            api.getConsentForPurpose(3) ||
+            api.getConsentForPurpose(4) ||
+            api.getConsentForPurpose(5)
+          );
+        } catch (e) {
+          return true;
         }
-
-        // 3) l'utente ha già gestito il popup: ricontrolla e, se ok, attacca
-        if (this.hasConsent(true)) this.attach();
       },
 
       attach(){
         if (this.$refs.frame && !this.$refs.frame.src) {
           this.$refs.frame.src = this.src;
-          this.isReady = true;
         }
       },
 
-      // Verifica consenso in modo "compatibile":
-      // - categorie standard Iubenda: 'preferences' (o 'funzionalità'), 'experience', 'marketing', 'measurement'/'statistics'
-      // - purposes più comuni 3/4/5 (misurazione/esperienza/marketing) se configurati
-      hasConsent(strict = false){
-  try {
-    const api = window._iub?.cs?.api;
-    if (!api) return true;                 // se Iubenda non è caricato, consenti
-
-    // 🔑 Se YouTube è sotto "Necessari / Technical", non serve consenso.
-    if (api.getConsentFor && (api.getConsentFor('necessary') || api.getConsentFor('technical'))) {
-      return true;
-    }
-
-    // fallback: per chi NON lo ha messo nei necessari (copre le altre config)
-    const catOk =
-      (api.getConsentFor && (
-        api.getConsentFor('preferences') ||
-        api.getConsentFor('experience')  ||
-        api.getConsentFor('statistics')  ||
-        api.getConsentFor('measurement') ||
-        api.getConsentFor('marketing')
-      ));
-
-    const purOk =
-      (api.getConsentForPurpose && (
-        api.getConsentForPurpose(3) ||  // functional/experience
-        api.getConsentForPurpose(4) ||  // measurement/analytics
-        api.getConsentForPurpose(5)     // marketing
-      ));
-
-    return !!(catOk || purOk);
-  } catch(e){
-    return true; // in caso di errore, non bloccare
-  }
-},
-
-      // === utilità preview ===
-      thumbFromSrc(url){
-        try {
-          // https://www.youtube.com/embed/VIDEO_ID
-          const m = String(url).match(/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/);
-          if (m && m[1]) return `https://i.ytimg.com/vi/${m[1]}/hqdefault.jpg`;
-        } catch(e){}
-        return null;
+      openPrefs(){
+        try { window._iub?.cs?.api?.openPreferences(); } catch(e){}
       },
-      placeholder(){
-        return 'data:image/svg+xml;utf8,' + encodeURIComponent(
-          `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720">
-             <defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
-               <stop offset="0" stop-color="#0f172a"/><stop offset="1" stop-color="#111827"/>
-             </linearGradient></defs>
-             <rect width="100%" height="100%" fill="url(#g)"/>
-           </svg>`
-        );
+
+      tryLoadAnyway(){
+        this.canPlay = true;
+        this.attach();
       }
     }
   }
