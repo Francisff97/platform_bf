@@ -45,17 +45,13 @@
         @if($srcAvif)<source type="image/avif" srcset="{{ $srcAvif }}" sizes="{{ $sizes }}"/><!-- best -->>@endif
         @if($srcWebp)<source type="image/webp" srcset="{{ $srcWebp }}" sizes="{{ $sizes }}"/><!-- modern -->@endif
         <img
-          src="{{ $src }}"
-          srcset="{{ $srcset }}"
-          sizes="{{ $sizes }}"
-          alt="{{ $hero->title ?? $title ?? 'Hero' }}"
-          class="absolute inset-0 h-full w-full object-cover"
-          fetchpriority="high"
-          loading="eager"
-          decoding="async"
-          width="1920" height="1080"
-          style="aspect-ratio: 16/9; contain-intrinsic-size: 1200px 675px;"
-        >
+  src="{{ $hero ? Storage::url($hero->image_path) : $image }}"
+  alt="{{ $hero->title ?? $title }}"
+  class="absolute inset-0 h-full w-full object-cover block"
+  fetchpriority="high"
+  loading="eager"
+  decoding="async"
+/>
       </picture>
     @endif
 
