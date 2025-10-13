@@ -226,7 +226,7 @@
           <div class="swiper-slide">
             <div class="group overflow-hidden rounded-3xl bg-white ring-1 ring-black/5 transition hover:shadow-lg dark:bg-gray-900">
               @if($s->image_path)
-                <x-img :src="Storage::url($s->image_path)" class="aspect-[16/9] w-full object-cover" />
+                <x-img :src="Storage::url($s->image_path)" :alt="$s->alt_text ?? $s->title ?? $s->name ?? 'Service image'" class="aspect-[16/9] w-full object-cover" />
               @endif
               <div class="p-4">
                 <div class="flex items-center justify-between">
