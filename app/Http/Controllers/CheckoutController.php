@@ -15,9 +15,6 @@ use App\Models\Order;
 
 class CheckoutController extends Controller
 {
-    /* ======================
-       Pagina checkout
-       ====================== */
     public function checkout()
     {
         $cart = $this->normalizeCart(session('cart', []));
@@ -36,7 +33,7 @@ class CheckoutController extends Controller
         ]);
     }
 
-    /* ====================== PayPal helpers ====================== */
+    /* = PayPal helpers = */
     private function paypalBase(): string
     {
         $mode = config('services.paypal.mode', 'sandbox');
@@ -50,7 +47,7 @@ class CheckoutController extends Controller
         $secret = config('services.paypal.secret');
 
         if (!$id || !$secret) {
-            throw new \RuntimeException('PayPal keys mancanti: imposta PAYPAL_CLIENT_ID e PAYPAL_CLIENT_SECRET');
+            throw new \RuntimeException('PayPal keys mancanti');
         }
 
         $res = Http::asForm()
@@ -65,28 +62,25 @@ class CheckoutController extends Controller
         return [$base, $res->json('access_token')];
     }
 
+    /* = Order view data (per email) = */
     private function buildOrderView(Order $order): array
     {
         $number = $order->number ?? $order->id;
         $totalFormatted = Money::formatCents((int)$order->amount_cents, $order->currency ?? 'EUR');
 
-        $rawItems = [];
-        if (is_iterable($order->items ?? null)) {
-            $rawItems = $order->items;
-        } elseif (is_array($order->meta['cart'] ?? null)) {
-            $rawItems = $order->meta['cart'];
-        }
+        // prendiamo SEMPRE dal meta->cart
+        $rawItems = is_array($order->meta['cart'] ?? null) ? $order->meta['cart'] : [];
 
         $items = [];
         foreach ($rawItems as $it) {
-            $name  = $it['name'] ?? ($it->name ?? '');
-            $qty   = (int)($it['qty'] ?? ($it->qty ?? 1));
-            $unitC = (int)($it['unit_amount_cents'] ?? ($it->unit_amount_cents ?? 0));
-            $cur   = strtoupper($it['currency'] ?? ($it->currency ?? ($order->currency ?? 'EUR')));
+            $name  = $it['name'] ?? '';
+            $qty   = (int)($it['qty'] ?? 1);
+            $unitC = (int)($it['unit_amount_cents'] ?? 0);
+            $cur   = strtoupper($it['currency'] ?? ($order->currency ?? 'EUR'));
             $items[] = (object)[
                 'name'            => $name,
                 'qty'             => $qty,
-                'price_formatted' => Money::formatCents($unitC * max(1, $qty), $cur),
+                'price_formatted' => Money::formatCents($unitC * max(1,$qty), $cur),
             ];
         }
 
@@ -99,28 +93,25 @@ class CheckoutController extends Controller
         ];
     }
 
-    /* ====================== Somme/Fx ====================== */
+    /* = FX/Totali = */
     private function totalInSiteCurrency(array $items): array
     {
         $site  = Currency::site();
         $total = 0;
 
         foreach ($items as $line) {
-            $unitCents = (int) ($line['unit_amount_cents'] ?? 0);
-            $qty       = (int) ($line['qty'] ?? 1);
+            $unitCents = (int)($line['unit_amount_cents'] ?? 0);
+            $qty       = (int)($line['qty'] ?? 1);
             $fromCur   = strtoupper($line['currency'] ?? 'EUR');
-
-            $row     = $unitCents * $qty;
-            $rowConv = Currency::convertCents($row, $fromCur, $site['code'], $site['fx']);
-            $total  += $rowConv;
+            $row       = $unitCents * $qty;
+            $rowConv   = Currency::convertCents($row, $fromCur, $site['code'], $site['fx']);
+            $total    += $rowConv;
         }
 
         return [$total, $site['code']];
     }
 
-    /* ======================
-       Estrai pack/coach dal carrello (multi)
-       ====================== */
+    /* = Estrai multi target = */
     private function extractTargetsFromCartMultiple(array $cart): array
     {
         $packIds  = [];
@@ -128,45 +119,35 @@ class CheckoutController extends Controller
 
         foreach ($cart as $line) {
             $type = strtolower($line['type'] ?? $line['kind'] ?? $line['model'] ?? '');
-            $id   = $line['pack_id']
-                 ?? $line['coach_id']
-                 ?? $line['model_id']
-                 ?? $line['id']
-                 ?? null;
-
+            $id   = $line['pack_id'] ?? $line['coach_id'] ?? $line['model_id'] ?? $line['id'] ?? null;
             if (!$id) continue;
-            $id = (int) $id;
+            $id = (int)$id;
 
-            if (in_array($type, ['pack','packs']))    $packIds[]  = $id;
+            if (in_array($type, ['pack','packs']))   $packIds[]  = $id;
             if (in_array($type, ['coach','coaches'])) $coachIds[] = $id;
         }
 
-        // de-dupe & reindex
         $packIds  = array_values(array_unique(array_filter($packIds)));
         $coachIds = array_values(array_unique(array_filter($coachIds)));
 
         return [$packIds, $coachIds];
     }
 
-    /* ====================== API: crea ordine ====================== */
+    /* = Create order = */
     public function createOrderFromCart(Request $request)
     {
         try {
-            // 1) Validazione minima
             $request->validate([
                 'full_name' => 'required|max:120',
                 'email'     => 'required|email',
             ]);
 
-            // 2) Carrello normalizzato
             $cart = $this->normalizeCart(session('cart', []));
             if (empty($cart)) abort(400, 'Carrello vuoto');
             session(['cart' => $cart]);
 
-            // 3) Totali in valuta sito
             [$subtotalCents, $currency] = $this->totalInSiteCurrency($cart);
 
-            // 4) Coupon
             $discountCents = 0;
             $couponSession = session('coupon');
             if ($couponSession) {
@@ -179,37 +160,34 @@ class CheckoutController extends Controller
                 }
             }
 
-            // 5) Payable
             $payableCents = max(0, $subtotalCents - $discountCents);
             abort_if($payableCents <= 0, 400, 'Importo non valido');
 
-            // 6) Targets multi (packs/coaches)
             [$packIds, $coachIds] = $this->extractTargetsFromCartMultiple($cart);
 
-            // 7) Crea **nuovo** ordine (storia non sovrascritta)
-            $order = new Order();
-            $order->user_id      = auth()->id();
-            $order->amount_cents = $payableCents;
-            $order->currency     = $currency;
-            $order->status       = 'pending';
-            $order->provider     = 'paypal';
-            $order->items        = $cart;
-            $order->meta         = [
-                'cart'        => $cart,
-                'customer'    => $request->only('full_name', 'email'),
-                'subtotal'    => $subtotalCents,
-                'discount'    => $discountCents,
-                'coupon_code' => $couponSession['code'] ?? null,
-            ];
+            $packField  = count($packIds)  === 0 ? null : (count($packIds)  === 1 ? $packIds[0]  : $packIds);
+            $coachField = count($coachIds) === 0 ? null : (count($coachIds) === 1 ? $coachIds[0] : $coachIds);
 
-            // 🔸 qui usiamo gli helper del Model per gestire legacy vs JSON
-            $order->setPackIds($packIds);
-            $order->setCoachIds($coachIds);
-            $order->save();
+            $order = Order::create([
+                'user_id'      => auth()->id(),
+                'pack_id'      => $packField,
+                'coach_id'     => $coachField,
+                'amount_cents' => $payableCents,
+                'currency'     => $currency,
+                'status'       => 'pending',
+                'provider'     => 'paypal',
+                // ⬇️ niente 'items' (non esiste la colonna)
+                'meta'         => [
+                    'cart'        => $cart,
+                    'customer'    => $request->only('full_name', 'email'),
+                    'subtotal'    => $subtotalCents,
+                    'discount'    => $discountCents,
+                    'coupon_code' => $couponSession['code'] ?? null,
+                ],
+            ]);
 
             session(['last_order_id' => $order->id]);
 
-            // 8) PayPal: crea ordine remoto
             [$base, $token] = $this->paypalAuth();
 
             $body = [
@@ -248,7 +226,7 @@ class CheckoutController extends Controller
         }
     }
 
-    /* ====================== Cattura PayPal ====================== */
+    /* = Capture = */
     public function captureCart(Request $request)
     {
         try {
@@ -337,7 +315,7 @@ class CheckoutController extends Controller
         }
     }
 
-    /* ====================== Mail helpers ====================== */
+    /* = Mail = */
     public function sendOrderCompletedMail(Order $order): void
     {
         try {
@@ -348,16 +326,11 @@ class CheckoutController extends Controller
 
             if ($tpl) {
                 $orderView = (object) $this->buildOrderView($order->fresh());
-                $html = Blade::render($tpl->body_html, [
-                    'order' => $orderView,
-                    'customer_name' => $name,
-                ]);
-                Mail::html($html, function($m) use ($tpl,$to,$name) {
-                    $m->to($to, $name)->subject($tpl->subject);
-                });
+                $html = Blade::render($tpl->body_html, ['order'=>$orderView,'customer_name'=>$name]);
+                Mail::html($html, function($m) use ($tpl,$to,$name){ $m->to($to,$name)->subject($tpl->subject); });
             } else {
-                Mail::raw("Thanks for your order #{$order->id}", function($m) use ($to,$name,$order) {
-                    $m->to($to, $name)->subject("Order #{$order->id} completed");
+                Mail::raw("Thanks for your order #{$order->id}", function($m) use ($to,$name,$order){
+                    $m->to($to,$name)->subject("Order #{$order->id} completed");
                 });
             }
         } catch (\Throwable $mailEx) {
@@ -376,14 +349,8 @@ class CheckoutController extends Controller
             if (!$to) return;
 
             $orderView = (object) $this->buildOrderView($order->fresh());
-            $html = Blade::render($tpl->body_html, [
-                'order' => $orderView,
-                'customer_name' => $name,
-            ]);
-
-            Mail::html($html, function($m) use ($tpl,$to,$name) {
-                $m->to($to, $name)->subject($tpl->subject);
-            });
+            $html = Blade::render($tpl->body_html, ['order'=>$orderView,'customer_name'=>$name]);
+            Mail::html($html, function($m) use ($tpl,$to,$name){ $m->to($to,$name)->subject($tpl->subject); });
         } catch (\Throwable $e) {
             Log::warning('OrderConfirmed mail failed: '.$e->getMessage());
         }
@@ -400,14 +367,8 @@ class CheckoutController extends Controller
             if (!$to) return;
 
             $orderView = (object) $this->buildOrderView($order->fresh());
-            $html = Blade::render($tpl->body_html, [
-                'order' => $orderView,
-                'customer_name' => $name,
-            ]);
-
-            Mail::html($html, function($m) use ($tpl,$to,$name) {
-                $m->to($to, $name)->subject($tpl->subject);
-            });
+            $html = Blade::render($tpl->body_html, ['order'=>$orderView,'customer_name'=>$name]);
+            Mail::html($html, function($m) use ($tpl,$to,$name){ $m->to($to,$name)->subject($tpl->subject); });
         } catch (\Throwable $e) {
             Log::warning('OrderCancelled mail failed: '.$e->getMessage());
         }
@@ -416,7 +377,7 @@ class CheckoutController extends Controller
     public function sendOrderDeletedMail(Order $order, ?string $reason = null): void
     {
         try {
-            $tpl = \App\Models\EmailTemplate::where('key','order_deleted')->where('enabled', true)->first();
+            $tpl = \App\Models\EmailTemplate::where('key','order_deleted')->where('enabled',true)->first();
             if (!$tpl) return;
 
             $to = $order->meta['customer']['email'] ?? $order->customer_email ?? optional($order->user)->email;
@@ -424,38 +385,24 @@ class CheckoutController extends Controller
 
             $name = $order->meta['customer']['full_name'] ?? ($order->customer_name ?? optional($order->user)->name ?? '');
             $orderView = (object) $this->buildOrderView($order->fresh());
+            $html = Blade::render($tpl->body_html, ['order'=>$orderView,'customer_name'=>$name,'reason'=>$reason]);
 
-            $html = Blade::render($tpl->body_html, [
-                'order'         => $orderView,
-                'customer_name' => $name,
-                'reason'        => $reason,
-            ]);
-
-            Mail::html($html, function ($m) use ($tpl, $to, $name) {
-                $m->to($to, $name)->subject($tpl->subject);
-            });
-
+            Mail::html($html, function($m) use ($tpl,$to,$name){ $m->to($to,$name)->subject($tpl->subject); });
         } catch (\Throwable $e) {
             Log::warning('OrderDeleted mail failed: '.$e->getMessage());
         }
     }
 
-    /* ====================== Utility carrello/totali ====================== */
+    /* = Utils = */
     private function normalizeCart(array $cart): array
     {
         foreach ($cart as &$it) {
             $it['qty'] = max(1, (int)($it['qty'] ?? 1));
-
             if (!isset($it['unit_amount_cents'])) {
                 $it['unit_amount_cents'] = (int) round(((float)($it['unit_amount'] ?? 0)) * 100);
             }
-
             $it['currency'] = strtoupper($it['currency'] ?? (optional(\App\Models\SiteSetting::first())->currency ?? 'EUR'));
-
-            // fallback coerente per il tipo
-            if (empty($it['type']) && !empty($it['model'])) {
-                $it['type'] = $it['model'];
-            }
+            if (empty($it['type']) && !empty($it['model'])) $it['type'] = $it['model'];
         }
         return $cart;
     }
@@ -463,54 +410,21 @@ class CheckoutController extends Controller
     private function computeTotals(array $cart, ?array $coupon): array
     {
         $subtotal = 0;
-        foreach ($cart as $it) {
-            $subtotal += (int)$it['unit_amount_cents'] * (int)$it['qty'];
-        }
+        foreach ($cart as $it) $subtotal += (int)$it['unit_amount_cents'] * (int)$it['qty'];
 
         $discount = 0;
         if ($coupon && !empty($coupon['type'])) {
-            if ($coupon['type'] === 'percent') {
-                $percent = max(0, (int)($coupon['percent'] ?? 0));
-                $discount = (int) floor($subtotal * ($percent / 100));
-            } elseif ($coupon['type'] === 'fixed') {
+            if (($coupon['type'] ?? null) === 'percent') {
+                $discount = (int) floor($subtotal * (max(0,(int)($coupon['percent'] ?? 0)) / 100));
+            } elseif (($coupon['type'] ?? null) === 'fixed') {
                 $discount = max(0, (int)($coupon['amount_cents'] ?? 0));
             }
             $discount = min($discount, $subtotal);
         }
 
-        $payable = max(0, $subtotal - $discount);
-
-        return [$subtotal, $discount, $payable];
+        return [$subtotal, $discount, max(0, $subtotal - $discount)];
     }
 
-    private function cartTotals(): array
-    {
-        $items = session('cart', []);
-        $currency = $items[0]['currency'] ?? 'EUR';
-        $subtotal = 0;
-        foreach ($items as $it) {
-            $subtotal += (int)$it['unit_amount_cents'] * (int)$it['qty'];
-        }
-
-        $couponSession = session('coupon');
-        $discount = 0;
-        if ($couponSession) {
-            $coupon = \App\Models\Coupon::find($couponSession['id'] ?? null);
-            if ($coupon) $discount = $coupon->discountFor($subtotal);
-            else session()->forget('coupon');
-        }
-
-        return [
-            'items'    => $items,
-            'currency' => $currency,
-            'subtotal' => $subtotal,
-            'discount' => $discount,
-            'total'    => max(0, $subtotal - $discount),
-            'coupon'   => $couponSession,
-        ];
-    }
-
-    /* ====================== Cancel page ====================== */
     public function cancel(Request $request)
     {
         $orderId = $request->query('order') ?? session('last_order_id');
