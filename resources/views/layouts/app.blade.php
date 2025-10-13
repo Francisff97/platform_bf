@@ -7,6 +7,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+   <link rel="icon" type="image/x-icon" href="/favicon.ico">
 
   <!-- ⚠️ HSTS, CSP, COOP/COEP: gestiscili da NGINX, non in meta!
        (niente meta Content-Security-Policy / HSTS / COEP qui) -->
