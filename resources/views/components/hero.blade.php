@@ -10,58 +10,67 @@
 ])
 
 @php
-  // height & full-bleed
+  use Illuminate\Support\Str;
+
+  // Altezza e modalità full-bleed
   $h  = optional($hero)->height_css ?? $height ?? '60vh';
   $fb = isset($hero) ? (bool) optional($hero)->full_bleed : (bool) $fullBleed;
   $full = $fb ? 'full-bleed' : '';
 
-  // robust source resolution
+  // Risoluzione robusta del path immagine
   $src = null;
   if (isset($hero) && !empty($hero->image_path)) {
-      // ✅ controlla se il file esiste nello storage pubblico o già in /public
       $path = $hero->image_path;
-      if (Str::startsWith($path, ['http://', 'https://', '/'])) {
-          $src = asset(ltrim($path, '/'));
+
+      if (Str::startsWith($path, ['http://', 'https://'])) {
+          $src = $path; // URL assoluto
+      } elseif (Str::startsWith($path, '/')) {
+          $src = url($path); // path assoluto nel sito
       } elseif (Storage::disk('public')->exists($path)) {
-          $src = Storage::url($path);
+          $src = url(Storage::url($path)); // ✅ URL assoluta dello storage
       } else {
-          $src = asset('storage/'.$path);
+          $src = asset('storage/'.$path); // fallback
       }
   } elseif (!empty($image)) {
       $src = $image;
   }
 
-  // optional modern formats (only swap extension, don't break if missing)
+  // Formati moderni (solo se esistono)
   $srcWebp = $src ? preg_replace('/\.(png|jpe?g)$/i', '.webp', $src) : null;
   $srcAvif = $src ? preg_replace('/\.(png|jpe?g|webp)$/i', '.avif', $src) : null;
 
+  // Breakpoint per srcset
   $widths = [480, 768, 1024, 1440, 1920];
   $maxW   = max($widths);
   $srcset = $src
-    ? collect($widths)
-        ->map(fn($w) => $src.(str_contains($src,'?') ? "&" : "?")."w={$w} {$w}w")
-        ->join(', ')
-    : '';
+      ? collect($widths)
+          ->map(fn($w) => $src.(str_contains($src,'?') ? "&" : "?")."w={$w} {$w}w")
+          ->join(', ')
+      : '';
   $sizes = '(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1200px';
 @endphp
-@if(isset($hero) && !empty($hero->image_path))
-  <div style="background: #111; color: #0f0; font-size: 12px; padding:4px">
-    Hero path: {{ $hero->image_path }}<br>
-    Storage::exists? {{ Storage::disk('public')->exists($hero->image_path) ? '✅ yes' : '❌ no' }}<br>
-    URL: {{ Storage::url($hero->image_path) }}
-  </div>
-@endif
+
 <style>
-  .full-bleed{width:100vw;position:relative;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw}
-  .hero-controls .swiper-button-next,.hero-controls .swiper-button-prev{color:#fff}
-  .hero-controls .swiper-pagination-bullet{background:rgba(255,255,255,.6);opacity:1}
-  .hero-controls .swiper-pagination-bullet-active{background:#fff}
-  @media (max-width:767px){.inizio{height:250px!important}}
+  .full-bleed {
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+  }
+  .hero-controls .swiper-button-next,
+  .hero-controls .swiper-button-prev { color: #fff; }
+  .hero-controls .swiper-pagination-bullet { background: rgba(255,255,255,.6); opacity: 1; }
+  .hero-controls .swiper-pagination-bullet-active { background: #fff; }
+  @media (max-width: 767px) {
+    .inizio { height: 250px !important; }
+  }
 </style>
 
 <section class="{{ $full }}">
   <figure class="inizio relative w-full" style="height: {{ $h }};">
-    {{-- base placeholder to avoid CLS --}}
+    {{-- Placeholder per evitare CLS --}}
     <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
 
     @if($src)
@@ -71,7 +80,7 @@
         @endif
         @if($srcWebp)
           <source type="image/webp" srcset="{{ $srcWebp }}" sizes="{{ $sizes }}">
-        @endif>
+        @endif
         <img
           src="{{ $src }}"
           @if($srcset) srcset="{{ $srcset }}" sizes="{{ $sizes }}" @endif
@@ -81,7 +90,7 @@
           loading="eager"
           decoding="async"
           width="{{ $maxW }}"
-          height="1080"   {{-- harmless hint; real size is controlled by CSS --}}
+          height="1080"
         >
       </picture>
     @endif
