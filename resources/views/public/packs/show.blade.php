@@ -351,47 +351,41 @@
   @endif
 
     {{-- Alpine helper per i video (consent-aware) --}}
-<script>
-function videoPlayer(src){
-  return {
-    src,
-    canPlay: false,
-    init(){
-      this.tryLoad();
-      document.addEventListener('iubenda_consent_given', () => this.tryLoad());
-      document.addEventListener('iubenda_updated', () => this.tryLoad());
-      setTimeout(() => this.tryLoad(), 1500); // fallback auto
-    },
-    tryLoad(){
-      try {
-        const api = window._iub?.cs?.api;
-        if (!api) { this.canPlay = true; return this.attach(); }
-
-        const allowed =
-          api.getConsentFor('necessary') ||
-          api.getConsentFor('technical') ||
-          api.getConsentFor('experience') ||
-          api.getConsentFor('marketing') ||
-          api.getConsentForPurpose?.(3) ||
-          api.getConsentForPurpose?.(4) ||
-          api.getConsentForPurpose?.(5);
-
-        this.canPlay = !!allowed;
-        if (this.canPlay) this.attach();
-      } catch(e){
-        this.canPlay = true;
-        this.attach();
+  <script>
+    function videoPlayer(src){
+      return {
+        src, canPlay: false,
+        init(){
+          try {
+            if (window._iub && _iub.cs && _iub.cs.api) {
+              const ok =
+                (_iub.cs.api.getConsentFor && (_iub.cs.api.getConsentFor('experience') || _iub.cs.api.getConsentFor('marketing'))) ||
+                (_iub.cs.api.getConsentForPurpose && (_iub.cs.api.getConsentForPurpose(3) || _iub.cs.api.getConsentForPurpose(4)));
+              this.canPlay = !!ok;
+              document.addEventListener('iubenda_consent_given', () => { this.load(); }, { once:true });
+              document.addEventListener('iubenda_updated',      () => { this.load(); });
+            } else {
+              this.canPlay = true;
+            }
+          } catch(e){ this.canPlay = true; }
+          if (this.canPlay) this.$nextTick(() => this.attach());
+        },
+        attach(){ if (this.$refs.frame && !this.$refs.frame.src) this.$refs.frame.src = this.src; },
+        load(){
+          try{
+            const ok =
+              (window._iub && _iub.cs && _iub.cs.api)
+                ? ((_iub.cs.api.getConsentFor && (_iub.cs.api.getConsentFor('experience') || _iub.cs.api.getConsentFor('marketing')))
+                    || (_iub.cs.api.getConsentForPurpose && (_iub.cs.api.getConsentForPurpose(3) || _iub.cs.api.getConsentForPurpose(4))))
+                : true;
+            this.canPlay = !!ok;
+            if (this.canPlay) this.attach();
+          }catch(e){ this.canPlay = true; this.attach(); }
+        },
+        openPrefs(){ try{ _iub.cs.api.openPreferences(); }catch(e){} },
+        tryLoadAnyway(){ this.load(); }
       }
-    },
-    attach(){
-      if (this.$refs.frame && !this.$refs.frame.src) {
-        this.$refs.frame.src = this.src;
-      }
-    },
-    openPrefs(){ try{ _iub.cs.api.openPreferences(); }catch(e){} },
-    tryLoadAnyway(){ this.canPlay = true; this.attach(); }
-  }
-}
-</script>
+    }
+  </script>
 @endif
 </x-app-layout>
