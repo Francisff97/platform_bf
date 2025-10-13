@@ -1,47 +1,19 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
-  {{-- ===============================
-       🌐 META BASE E SICUREZZA
-  =============================== --}}
+  <!-- ===============================
+       🌐 BASE META
+  =============================== -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-  <!-- Content-Security-Policy (client-side) -->
-<!-- <meta http-equiv="Content-Security-Policy" content="
-  default-src 'self';
-  img-src 'self' data: blob: https:;
-  font-src 'self' data: https:;
-  media-src 'self' https:;
-  style-src 'self' 'unsafe-inline' https:;
-  script-src 'self' 'unsafe-inline' 'unsafe-eval' https: https://www.googletagmanager.com;
-  connect-src 'self' https: 
-    https://embeds.iubenda.com https://cdn.iubenda.com https://ldb.iubenda.com
-    https://www.youtube.com https://www.youtube-nocookie.com
-    https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com
-    https://i.ytimg.com https://img.youtube.com;
-  frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com;
-  object-src 'none';
-  base-uri 'self';
-  upgrade-insecure-requests
-"> 
--->
-  {{-- ✅ HSTS: forza HTTPS (solo se il dominio ha HTTPS attivo!) --}}
-  <meta http-equiv="Strict-Transport-Security" content="max-age=63072000; includeSubDomains; preload">
+  <!-- ⚠️ HSTS, CSP, COOP/COEP: gestiscili da NGINX, non in meta!
+       (niente meta Content-Security-Policy / HSTS / COEP qui) -->
 
-  {{-- ✅ COOP/COEP/Trusted Types: isolamento XSS sicuro --}}
-  <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
-  <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
-  <meta http-equiv="Cross-Origin-Resource-Policy" content="same-origin">
-  <meta http-equiv="Permissions-Policy"
-        content="accelerometer=(), autoplay=(), camera=(), clipboard-write=(), geolocation=(), gyroscope=(), microphone=(), payment=(), usb=()">
-  <meta http-equiv="Origin-Trial" content="">
-  <meta http-equiv="Content-Security-Policy" content="require-trusted-types-for 'script'; trusted-types default;">
-
-  {{-- ===============================
-       🔍 SEO BASE (usa il tuo SeoManager)
-  =============================== --}}
+  <!-- ===============================
+       🔍 SEO (SeoManager)
+  =============================== -->
   @php
     use App\Support\SeoManager;
     $meta = SeoManager::pageMeta(null, null, $seoCtx ?? []);
@@ -58,9 +30,9 @@
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
 
-  {{-- ===============================
-       ⚡ PERFORMANCE HINTS (Preconnect + DNS Prefetch)
-  =============================== --}}
+  <!-- ===============================
+       ⚡ Performance hints (max ~4 preconnect utili)
+  =============================== -->
   <link rel="dns-prefetch" href="//fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -68,17 +40,13 @@
   <link rel="dns-prefetch" href="//unpkg.com">
   <link rel="preconnect" href="https://unpkg.com" crossorigin>
 
+  <!-- Thumbnails YouTube per le cover con Play -->
   <link rel="dns-prefetch" href="//i.ytimg.com">
   <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
-  <link rel="dns-prefetch" href="//img.youtube.com">
-  <link rel="preconnect" href="https://img.youtube.com" crossorigin>
 
-  <link rel="dns-prefetch" href="//embeds.iubenda.com">
-  <link rel="preconnect" href="https://embeds.iubenda.com" crossorigin>
-
-  {{-- ===============================
-       🧩 GOOGLE TAG MANAGER
-  =============================== --}}
+  <!-- ===============================
+       🧩 Google Tag Manager (se presente)
+  =============================== -->
   @php $gtm = optional(\App\Models\SiteSetting::first())->gtm_container_id; @endphp
   @if($gtm)
     <script>
@@ -90,34 +58,30 @@
     </script>
   @endif
 
-  {{-- ===============================
-       🖋️ FONT + STYLES
-  =============================== --}}
+  <!-- ===============================
+       🖋️ Fonts + CSS esterni
+  =============================== -->
   <link rel="preload"
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
         as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript>
-    <link rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
-  </noscript>
+  <noscript><link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"></noscript>
 
   <link rel="preload"
         href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&display=swap"
         as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript>
-    <link rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&display=swap">
-  </noscript>
+  <noscript><link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&display=swap"></noscript>
 
+  <!-- Swiper -->
   <link rel="preload" href="https://unpkg.com/swiper@10.3.1/swiper-bundle.min.css"
         as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://unpkg.com/swiper@10.3.1/swiper-bundle.min.css"></noscript>
-
   <script defer src="https://unpkg.com/swiper@10.3.1/swiper-bundle.min.js"></script>
 
-  {{-- ===============================
-       🎨 TEMA DINAMICO (chiaro/scuro)
-  =============================== --}}
+  <!-- ===============================
+       🎨 Theme bootstrap (inline; richiede CSP lato server permissiva a inline)
+  =============================== -->
   <script>
     (function(){
       try {
@@ -126,30 +90,27 @@
         var lsTheme=(localStorage.getItem('theme')||'').toLowerCase();
         var mode=cookieTheme||lsTheme||'system';
         if(!['light','dark','system'].includes(mode)) mode='system';
-        var prefersDark=false;
-        try{prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches}catch(e){}
-        d.classList.toggle('dark', mode==='dark'||(mode==='system'&&prefersDark));
+        var prefers=false; try{prefers=window.matchMedia('(prefers-color-scheme: dark)').matches}catch(e){}
+        d.classList.toggle('dark', mode==='dark'||(mode==='system'&&prefers));
         window.setTheme=function(next){
           next=(next||'system').toLowerCase();
           if(!['light','dark','system'].includes(next)) next='system';
           localStorage.setItem('theme',next);
           document.cookie='theme='+next+'; Path=/; Max-Age=31536000; SameSite=Lax';
-          var prefers=false;
-          try{prefers=window.matchMedia('(prefers-color-scheme: dark)').matches}catch(e){}
-          d.classList.toggle('dark', next==='dark'||(next==='system'&&prefers));
+          var p=false; try{p=window.matchMedia('(prefers-color-scheme: dark)').matches}catch(e){}
+          d.classList.toggle('dark', next==='dark'||(next==='system'&&p));
         };
         window.toggleTheme=function(){
-          var current=(localStorage.getItem('theme')||'system').toLowerCase();
-          var next=current==='dark'?'light':'dark';
-          setTheme(next);
+          var cur=(localStorage.getItem('theme')||'system').toLowerCase();
+          setTheme(cur==='dark'?'light':'dark');
         };
       }catch(e){}
     })();
   </script>
 
-  {{-- ===============================
-       🎨 COLORI GLOBALI
-  =============================== --}}
+  <!-- ===============================
+       🎨 Colori globali
+  =============================== -->
   @php $s = \App\Models\SiteSetting::first(); @endphp
   <style>
     :root{
@@ -157,18 +118,19 @@
       --accent:   {{ $s->color_accent   ?? '#4f46e5' }};
     }
     .dark{ --bg-dark: {{ $s->color_dark_bg ?? '#0b0f1a' }}; }
+    [x-cloak]{display:none!important}
   </style>
 
-  {{-- ===============================
-       📢 BANNER IUBENDA (se attivo)
-  =============================== --}}
+  <!-- ===============================
+       📢 Iubenda banner (se attivo)
+  =============================== -->
   @if(($privacySettings?->banner_enabled) && $privacySettings?->banner_head_code)
     {!! $privacySettings->banner_head_code !!}
   @endif
 
-  {{-- ===============================
-       🧩 VITE
-  =============================== --}}
+  <!-- ===============================
+       🧩 Vite bundle
+  =============================== -->
   @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <style>[x-cloak]{display:none!important}</style>
