@@ -68,4 +68,23 @@ final class VideoEmbed
         // altri provider: restituisci l’URL (se è iframe-able e consentito dalla CSP)
         return $url;
     }
+    public static function youtubeId(?string $url): ?string
+    {
+        if (!$url) return null;
+        $url = trim($url);
+
+        // casi: youtu.be/ID
+        if (preg_match('~youtu\.be/([A-Za-z0-9_-]{6,})~i', $url, $m)) return $m[1];
+
+        // casi: /embed/ID
+        if (preg_match('~/embed/([A-Za-z0-9_-]{6,})~i', $url, $m)) return $m[1];
+
+        // casi: watch?v=ID
+        if (preg_match('~v=([A-Za-z0-9_-]{6,})~i', $url, $m)) return $m[1];
+
+        // casi: shorts/ID
+        if (preg_match('~/shorts/([A-Za-z0-9_-]{6,})~i', $url, $m)) return $m[1];
+
+        return null;
+    }
 }
