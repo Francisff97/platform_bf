@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -7,178 +6,121 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 class PlatformInfoController extends Controller
 {
     public function index(Request $request)
     {
-        try {
-        \Log::info('platform_info.entry', [
-            'env' => app()->environment(),
-            'url_env' => env('PLATFORM_INFO_URL')
-        ]);
-    } catch (\Throwable $e) {
-        // anche se Log non va
-        file_put_contents(storage_path('logs/platform-info-debug.log'),
-            date('c').' — entry failed: '.$e->getMessage().PHP_EOL, FILE_APPEND);
-    }
-
-        $rid = (string) Str::uuid();                 // trace id per correlare i log
-        Log::withContext(['rid' => $rid, 'route' => 'admin.platform-info']);
-
-        // 1) URL dal config o direttamente da .env
-        $url = config('app.platform_info_url', env('PLATFORM_INFO_URL'));
+        // --- RISOLUZIONE URL ROBUSTA (supporta più chiavi) ---
+        $url = config('app.platform_info_url')
+            ?: env('PLATFORM_INFO_URL')          // chiave “giusta”
+            ?: env('PLATFORM_FEED_URL')          // vecchia chiave che avevi in config
+            ?: env('PLATFORM_URL');              // eventuale legacy
 
         if (empty($url)) {
-            Log::error('platform_info.misconfigured', [
-                'reason' => 'PLATFORM_INFO_URL assente'
+            Log::warning('platform-info: URL vuoto', [
+                'route'  => 'admin.platform-info',
+                'env'    => app()->environment(),
+                'config' => [
+                    'app.platform_info_url' => config('app.platform_info_url'),
+                ],
+                'env_vars_seen' => [
+                    'PLATFORM_INFO_URL' => env('PLATFORM_INFO_URL'),
+                    'PLATFORM_FEED_URL' => env('PLATFORM_FEED_URL'),
+                    'PLATFORM_URL'      => env('PLATFORM_URL'),
+                ],
             ]);
-            if (empty($url)) {
-    \Log::error('platform_info.missing_url', ['rid' => $rid ?? null]);
-    return response()->view('admin.platform.info', [
-        'info' => ['error' => true, 'message' => 'PLATFORM_INFO_URL non configurato'],
-        'url' => null,
-        'error' => true,
-    ]);
-}
+            // niente 500: mostriamo pagina “vuota” con errore leggibile
+            return view('admin.platform.info', [
+                'info'  => ['error' => true, 'message' => 'PLATFORM_INFO_URL non configurato'],
+                'url'   => null,
+                'error' => true,
+            ]);
         }
 
-        // 2) TTL cache
         $ttl = (int) env('PLATFORM_INFO_TTL', 3600);
+        $cacheKey = 'platform-info:'.md5($url);
 
-        // 3) Chiave cache
-        $cacheKey = 'platform-info:' . md5($url);
+        // flush cache manuale ?flush=1
+        if ($request->boolean('flush')) {
+            Cache::forget($cacheKey);
+        }
 
-        // 4) Fetch con cache (loggo sia hit che miss)
         $payload = Cache::remember($cacheKey, $ttl, function () use ($url, $ttl) {
-            Log::info('platform_info.cache_miss', ['url' => $url]);
-
             try {
-                $resp = Http::retry(1, 300)          // 1 retry rapido
-                    ->timeout(8)
+                Log::info('platform-info: fetch start', ['url' => $url]);
+
+                $verify = filter_var(env('PLATFORM_INFO_VERIFY_SSL', true), FILTER_VALIDATE_BOOL);
+
+                $resp = Http::timeout(10)
                     ->acceptJson()
-                    ->withHeaders([
-                        'X-Request-Id' => Log::getContext()['rid'] ?? null,
-                        'User-Agent'   => 'BaseForge/PlatformInfo',
-                    ])
+                    ->withHeaders(['User-Agent' => 'BaseForge/PlatformInfo'])
+                    ->when(!$verify, fn ($h) => $h->withOptions(['verify' => false]))
                     ->get($url);
 
                 if (!$resp->successful()) {
-                    $body = $this->truncate($resp->body(), 4000);
-                    Log::warning('platform_info.http_failed', [
-                        'status' => $resp->status(),
-                        'url'    => $url,
-                        'body'   => $this->truncate(str_replace(["\r", "\n"], ' ', $body), 500),
+                    Log::warning('platform-info: http non-200', [
+                        'url' => $url, 'status' => $resp->status(), 'body' => $resp->body(),
                     ]);
-
                     return [
                         'error'   => true,
                         'status'  => $resp->status(),
-                        'message' => 'HTTP request returned status code '.$resp->status(),
-                        '_meta'   => [
-                            'source'     => $url,
-                            'fetched_at' => now()->toDateTimeString(),
-                            'ttl'        => (int) env('PLATFORM_INFO_TTL', 3600),
-                        ],
-                        '_raw'    => $body, // utile in view/log
+                        'message' => 'HTTP '.$resp->status(),
+                        '_meta'   => ['source'=>$url,'fetched_at'=>now()->toDateTimeString(),'ttl'=>$ttl],
                     ];
                 }
 
                 $data = $resp->json();
-
                 if (!is_array($data)) {
-                    Log::warning('platform_info.invalid_json', [
-                        'status' => $resp->status(),
-                        'url'    => $url,
-                        'body'   => $this->truncate($resp->body(), 400), // per capire cos’è arrivato
-                    ]);
-
+                    Log::warning('platform-info: json non parsabile', ['url' => $url, 'body' => $resp->body()]);
                     return [
                         'error'   => true,
                         'status'  => 500,
-                        'message' => 'Risposta non valida: JSON non parsabile.',
-                        '_meta'   => [
-                            'source'     => $url,
-                            'fetched_at' => now()->toDateTimeString(),
-                            'ttl'        => (int) env('PLATFORM_INFO_TTL', 3600),
-                        ],
+                        'message' => 'JSON non parsabile',
+                        '_meta'   => ['source'=>$url,'fetched_at'=>now()->toDateTimeString(),'ttl'=>$ttl],
                     ];
                 }
 
-                $data['_meta'] = [
-                    'source'     => $url,
-                    'fetched_at' => now()->toDateTimeString(),
-                    'ttl'        => (int) env('PLATFORM_INFO_TTL', 3600),
-                ];
-
-                Log::info('platform_info.ok', [
-                    'url'   => $url,
-                    'keys'  => array_keys($data),
-                    'cache' => 'store',
-                    'ttl'   => $ttl,
-                ]);
-
+                $data['_meta'] = ['source'=>$url,'fetched_at'=>now()->toDateTimeString(),'ttl'=>$ttl];
+                Log::info('platform-info: fetch ok', ['url'=>$url]);
                 return $data;
-            } catch (\Throwable $e) {
-                Log::error('platform_info.exception', [
-                    'url'   => $url,
-                    'ex'    => get_class($e),
-                    'msg'   => $e->getMessage(),
-                ]);
 
+            } catch (\Throwable $e) {
+                Log::error('platform-info: exception', [
+                    'url' => $url, 'e' => $e->getMessage(), 'trace' => $e->getTraceAsString(),
+                ]);
                 return [
                     'error'   => true,
                     'status'  => 0,
-                    'message' => 'Eccezione durante il fetch: '.$e->getMessage(),
-                    '_meta'   => [
-                        'source'     => $url,
-                        'fetched_at' => now()->toDateTimeString(),
-                        'ttl'        => (int) env('PLATFORM_INFO_TTL', 3600),
-                    ],
+                    'message' => 'Exception: '.$e->getMessage(),
+                    '_meta'   => ['source'=>$url,'fetched_at'=>now()->toDateTimeString(),'ttl'=>$ttl],
                 ];
             }
         });
 
-        // log cache hit (solo se non abbiamo scritto dentro al remember)
-        if (Cache::has($cacheKey)) {
-            Log::debug('platform_info.cache_hit', ['url' => $url]);
-        }
-
-        // 5) Flag errore per blade
-        $error = isset($payload['error']) && $payload['error'] === true;
-
-        // 6) Passa dati alla view
         return view('admin.platform.info', [
             'info'  => $payload,
             'url'   => $url,
-            'error' => $error,
-            'rid'   => $rid,
+            'error' => (bool)($payload['error'] ?? false),
         ]);
     }
 
     public function refresh(Request $request)
     {
-        $rid = (string) Str::uuid();
-        Log::withContext(['rid' => $rid, 'route' => 'admin.platform-info.refresh']);
+        $url = config('app.platform_info_url')
+            ?: env('PLATFORM_INFO_URL')
+            ?: env('PLATFORM_FEED_URL')
+            ?: env('PLATFORM_URL');
 
-        $url = config('app.platform_info_url', env('PLATFORM_INFO_URL'));
-        if (empty($url)) {
-            Log::error('platform_info.misconfigured_refresh', ['reason' => 'PLATFORM_INFO_URL assente']);
-            abort(500, 'PLATFORM_INFO_URL non configurato');
+        if (!$url) {
+            Log::warning('platform-info: refresh senza URL');
+            return back()->with('error','PLATFORM_INFO_URL non configurato');
         }
 
-        $cacheKey = 'platform-info:' . md5($url);
-        Cache::forget($cacheKey);
-        Log::notice('platform_info.cache_forced_refresh', ['url' => $url, 'cache_key' => $cacheKey]);
+        Cache::forget('platform-info:'.md5($url));
+        Log::info('platform-info: cache flushed', ['url' => $url]);
 
-        return redirect()->route('admin.platform.info')
-            ->with('success', 'Platform info refreshed');
-    }
-
-    private function truncate(?string $text, int $max = 4000): string
-    {
-        $text = (string) $text;
-        return mb_strlen($text) > $max ? (mb_substr($text, 0, $max).'…') : $text;
+        return redirect()->route('admin.platform.info', ['flush'=>1])
+            ->with('success','Platform info refreshed');
     }
 }
