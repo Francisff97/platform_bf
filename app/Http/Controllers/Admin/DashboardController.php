@@ -49,35 +49,60 @@ $orders7d = Order::where('status','paid')
             ->limit(10)
             ->get();
 
-        // === TOP SELLING ITEMS (ultimi 90 giorni) ===
-        $topSelling = collect(
-            DB::table('orders')
-                ->select(DB::raw('JSON_EXTRACT(meta, "$.cart") as cart'))
-                ->where('status', 'paid')
-                ->where('created_at', '>=', now()->subDays(90))
-                ->get()
-        )->flatMap(function ($row) {
-            $cart = json_decode($row->cart ?? '[]', true);
-            return is_array($cart) ? $cart : [];
-        })
-        ->groupBy(fn ($item) => $item['name'] ?? 'Unknown')
-        ->map(function ($group) {
-            $sample = $group[0];
-            $qty = collect($group)->sum('quantity') ?? 1;
-            $revenue = collect($group)->sum('unit_amount_cents') / 100;
-            return [
-                'name' => $sample['name'] ?? 'Unknown',
-                'type' => $sample['type'] ?? 'item',
-                'image' => $sample['image'] ?? null,
-                'currency' => strtoupper($sample['currency'] ?? 'EUR'),
-                'qty' => $qty,
-                'orders' => count($group),
-                'revenue' => $revenue,
+        // ---- Top selling (ultimi 90 giorni) ----
+$since = now()->subDays(90);
+$siteCurrency = optional(\App\Models\SiteSetting::first())->currency ?? 'EUR';
+
+$orders = \App\Models\Order::query()
+    ->where('status', 'paid')
+    ->where('created_at', '>=', $since)
+    ->get(['id','currency','amount_cents','meta','created_at','user_id']);
+
+$bucket = []; // key => aggregato
+
+foreach ($orders as $o) {
+    $cart = data_get($o->meta, 'cart', []);
+    if (!is_array($cart) || empty($cart)) continue;
+
+    foreach ($cart as $line) {
+        $type = strtoupper((string)($line['type'] ?? 'ITEM'));
+        $name = (string)($line['name'] ?? 'Unnamed');
+        $image = $line['image'] ?? null;
+
+        // ID stabile per item (se c'è uno slug/id usalo, altrimenti il nome)
+        $key = ($line['id'] ?? $line['sku'] ?? $name).'|'.$type;
+
+        // quantità e prezzo corretti in CENTS
+        $qty   = (int)($line['quantity'] ?? 1);
+        $unit  = (int)($line['unit_amount_cents'] ?? $line['amount_cents'] ?? 0);
+
+        // valuta: linea > ordine > default sito
+        $curr  = strtoupper($line['currency'] ?? $o->currency ?? $siteCurrency);
+
+        if (!isset($bucket[$key])) {
+            $bucket[$key] = [
+                'name'          => $name,
+                'type'          => $type,
+                'image'         => $image,
+                'currency'      => $curr,
+                'orders'        => 0,
+                'qty'           => 0,
+                'revenue_cents' => 0,
             ];
-        })
-        ->sortByDesc('revenue')
-        ->take(6)
-        ->values();
+        }
+
+        $bucket[$key]['orders']        += 1;
+        $bucket[$key]['qty']           += max(1, $qty);
+        $bucket[$key]['revenue_cents'] += max(0, $unit) * max(1, $qty);
+        // mantieni la currency della linea se differisce (qui assumiamo stessa currency per item)
+    }
+}
+
+// ordina per revenue desc e limita
+$topSelling = collect($bucket)
+    ->sortByDesc('revenue_cents')
+    ->take(9)
+    ->values();
 
         // === COUPONS ===
         $coupons = Coupon::query()
