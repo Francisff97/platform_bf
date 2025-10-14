@@ -217,10 +217,10 @@
     </div>
 
     {{-- SLOT libero per prossime metriche o tabella ultimi ordini --}}
-    <div class="lg:col-span-2 grid grid-cols-1 gap-6">
+    {{-- <div class="lg:col-span-2 grid grid-cols-1 gap-6">
       <div class="rounded-2xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
         Add your next module here (e.g. latest orders table, top products, conversion funnel…)
       </div>
     </div>
   </section>
-</x-admin-layout>
+</x-admin-layout> --}}
