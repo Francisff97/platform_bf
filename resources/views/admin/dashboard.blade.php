@@ -188,107 +188,110 @@
   {{-- spacer per chiudere la sezione sopra e inserire il full width --}}
   <section class="mb-6"></section>
 
-  {{-- === Recent purchases (full width) === --}}
-  <style>
-    .no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
-    .edge-fade{-webkit-mask-image:linear-gradient(to right,transparent 0,black 28px,black calc(100% - 28px),transparent 100%);mask-image:linear-gradient(to right,transparent 0,black 28px,black calc(100% - 28px),transparent 100%)}
-  </style>
-
-  <div class="mb-6 rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900/60 dark:ring-white/10">
+  {{-- === Recent purchases (slider full width, fixed height, no vertical scroll) === --}}
+<section class="mb-8 w-full">
+  <div class="rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900/60 dark:ring-white/10">
     <div class="flex items-center justify-between px-4 py-3">
-      <h3 class="text-sm font-semibold">Recent purchases</h3>
+      <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-50">Recent purchases</h3>
       <a href="{{ route('admin.orders.index') }}" class="text-xs opacity-70 hover:opacity-100">View all</a>
     </div>
 
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      .edge-fade {
+        -webkit-mask-image: linear-gradient(to right, transparent 0, black 32px, black calc(100% - 32px), transparent 100%);
+        mask-image: linear-gradient(to right, transparent 0, black 32px, black calc(100% - 32px), transparent 100%);
+      }
+    </style>
+
+    {{-- Desktop slider --}}
+    <div class="relative hidden sm:block">
+      <div x-data="rp()" x-init="init()" class="group relative">
+        <div id="rp-track"
+             class="edge-fade no-scrollbar overflow-x-auto whitespace-nowrap scroll-smooth px-4 pb-4"
+             style="-webkit-overflow-scrolling:touch;">
+          @forelse($recentOrders as $o)
+            @php
+              $cart = $o->meta['cart'] ?? [];
+              $line = is_array($cart) ? ($cart[0] ?? null) : null;
+              $img  = $line['image'] ?? null;
+              $name = $line['name']  ?? ('Order #'.$o->id);
+              $type = strtoupper($line['type'] ?? 'ITEM');
+              $amt  = (int)($line['unit_amount_cents'] ?? $o->amount_cents);
+              $cur  = strtoupper($line['currency'] ?? $o->currency ?? 'EUR');
+              $extra = max(0, count($cart) - 1);
+            @endphp
+
+            <a href="{{ route('admin.orders.show', $o->id) }}"
+               class="inline-flex h-24 w-[420px] shrink-0 items-center gap-4 rounded-xl border border-gray-200 bg-white/85 p-4 shadow-sm ring-1 ring-black/5 transition hover:ring-black/10 dark:border-gray-800 dark:bg-gray-900/70 dark:ring-white/10 mr-3 align-top">
+              <div class="h-16 w-16 overflow-hidden rounded-xl ring-1 ring-black/5 dark:ring-white/10">
+                @if($img)
+                  <img src="{{ $img }}" alt="" class="h-full w-full object-cover">
+                @else
+                  <div class="grid h-full w-full place-items-center bg-gray-200 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">IMG</div>
+                @endif
+              </div>
+              <div class="min-w-0 grow">
+                <div class="truncate text-sm font-semibold">{{ $name }}</div>
+                <div class="mt-0.5 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                  <span>by {{ optional($o->user)->name ?? '—' }}</span><span aria-hidden="true">•</span>
+                  <span>{{ $o->created_at->diffForHumans() }}</span>
+                  @if($extra>0)
+                    <span class="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">+{{ $extra }}</span>
+                  @endif
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="inline-flex items-center justify-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{{ $type }}</span>
+                <div class="mt-1 text-sm font-semibold">@money($amt, $cur)</div>
+              </div>
+            </a>
+          @empty
+            <div class="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No recent purchases.</div>
+          @endforelse
+        </div>
+
+        {{-- navigation arrows --}}
+        <button type="button" @click="scroll(-1)"
+                class="absolute left-1 top-1/2 hidden -translate-y-1/2 rounded-full border bg-white/90 p-2 shadow-sm ring-1 ring-black/5 backdrop-blur hover:bg-white group-hover:block dark:border-gray-800 dark:bg-gray-900/80 dark:ring-white/10">‹</button>
+        <button type="button" @click="scroll(1)"
+                class="absolute right-1 top-1/2 hidden -translate-y-1/2 rounded-full border bg-white/90 p-2 shadow-sm ring-1 ring-black/5 backdrop-blur hover:bg-white group-hover:block dark:border-gray-800 dark:bg-gray-900/80 dark:ring-white/10">›</button>
+      </div>
+    </div>
+
     {{-- Mobile list --}}
-    <div class="divide-y dark:divide-gray-800 sm:hidden">
-      @forelse($recentOrders as $o)
+    <div class="sm:hidden divide-y dark:divide-gray-800">
+      @foreach($recentOrders as $o)
         @php
           $cart = $o->meta['cart'] ?? [];
           $line = is_array($cart) ? ($cart[0] ?? null) : null;
           $img  = $line['image'] ?? null;
           $name = $line['name']  ?? ('Order #'.$o->id);
-          $type = strtoupper($line['type'] ?? 'item');
+          $type = strtoupper($line['type'] ?? 'ITEM');
           $amt  = (int)($line['unit_amount_cents'] ?? $o->amount_cents);
           $cur  = strtoupper($line['currency'] ?? $o->currency ?? 'EUR');
-          $extra = max(0, count($cart) - 1);
         @endphp
-        <a href="{{ route('admin.orders.show', $o->id) }}" class="flex items-center gap-3 px-4 py-3 hover:bg-black/5 dark:hover:bg-white/5">
-          <div class="h-12 w-12 overflow-hidden rounded-xl ring-1 ring-black/5 dark:ring-white/10">
-            @if($img) <img src="{{ $img }}" class="h-full w-full object-cover" alt=""> @else
+        <a href="{{ route('admin.orders.show', $o->id) }}" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800">
+          <div class="h-12 w-12 overflow-hidden rounded-lg ring-1 ring-black/5 dark:ring-white/10">
+            @if($img)
+              <img src="{{ $img }}" alt="" class="h-full w-full object-cover">
+            @else
               <div class="grid h-full w-full place-items-center bg-gray-200 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">IMG</div>
             @endif
           </div>
           <div class="min-w-0 flex-1">
             <div class="truncate text-sm font-medium">{{ $name }}</div>
-            <div class="mt-0.5 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-              <span>by {{ optional($o->user)->name ?? '—' }}</span><span aria-hidden="true">•</span>
-              <span>{{ $o->created_at->diffForHumans() }}</span>
-              @if($extra>0)
-                <span class="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">+{{ $extra }}</span>
-              @endif
+            <div class="text-xs text-gray-500 dark:text-gray-400">
+              by {{ optional($o->user)->name ?? '—' }} • {{ $o->created_at->diffForHumans() }}
             </div>
           </div>
-          <div class="text-right">
-            <span class="inline-flex items-center justify-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{{ $type }}</span>
-            <div class="mt-1 text-sm font-semibold">@money($amt, $cur)</div>
-          </div>
+          <div class="text-right text-sm font-semibold">@money($amt, $cur)</div>
         </a>
-      @empty
-        <div class="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No recent purchases.</div>
-      @endforelse
-    </div>
-
-    {{-- Desktop slider --}}
-    <div class="hidden w-full pb-3 sm:block">
-      <div x-data="rp()" x-init="init()" class="group relative">
-        <div id="rp-track" class="no-scrollbar edge-fade overflow-x-auto scroll-smooth px-3" style="-webkit-overflow-scrolling:touch;">
-          <div class="flex gap-3 pr-6">
-            @forelse($recentOrders as $o)
-              @php
-                $cart = $o->meta['cart'] ?? [];
-                $line = is_array($cart) ? ($cart[0] ?? null) : null;
-                $img  = $line['image'] ?? null;
-                $name = $line['name']  ?? ('Order #'.$o->id);
-                $type = strtoupper($line['type'] ?? 'item');
-                $amt  = (int)($line['unit_amount_cents'] ?? $o->amount_cents);
-                $cur  = strtoupper($line['currency'] ?? $o->currency ?? 'EUR');
-                $extra = max(0, count($cart) - 1);
-              @endphp
-
-              <a href="{{ route('admin.orders.show', $o->id) }}"
-                 class="inline-flex w-[460px] shrink-0 items-center gap-4 rounded-xl border border-gray-200 bg-white/85 p-4 shadow-sm ring-1 ring-black/5 transition hover:ring-black/10 dark:border-gray-800 dark:bg-gray-900/70 dark:ring-white/10">
-                <div class="h-16 w-16 overflow-hidden rounded-xl ring-1 ring-black/5 dark:ring-white/10">
-                  @if($img) <img src="{{ $img }}" class="h-full w-full object-cover" alt=""> @else
-                    <div class="grid h-full w-full place-items-center bg-gray-200 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">IMG</div>
-                  @endif
-                </div>
-                <div class="min-w-0 grow">
-                  <div class="truncate text-sm font-semibold">{{ $name }}</div>
-                  <div class="mt-0.5 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                    <span>by {{ optional($o->user)->name ?? '—' }}</span><span aria-hidden="true">•</span>
-                    <span>{{ $o->created_at->diffForHumans() }}</span>
-                    @if($extra>0)
-                      <span class="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">+{{ $extra }}</span>
-                    @endif
-                  </div>
-                </div>
-                <div class="text-right">
-                  <span class="inline-flex items-center justify-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{{ $type }}</span>
-                  <div class="mt-1 text-sm font-semibold">@money($amt, $cur)</div>
-                </div>
-              </a>
-            @empty
-              <div class="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No recent purchases.</div>
-            @endforelse
-          </div>
-        </div>
-
-        <button type="button" class="absolute left-2 top-1/2 hidden -translate-y-1/2 rounded-full border bg-white/90 p-2 shadow-sm ring-1 ring-black/5 backdrop-blur transition hover:bg-white group-hover:block dark:border-gray-800 dark:bg-gray-900/80 dark:ring-white/10" @click="scroll(-1)" aria-label="Scroll left">‹</button>
-        <button type="button" class="absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-full border bg-white/90 p-2 shadow-sm ring-1 ring-black/5 backdrop-blur transition hover:bg-white group-hover:block dark:border-gray-800 dark:bg-gray-900/80 dark:ring-white/10" @click="scroll(1)" aria-label="Scroll right">›</button>
-      </div>
+      @endforeach
     </div>
   </div>
+</section>
 
   {{-- ===== TOP SELLING + COUPONS ===== --}}
   <section class="grid grid-cols-1 gap-6 lg:grid-cols-3">
