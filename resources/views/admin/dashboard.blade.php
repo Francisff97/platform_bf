@@ -354,10 +354,11 @@
             <tbody class="divide-y dark:divide-gray-800">
               @foreach($coupons as $c)
                 @php
-                  $val = $c->type === 'percent'
-                    ? ($c->percent ?? 0).'%'
-                    : money_format('%.2n', ($c->amount_cents ?? 0)/100);
-                  $usage = ($c->usage_count ?? 0).' / '.(($c->usage_limit ?? 0) ?: '∞');
+                if ($val = $c->type === 'percent'){
+                        $val = ($c->amount_cents ?? 0= . '%';
+                } else {
+                        $val = numer_format(($c->amount_cents ?? 0)/100, 2). '$/€';
+                }
                 @endphp
                 <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-800/40">
                   <td class="px-3 py-2 font-medium">{{ $c->code }}</td>
