@@ -49,58 +49,56 @@ $orders7d = Order::where('status','paid')
             ->limit(10)
             ->get();
 
-        // ---- Top selling (ultimi 90 giorni) ----
+  // --- Top selling (90d) ---
 $since = now()->subDays(90);
-$siteCurrency = optional(\App\Models\SiteSetting::first())->currency ?? 'EUR';
 
 $orders = \App\Models\Order::query()
     ->where('status', 'paid')
     ->where('created_at', '>=', $since)
-    ->get(['id','currency','amount_cents','meta','created_at','user_id']);
+    ->latest()
+    ->get(['id','currency','meta','created_at']);
 
-$bucket = []; // key => aggregato
+$bucket = [];
 
 foreach ($orders as $o) {
     $cart = data_get($o->meta, 'cart', []);
-    if (!is_array($cart) || empty($cart)) continue;
-
     foreach ($cart as $line) {
-        $type = strtoupper((string)($line['type'] ?? 'ITEM'));
-        $name = (string)($line['name'] ?? 'Unnamed');
-        $image = $line['image'] ?? null;
+        $id   = data_get($line, 'id') ?: data_get($line, 'slug') ?: data_get($line, 'name');
+        if (!$id) continue;
 
-        // ID stabile per item (se c'è uno slug/id usalo, altrimenti il nome)
-        $key = ($line['id'] ?? $line['sku'] ?? $name).'|'.$type;
+        $type = strtoupper(data_get($line, 'type', 'ITEM'));
+        $key  = $type.'|'.$id;
 
-        // quantità e prezzo corretti in CENTS
-        $qty   = (int)($line['quantity'] ?? 1);
-        $unit  = (int)($line['unit_amount_cents'] ?? $line['amount_cents'] ?? 0);
-
-        // valuta: linea > ordine > default sito
-        $curr  = strtoupper($line['currency'] ?? $o->currency ?? $siteCurrency);
+        $unitCents = (int) data_get($line, 'unit_amount_cents', 0);
+        $qty       = max(1, (int) data_get($line, 'quantity', 1));
 
         if (!isset($bucket[$key])) {
             $bucket[$key] = [
-                'name'          => $name,
-                'type'          => $type,
-                'image'         => $image,
-                'currency'      => $curr,
-                'orders'        => 0,
-                'qty'           => 0,
-                'revenue_cents' => 0,
+                'type'               => $type,
+                'id'                 => $id,
+                'name'               => data_get($line, 'name', 'Unnamed'),
+                'image'              => data_get($line, 'image'),
+                'currency'           => strtoupper(data_get($line,'currency', $o->currency ?? 'EUR')),
+                'unit_price_cents'   => $unitCents, // <- per display (prezzo unitario)
+                'revenue_cents'      => 0,          // <- per ranking (fatturato)
+                'orders'             => 0,
+                'qty'                => 0,
             ];
         }
 
         $bucket[$key]['orders']        += 1;
-        $bucket[$key]['qty']           += max(1, $qty);
-        $bucket[$key]['revenue_cents'] += max(0, $unit) * max(1, $qty);
-        // mantieni la currency della linea se differisce (qui assumiamo stessa currency per item)
+        $bucket[$key]['qty']           += $qty;
+        $bucket[$key]['revenue_cents'] += $unitCents * $qty;
+
+        // in caso di prezzi diversi nel tempo, tieni l'ultimo non-zero come prezzo unitario da mostrare
+        if ($unitCents > 0) {
+            $bucket[$key]['unit_price_cents'] = $unitCents;
+        }
     }
 }
 
-// ordina per revenue desc e limita
 $topSelling = collect($bucket)
-    ->sortByDesc('revenue_cents')
+    ->sortByDesc('revenue_cents') // ranking per fatturato
     ->take(9)
     ->values();
 
