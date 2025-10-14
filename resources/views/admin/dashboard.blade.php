@@ -228,7 +228,7 @@
   }
 </style>
 
-<div class="rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900/60 dark:ring-white/10">
+<div class="w-full rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900/60 dark:ring-white/10">
   <div class="flex items-center justify-between px-4 py-3">
     <h3 class="text-sm font-semibold">Recent purchases</h3>
     <a href="{{ route('admin.orders.index') }}" class="text-xs opacity-70 hover:opacity-100">View all</a>
