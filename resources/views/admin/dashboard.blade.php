@@ -327,8 +327,8 @@
                   <span>{{ $row['qty'] }} items</span>
                 </div>
               </div>
-              <div class="text-right text-sm font-semibold">
-  @money($row['revenue_cents'], $row['currency'])
+<div class="text-right text-sm font-semibold">
+  @money((int)($row['unit_price_cents'] ?? 0), $row['currency'])
 </div>
             </div>
           @endforeach
