@@ -13,14 +13,13 @@ class DashboardController extends Controller
     public function __invoke()
     {
         // === KPI ===
-        $revenue7d = Order::paid()
-            ->where('created_at', '>=', now()->subDays(7))
-            ->sum('amount_cents') / 100;
+        $revenue7d = Order::where('status','paid')
+    ->where('created_at','>=', now()->subDays(7))
+    ->sum('amount_cents') / 100;
 
-        $orders7d = Order::paid()
-            ->where('created_at', '>=', now()->subDays(7))
-            ->count();
-
+$orders7d = Order::where('status','paid')
+    ->where('created_at','>=', now()->subDays(7))
+    ->count();
         $customers = User::count();
         $aov7d = $orders7d > 0 ? round($revenue7d / $orders7d) : 0;
 
