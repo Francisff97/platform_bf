@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Http;
 
 class PlatformInfoController extends Controller
 {
-    public function show(Request $request)
+    public function index(Request $request)
     {
         // === Context comune a tutti i log di questa richiesta ===
         $rid = (string) Str::uuid();             // request id univoco
