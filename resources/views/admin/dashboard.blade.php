@@ -216,6 +216,111 @@
       </div>
     </div>
     {{-- Acquisti recenti --}}
-    @include('admin.dashboard._recent_purchases', ['recentPurchases' => $recentPurchases ?? []])
+    {{-- Recent purchases --}}
+<div class="rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900/60 dark:ring-white/10">
+  <div class="flex items-center justify-between px-4 py-3">
+    <h3 class="text-sm font-semibold">Recent purchases</h3>
+    <a href="{{ route('admin.orders.index') }}" class="text-xs opacity-70 hover:opacity-100">View all</a>
+  </div>
+
+  {{-- Mobile: lista verticale --}}
+  <div class="divide-y dark:divide-gray-800 sm:hidden">
+    @forelse($recentOrders as $o)
+      @php
+        $line = is_array($o->meta['cart'] ?? null) ? ($o->meta['cart'][0] ?? null) : null;
+        $img  = $line['image'] ?? null;
+        $name = $line['name']  ?? 'Order #'.$o->id;
+        $type = strtoupper(($line['type'] ?? 'item'));
+        $amt  = (int)($line['unit_amount_cents'] ?? $o->amount_cents);
+        $cur  = strtoupper($line['currency'] ?? $o->currency ?? 'EUR');
+      @endphp
+      <a href="{{ route('admin.orders.show', $o->id) }}" class="flex items-center gap-3 px-4 py-3 hover:bg-black/5 dark:hover:bg-white/5">
+        <div class="h-12 w-12 overflow-hidden rounded-xl ring-1 ring-black/5 dark:ring-white/10">
+          @if($img)
+            <img src="{{ $img }}" class="h-full w-full object-cover" alt="" />
+          @else
+            <div class="grid h-full w-full place-items-center bg-gray-200 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">IMG</div>
+          @endif
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="truncate text-sm font-medium">{{ $name }}</div>
+          <div class="mt-0.5 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <span>by {{ optional($o->user)->name ?? '—' }}</span>
+            <span aria-hidden="true">•</span>
+            <span>{{ $o->created_at->diffForHumans() }}</span>
+          </div>
+        </div>
+        <div class="flex shrink-0 flex-col items-end">
+          <span class="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{{ $type }}</span>
+          <div class="mt-1 text-sm font-semibold">@money($amt, $cur)</div>
+        </div>
+      </a>
+    @empty
+      <div class="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No recent purchases.</div>
+    @endforelse
+  </div>
+
+  {{-- Desktop: slider orizzontale con snap --}}
+  <div class="hidden sm:block px-3 pb-3">
+    <div class="group relative">
+      <div class="overflow-x-auto scroll-smooth snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none]"
+           style="-webkit-overflow-scrolling:touch"
+           x-data
+           @wheel.passive="$event.deltaY && ($el.scrollLeft += $event.deltaY)">
+        <div class="flex gap-3 pr-3 [min-width:640px]">
+          @forelse($recentOrders as $o)
+            @php
+              $line = is_array($o->meta['cart'] ?? null) ? ($o->meta['cart'][0] ?? null) : null;
+              $img  = $line['image'] ?? null;
+              $name = $line['name']  ?? 'Order #'.$o->id;
+              $type = strtoupper(($line['type'] ?? 'item'));
+              $amt  = (int)($line['unit_amount_cents'] ?? $o->amount_cents);
+              $cur  = strtoupper($line['currency'] ?? $o->currency ?? 'EUR');
+            @endphp
+
+            <a class="snap-start inline-flex w-[360px] shrink-0 items-center gap-3 rounded-xl border border-gray-200 bg-white/80 p-3 shadow-sm ring-1 ring-black/5 transition hover:ring-black/10 dark:border-gray-800 dark:bg-gray-900/70 dark:ring-white/10"
+               href="{{ route('admin.orders.show', $o->id) }}">
+              <div class="h-12 w-12 overflow-hidden rounded-xl ring-1 ring-black/5 dark:ring-white/10">
+                @if($img)
+                  <img src="{{ $img }}" class="h-full w-full object-cover" alt="" />
+                @else
+                  <div class="grid h-full w-full place-items-center bg-gray-200 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">IMG</div>
+                @endif
+              </div>
+
+              <div class="min-w-0 grow">
+                <div class="truncate text-sm font-medium">{{ $name }}</div>
+                <div class="mt-0.5 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                  <span>by {{ optional($o->user)->name ?? '—' }}</span>
+                  <span aria-hidden="true">•</span>
+                  <span>{{ $o->created_at->diffForHumans() }}</span>
+                </div>
+              </div>
+
+              <div class="text-right">
+                <span class="inline-flex items-center justify-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{{ $type }}</span>
+                <div class="mt-1 text-sm font-semibold">@money($amt, $cur)</div>
+              </div>
+            </a>
+          @empty
+            <div class="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No recent purchases.</div>
+          @endforelse
+        </div>
+      </div>
+
+      {{-- “frecce” semplici (si vedono su hover) --}}
+      <button type="button"
+              class="absolute left-1 top-1/2 hidden -translate-y-1/2 rounded-full border bg-white/80 p-2 shadow-sm ring-1 ring-black/5 backdrop-blur transition hover:bg-white group-hover:block dark:border-gray-800 dark:bg-gray-900/70 dark:ring-white/10"
+              onclick="this.nextElementSibling.scrollBy({left:-360, behavior:'smooth'})">
+        ‹
+      </button>
+      <button type="button"
+              class="absolute right-1 top-1/2 hidden -translate-y-1/2 rounded-full border bg-white/80 p-2 shadow-sm ring-1 ring-black/5 backdrop-blur transition hover:bg-white group-hover:block dark:border-gray-800 dark:bg-gray-900/70 dark:ring-white/10"
+              onclick="this.previousElementSibling.scrollBy({left:360, behavior:'smooth'})">
+        ›
+      </button>
+    </div>
+  </div>
+</div>
   </section>
 </x-admin-layout> 
