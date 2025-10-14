@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\User;
+use App\Models\Pack;
+use App\Models\Coach;
+use Illuminate\Support\Facades\Cache;
 
 class DashboardController extends Controller
 {
@@ -13,6 +16,12 @@ class DashboardController extends Controller
         $now    = now();
         $from7  = (clone $now)->subDays(6)->startOfDay();
         $from30 = (clone $now)->subDays(29)->startOfDay();
+
+        /*
+        |--------------------------------------------------------------------------
+        | 📊 METRICHE PRINCIPALI
+        |--------------------------------------------------------------------------
+        */
 
         // ORDERS per giorno ultimi 7 giorni
         $ordersByDay = Order::query()
@@ -70,6 +79,101 @@ class DashboardController extends Controller
         $refunds30d    = (int) Order::where('status', 'refunded')
                             ->whereBetween('updated_at', [$from30, $now])->count();
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | 🛒 RECENT PURCHASES WIDGET
+        |--------------------------------------------------------------------------
+        */
+        $recentPurchases = Cache::remember('admin:recent_purchases', 60, function () {
+            $orders = Order::query()
+                ->with(['user:id,name,email'])
+                ->where('status', 'paid')
+                ->latest('id')
+                ->limit(20)
+                ->get();
+
+            $packIds  = [];
+            $coachIds = [];
+
+            foreach ($orders as $o) {
+                if (!empty($o->pack_id))  $packIds[]  = (int)$o->pack_id;
+                if (!empty($o->coach_id)) $coachIds[] = (int)$o->coach_id;
+            }
+
+            $packs  = $packIds ? Pack::whereIn('id', array_unique($packIds))
+                ->get(['id','title','image_path','currency','price_cents'])->keyBy('id') : collect([]);
+            $coachs = $coachIds ? Coach::whereIn('id', array_unique($coachIds))
+                ->get(['id','name','image_path'])->keyBy('id') : collect([]);
+
+            $rows = [];
+
+            foreach ($orders as $o) {
+                $items = isset($o->meta['cart']) && is_array($o->meta['cart']) ? $o->meta['cart'] : [];
+
+                if (!$items) {
+                    if (!empty($o->pack_id) && $p = $packs->get((int)$o->pack_id)) {
+                        $items[] = [
+                            'type' => 'pack',
+                            'id'   => $p->id,
+                            'name' => $p->title,
+                            'image'=> $p->image_path ? \Storage::url($p->image_path) : null,
+                            'unit_amount_cents' => $p->price_cents ?? 0,
+                            'currency' => $p->currency ?? ($o->currency ?? 'EUR'),
+                            'qty' => 1,
+                        ];
+                    }
+                    if (!empty($o->coach_id) && $c = $coachs->get((int)$o->coach_id)) {
+                        $items[] = [
+                            'type' => 'coach',
+                            'id'   => $c->id,
+                            'name' => $c->name,
+                            'image'=> $c->image_path ? \Storage::url($c->image_path) : null,
+                            'unit_amount_cents' => 0,
+                            'currency' => $o->currency ?? 'EUR',
+                            'qty' => 1,
+                        ];
+                    }
+                }
+
+                foreach ($items as $line) {
+                    $type = strtolower($line['type'] ?? '');
+                    $title = $line['name'] ?? ($type === 'pack' ? 'Pack' : 'Coach');
+                    $img   = $line['image'] ?? null;
+                    if ($img && !str_starts_with($img, 'http') && !str_starts_with($img, '/storage/')) {
+                        $img = \Storage::url($img);
+                    }
+                    $qty   = (int)($line['qty'] ?? 1);
+                    $unit  = (int)($line['unit_amount_cents'] ?? 0);
+                    $cur   = strtoupper($line['currency'] ?? ($o->currency ?? 'EUR'));
+                    $total = $unit * max(1, $qty);
+
+                    $rows[] = (object)[
+                        'id'         => $o->id,
+                        'type'       => $type,
+                        'title'      => $title,
+                        'image'      => $img,
+                        'qty'        => $qty,
+                        'amount'     => $total,
+                        'currency'   => $cur,
+                        'buyer_id'   => $o->user?->id,
+                        'buyer_name' => $o->user?->name ?? '—',
+                        'created_at' => $o->created_at,
+                    ];
+                }
+            }
+
+            usort($rows, fn($a, $b) => ($b->created_at <=> $a->created_at) ?: ($b->id <=> $a->id));
+
+            return array_slice($rows, 0, 12);
+        });
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 🔁 VIEW
+        |--------------------------------------------------------------------------
+        */
         return view('admin.dashboard', [
             'ordersPerDay'     => $ordersPerDay,
             'orders7dPeakDay'  => $orders7dPeakDay,
@@ -83,6 +187,7 @@ class DashboardController extends Controller
             'aov7dDelta'       => $aov7dDelta,
             'ordersPending'    => $ordersPending,
             'refunds30d'       => $refunds30d,
+            'recentPurchases'  => $recentPurchases,
         ]);
     }
 }
