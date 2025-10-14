@@ -1,3 +1,9 @@
+@if(!empty($rid))
+  <div class="mb-2 text-xs text-gray-500 dark:text-gray-400">
+    Request ID: <span class="font-mono">{{ $rid }}</span>
+  </div>
+@endif
+
 {{-- resources/views/admin/platform/info.blade.php --}}
 <x-admin-layout title="Platform info">
   @php
