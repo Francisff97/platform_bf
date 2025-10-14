@@ -274,7 +274,7 @@
   </div>
 
   {{-- Desktop: slider orizzontale full width, thumbs più grandi, no scrollbar --}}
-  <div class="hidden sm:block pb-3">
+  <div class="w-full hidden sm:block pb-3">
     <div x-data="rp()" class="group relative">
       <div id="rp-track"
            class="no-scrollbar edge-fade overflow-x-auto scroll-smooth px-3"
