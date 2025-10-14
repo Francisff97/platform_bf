@@ -125,15 +125,26 @@ class DashboardController extends Controller
             ->values()
             ->take(8);
 
-        // ======== COUPONS (se presenti nel progetto) ========
-        $coupons = collect();
-        if (class_exists(\App\Models\Coupon::class)) {
-            $coupons = \App\Models\Coupon::query()
-                ->orderByDesc('enabled')
-                ->orderBy('expires_at')
-                ->limit(8)
-                ->get(['id','code','type','amount_cents','usage_limit','usage_count','starts_at','expires_at','enabled']);
-        }
+// ==== COUPONS (schema reale: type, value, value_cents, is_active, usage_count, max_uses, starts_at, ends_at) ====
+$now = now();
+
+$coupons = Coupon::query()
+    // li mostriamo tutti (attivi, programmati, scaduti) con gli attivi prima
+    ->orderByDesc('is_active')
+    ->orderByRaw('(ends_at IS NULL) DESC')  // i "senza scadenza" dopo gli attivi
+    ->orderBy('ends_at')
+    ->limit(10)
+    ->get([
+        'id','code','type','value','value_cents','is_active',
+        'min_order_cents','starts_at','ends_at',
+        'usage_count','max_uses',
+        'created_at','updated_at',
+    ]);
+
+return view('admin.dashboard', [
+    // …tutto ciò che già passi…
+    'coupons' => $coupons,
+]);
 
         return view('admin.dashboard', [
             'ordersPerDay'     => $ordersPerDay,
