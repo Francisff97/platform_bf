@@ -328,8 +328,8 @@
                 </div>
               </div>
               <div class="text-right text-sm font-semibold">
-                @money($row['revenue'], $row['currency'])
-              </div>
+  @money($row['revenue_cents'], $row['currency'])
+</div>
             </div>
           @endforeach
         </div>
