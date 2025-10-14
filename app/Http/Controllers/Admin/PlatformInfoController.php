@@ -12,7 +12,7 @@ class PlatformInfoController extends Controller
     public function index(Request $request)
     {
         // --- RISOLUZIONE URL ROBUSTA (supporta più chiavi) ---
-        $url = config('app.platform_info_url')
+        $url = config('platform.platform_info_url')
             ?: env('PLATFORM_INFO_URL')          // chiave “giusta”
             ?: env('PLATFORM_FEED_URL')          // vecchia chiave che avevi in config
             ?: env('PLATFORM_URL');              // eventuale legacy
