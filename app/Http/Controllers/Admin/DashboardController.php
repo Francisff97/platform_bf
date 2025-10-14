@@ -132,7 +132,7 @@ class DashboardController extends Controller
                 ->orderByDesc('enabled')
                 ->orderBy('expires_at')
                 ->limit(8)
-                ->get(['id','code','type','percent','amount_cents','usage_limit','usage_count','starts_at','expires_at','enabled']);
+                ->get(['id','code','type','amount_cents','usage_limit','usage_count','starts_at','expires_at','enabled']);
         }
 
         return view('admin.dashboard', [
