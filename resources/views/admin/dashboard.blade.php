@@ -136,164 +136,165 @@
     </div>
   </section>
 
-  {{-- ===== CONTENT MIX (donut) ===== --}}
-  @php
-    $packsCount=$packsCount??0;$servicesCount=$servicesCount??0;$buildersCount=$buildersCount??0;$heroesCount=$heroesCount??0;$slidesCount=$slidesCount??0;
-    $contentMix = $contentMix ?? [
-      ['label'=>'Packs',    'value'=>$packsCount,    'color'=>'#7c3aed'],
-      ['label'=>'Services', 'value'=>$servicesCount, 'color'=>'#06b6d4'],
-      ['label'=>'Builders', 'value'=>$buildersCount, 'color'=>'#10b981'],
-      ['label'=>'Heroes',   'value'=>$heroesCount,   'color'=>'#f59e0b'],
-      ['label'=>'Slides',   'value'=>$slidesCount,   'color'=>'#ef4444'],
-    ];
-    $contentTotal = collect($contentMix)->sum('value') ?: 1;
-    $acc=0; $stops=[];
-    foreach ($contentMix as $row) {
-      $pct = round(($row['value'] / $contentTotal) * 100);
-      $from = $acc; $to = min(100, $acc + $pct);
-      $stops[] = "{$row['color']} {$from}% {$to}%";
-      $acc = $to;
-    }
-    $donutGradient = 'conic-gradient('.implode(', ', $stops).')';
-  @endphp
+  {{-- ===== CONTENT MIX + RECENT PURCHASES (50/50) ===== --}}
+@php
+  $packsCount=$packsCount??0;$servicesCount=$servicesCount??0;$buildersCount=$buildersCount??0;$heroesCount=$heroesCount??0;$slidesCount=$slidesCount??0;
 
-  <section class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-    <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900">
-      <div class="flex items-center justify-between">
-        <h3 class="font-semibold">Content mix</h3>
-        <span class="text-xs text-gray-500 dark:text-gray-400">Share by type</span>
-      </div>
+  $contentMix = $contentMix ?? [
+    ['label'=>'Packs',    'value'=>$packsCount,    'color'=>'#7c3aed'],
+    ['label'=>'Services', 'value'=>$servicesCount, 'color'=>'#06b6d4'],
+    ['label'=>'Builders', 'value'=>$buildersCount, 'color'=>'#10b981'],
+    ['label'=>'Heroes',   'value'=>$heroesCount,   'color'=>'#f59e0b'],
+    ['label'=>'Slides',   'value'=>$slidesCount,   'color'=>'#ef4444'],
+  ];
+  $contentTotal = collect($contentMix)->sum('value') ?: 1;
 
-      <div class="mt-4 grid grid-cols-1 items-center gap-4 sm:grid-cols-2">
-        <div class="mx-auto grid place-items-center">
-          <div class="relative h-36 w-36">
-            <div class="absolute inset-0 rounded-full" style="background: {{ $donutGradient }}"></div>
-            <div class="absolute inset-3 rounded-full bg-white shadow-inner dark:bg-gray-900/70"></div>
-            <div class="absolute inset-0 grid place-items-center">
-              <div class="text-center">
-                <div class="text-xs text-gray-500 dark:text-gray-400">Total</div>
-                <div class="text-lg font-semibold">{{ $contentTotal }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
+  $acc=0; $stops=[];
+  foreach ($contentMix as $row) {
+    $pct = round(($row['value'] / $contentTotal) * 100);
+    $from = $acc; $to = min(100, $acc + $pct);
+    $stops[] = "{$row['color']} {$from}% {$to}%";
+    $acc = $to;
+  }
+  $donutGradient = 'conic-gradient('.implode(', ', $stops).')';
 
-        <div class="space-y-2">
-          @foreach($contentMix as $row)
-            @php $pct = round(($row['value'] / $contentTotal) * 100); @endphp
-            <div class="flex items-center justify-between gap-3">
-              <div class="flex items-center gap-2">
-                <span class="h-3.5 w-3.5 rounded-full" style="background: {{ $row['color'] }}"></span>
-                <span class="text-sm text-gray-700 dark:text-gray-200">{{ $row['label'] }}</span>
-              </div>
-              <span class="text-xs text-gray-500 dark:text-gray-400">{{ $row['value'] }} ({{ $pct }}%)</span>
-            </div>
-          @endforeach
-        </div>
-      </div>
+  // safety
+  $recentOrders = $recentOrders ?? collect();
+@endphp
+
+<style>
+  /* util slider */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .edge-fade {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, black 32px, black calc(100% - 32px), transparent 100%);
+            mask-image: linear-gradient(to right, transparent 0, black 32px, black calc(100% - 32px), transparent 100%);
+  }
+</style>
+
+<section class="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+  {{-- LEFT: Content mix --}}
+  <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900">
+    <div class="flex items-center justify-between">
+      <h3 class="font-semibold">Content mix</h3>
+      <span class="text-xs text-gray-500 dark:text-gray-400">Share by type</span>
     </div>
-  </section>
 
-  {{-- ===== RECENT PURCHASES (full width slider) ===== --}}
-  <section class="mb-8 w-full">
-    <div class="rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900/60 dark:ring-white/10">
-      <div class="flex items-center justify-between px-4 py-3">
-        <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-50">Recent purchases</h3>
-        <a href="{{ route('admin.orders.index') }}" class="text-xs opacity-70 hover:opacity-100">View all</a>
-      </div>
-
-      <style>
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .edge-fade {
-          -webkit-mask-image: linear-gradient(to right, transparent 0, black 32px, black calc(100% - 32px), transparent 100%);
-          mask-image: linear-gradient(to right, transparent 0, black 32px, black calc(100% - 32px), transparent 100%);
-        }
-      </style>
-
-      {{-- Desktop slider --}}
-      <div class="relative hidden sm:block">
-        <div x-data="rp()" x-init="init()" class="group relative">
-          <div id="rp-track" class="edge-fade no-scrollbar overflow-x-auto whitespace-nowrap scroll-smooth px-4 pb-4" style="-webkit-overflow-scrolling:touch;">
-            @forelse($recentOrders as $o)
-              @php
-                $cart  = $o->meta['cart'] ?? [];
-                $line  = is_array($cart) ? ($cart[0] ?? null) : null;
-                $img   = $line['image'] ?? null;
-                $name  = $line['name']  ?? ('Order #'.$o->id);
-                $type  = strtoupper($line['type'] ?? 'ITEM');
-                $amt   = (int)($line['unit_amount_cents'] ?? $o->amount_cents);
-                $cur   = strtoupper($line['currency'] ?? $o->currency ?? 'EUR');
-                $extra = max(0, count($cart) - 1);
-              @endphp
-
-              <a href="{{ route('admin.orders.show', $o->id) }}"
-                 class="inline-flex h-24 w-[420px] shrink-0 items-center gap-4 rounded-xl border border-gray-200 bg-white/85 p-4 shadow-sm ring-1 ring-black/5 transition hover:ring-black/10 dark:border-gray-800 dark:bg-gray-900/70 dark:ring-white/10 mr-3 align-top">
-                <div class="h-16 w-16 overflow-hidden rounded-xl ring-1 ring-black/5 dark:ring-white/10">
-                  @if($img)
-                    <img src="{{ $img }}" alt="" class="h-full w-full object-cover">
-                  @else
-                    <div class="grid h-full w-full place-items-center bg-gray-200 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">IMG</div>
-                  @endif
-                </div>
-                <div class="min-w-0 grow">
-                  <div class="truncate text-sm font-semibold">{{ $name }}</div>
-                  <div class="mt-0.5 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                    <span>by {{ optional($o->user)->name ?? '—' }}</span><span aria-hidden="true">•</span>
-                    <span>{{ $o->created_at->diffForHumans() }}</span>
-                    @if($extra>0)
-                      <span class="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">+{{ $extra }}</span>
-                    @endif
-                  </div>
-                </div>
-                <div class="text-right">
-                  <span class="inline-flex items-center justify-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{{ $type }}</span>
-                  <div class="mt-1 text-sm font-semibold">@money($amt, $cur)</div>
-                </div>
-              </a>
-            @empty
-              <div class="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No recent purchases.</div>
-            @endforelse
+    <div class="mt-4 grid grid-cols-1 items-center gap-4 sm:grid-cols-2">
+      {{-- Donut --}}
+      <div class="mx-auto grid place-items-center">
+        <div class="relative h-36 w-36">
+          <div class="absolute inset-0 rounded-full" style="background: {{ $donutGradient }}"></div>
+          <div class="absolute inset-3 rounded-full bg-white shadow-inner dark:bg-gray-900/70"></div>
+          <div class="absolute inset-0 grid place-items-center">
+            <div class="text-center">
+              <div class="text-xs text-gray-500 dark:text-gray-400">Total</div>
+              <div class="text-lg font-semibold">{{ $contentTotal }}</div>
+            </div>
           </div>
-
-          <button type="button" @click="scroll(-1)"
-                  class="absolute left-1 top-1/2 hidden -translate-y-1/2 rounded-full border bg-white/90 p-2 shadow-sm ring-1 ring-black/5 backdrop-blur hover:bg-white group-hover:block dark:border-gray-800 dark:bg-gray-900/80 dark:ring-white/10">‹</button>
-          <button type="button" @click="scroll(1)"
-                  class="absolute right-1 top-1/2 hidden -translate-y-1/2 rounded-full border bg-white/90 p-2 shadow-sm ring-1 ring-black/5 backdrop-blur hover:bg-white group-hover:block dark:border-gray-800 dark:bg-gray-900/80 dark:ring-white/10">›</button>
         </div>
       </div>
 
-      {{-- Mobile list --}}
-      <div class="sm:hidden divide-y dark:divide-gray-800">
-        @foreach($recentOrders as $o)
-          @php
-            $cart = $o->meta['cart'] ?? [];
-            $line = is_array($cart) ? ($cart[0] ?? null) : null;
-            $img  = $line['image'] ?? null;
-            $name = $line['name']  ?? ('Order #'.$o->id);
-            $amt  = (int)($line['unit_amount_cents'] ?? $o->amount_cents);
-            $cur  = strtoupper($line['currency'] ?? $o->currency ?? 'EUR');
-          @endphp
-          <a href="{{ route('admin.orders.show', $o->id) }}" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800">
-            <div class="h-12 w-12 overflow-hidden rounded-lg ring-1 ring-black/5 dark:ring-white/10">
-              @if($img)
-                <img src="{{ $img }}" alt="" class="h-full w-full object-cover">
-              @else
-                <div class="grid h-full w-full place-items-center bg-gray-200 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">IMG</div>
-              @endif
+      {{-- Legend --}}
+      <div class="space-y-2">
+        @foreach($contentMix as $row)
+          @php $pct = round(($row['value'] / $contentTotal) * 100); @endphp
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <span class="h-3.5 w-3.5 rounded-full" style="background: {{ $row['color'] }}"></span>
+              <span class="text-sm text-gray-700 dark:text-gray-200">{{ $row['label'] }}</span>
             </div>
-            <div class="min-w-0 flex-1">
-              <div class="truncate text-sm font-medium">{{ $name }}</div>
-              <div class="text-xs text-gray-500 dark:text-gray-400">
-                by {{ optional($o->user)->name ?? '—' }} • {{ $o->created_at->diffForHumans() }}
-              </div>
-            </div>
-            <div class="text-right text-sm font-semibold">@money($amt, $cur)</div>
-          </a>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ $row['value'] }} ({{ $pct }}%)</span>
+          </div>
         @endforeach
       </div>
     </div>
-  </section>
+  </div>
+
+  {{-- RIGHT: Recent purchases (slider) --}}
+  <div class="rounded-2xl border border-gray-200 bg-white/70 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900/60 dark:ring-white/10">
+    <div class="flex items-center justify-between px-4 py-3">
+      <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-50">Recent purchases</h3>
+      <a href="{{ route('admin.orders.index') }}" class="text-xs opacity-70 hover:opacity-100">View all</a>
+    </div>
+
+    {{-- Desktop slider --}}
+    <div class="relative hidden sm:block">
+      <div x-data="{ step:460, scroll(dir){ $refs.track.scrollBy({left: dir*this.step, behavior:'smooth'}) } }" class="group">
+        <div x-ref="track" class="edge-fade no-scrollbar overflow-x-auto whitespace-nowrap scroll-smooth px-4 pb-4" style="-webkit-overflow-scrolling:touch;">
+          @forelse($recentOrders as $o)
+            @php
+              $cart  = $o->meta['cart'] ?? [];
+              $line  = is_array($cart) ? ($cart[0] ?? null) : null;
+              $img   = $line['image'] ?? null;
+              $name  = $line['name']  ?? ('Order #'.$o->id);
+              $type  = strtoupper($line['type'] ?? 'ITEM');
+              $amt   = (int)($line['unit_amount_cents'] ?? $o->amount_cents);
+              $cur   = strtoupper($line['currency'] ?? $o->currency ?? 'EUR');
+              $extra = max(0, count($cart) - 1);
+            @endphp
+
+            <a href="{{ route('admin.orders.show', $o->id) }}"
+               class="mr-3 inline-flex h-24 w-[420px] shrink-0 items-center gap-4 align-top rounded-xl border border-gray-200 bg-white/85 p-4 shadow-sm ring-1 ring-black/5 transition hover:ring-black/10 dark:border-gray-800 dark:bg-gray-900/70 dark:ring-white/10">
+              <div class="h-16 w-16 overflow-hidden rounded-xl ring-1 ring-black/5 dark:ring-white/10">
+                @if($img) <img src="{{ $img }}" alt="" class="h-full w-full object-cover">
+                @else <div class="grid h-full w-full place-items-center bg-gray-200 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">IMG</div> @endif
+              </div>
+              <div class="min-w-0 grow">
+                <div class="truncate text-sm font-semibold">{{ $name }}</div>
+                <div class="mt-0.5 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                  <span>by {{ optional($o->user)->name ?? '—' }}</span><span aria-hidden="true">•</span>
+                  <span>{{ $o->created_at->diffForHumans() }}</span>
+                  @if($extra>0)
+                    <span class="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">+{{ $extra }}</span>
+                  @endif
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="inline-flex items-center justify-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{{ $type }}</span>
+                <div class="mt-1 text-sm font-semibold">@money($amt, $cur)</div>
+              </div>
+            </a>
+          @empty
+            <div class="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No recent purchases.</div>
+          @endforelse
+        </div>
+
+        <button type="button" @click="scroll(-1)"
+                class="absolute left-1 top-1/2 hidden -translate-y-1/2 rounded-full border bg-white/90 p-2 shadow-sm ring-1 ring-black/5 backdrop-blur hover:bg-white group-hover:block dark:border-gray-800 dark:bg-gray-900/80 dark:ring-white/10">‹</button>
+        <button type="button" @click="scroll(1)"
+                class="absolute right-1 top-1/2 hidden -translate-y-1/2 rounded-full border bg-white/90 p-2 shadow-sm ring-1 ring-black/5 backdrop-blur hover:bg-white group-hover:block dark:border-gray-800 dark:bg-gray-900/80 dark:ring-white/10">›</button>
+      </div>
+    </div>
+
+    {{-- Mobile list --}}
+    <div class="sm:hidden divide-y dark:divide-gray-800">
+      @foreach($recentOrders as $o)
+        @php
+          $cart = $o->meta['cart'] ?? [];
+          $line = is_array($cart) ? ($cart[0] ?? null) : null;
+          $img  = $line['image'] ?? null;
+          $name = $line['name']  ?? ('Order #'.$o->id);
+          $amt  = (int)($line['unit_amount_cents'] ?? $o->amount_cents);
+          $cur  = strtoupper($line['currency'] ?? $o->currency ?? 'EUR');
+        @endphp
+        <a href="{{ route('admin.orders.show', $o->id) }}" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800">
+          <div class="h-12 w-12 overflow-hidden rounded-lg ring-1 ring-black/5 dark:ring-white/10">
+            @if($img) <img src="{{ $img }}" alt="" class="h-full w-full object-cover">
+            @else <div class="grid h-full w-full place-items-center bg-gray-200 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">IMG</div> @endif
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="truncate text-sm font-medium">{{ $name }}</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">
+              by {{ optional($o->user)->name ?? '—' }} • {{ $o->created_at->diffForHumans() }}
+            </div>
+          </div>
+          <div class="text-right text-sm font-semibold">@money($amt, $cur)</div>
+        </a>
+      @endforeach
+    </div>
+  </div>
+</section>
 
   {{-- ===== TOP SELLING + COUPONS ===== --}}
   <section class="grid grid-cols-1 gap-6 lg:grid-cols-3">
