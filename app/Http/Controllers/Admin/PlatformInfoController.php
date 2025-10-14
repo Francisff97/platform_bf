@@ -22,7 +22,7 @@ class PlatformInfoController extends Controller
                 'route'  => 'admin.platform-info',
                 'env'    => app()->environment(),
                 'config' => [
-                    'app.platform_info_url' => config('app.platform_info_url'),
+                    'platform.platform_info_url' => config('platform.platform_info_url'),
                 ],
                 'env_vars_seen' => [
                     'PLATFORM_INFO_URL' => env('PLATFORM_INFO_URL'),
