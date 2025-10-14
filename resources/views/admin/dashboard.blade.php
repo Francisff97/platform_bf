@@ -1,4 +1,11 @@
 <x-admin-layout title="Dashboard - Admin">
+  @php
+    // fallback sicuri (nel caso il controller non passi i dati)
+    $recentOrders = $recentOrders ?? collect();
+    $topSelling   = $topSelling   ?? collect();
+    $coupons      = $coupons      ?? collect();
+  @endphp
+
   {{-- ===== HERO ===== --}}
   <section class="mb-6 rounded-3xl border border-gray-200 bg-white/70 p-5 shadow-sm ring-1 ring-black/5 backdrop-blur md:p-6 dark:border-gray-800 dark:bg-gray-900/60">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -41,10 +48,9 @@
   <section class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
     @foreach($kpis as $k)
       @php $pos = ($k['delta'] ?? 0) >= 0; @endphp
-      <div
-        x-data="{n:0}"
-        x-init="let t={{ (int)$k['value'] }}; let step=Math.ceil(t/18)||1; let i=setInterval(()=>{ n+=step; if(n>=t){n=t;clearInterval(i)} },30)"
-        class="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900">
+      <div x-data="{n:0}"
+           x-init="let t={{ (int)$k['value'] }}; let step=Math.ceil(t/18)||1; let i=setInterval(()=>{ n+=step; if(n>=t){n=t;clearInterval(i)} },30)"
+           class="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900">
         <div class="flex items-center justify-between">
           <div class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ $k['label'] }}</div>
           <div class="opacity-60">
@@ -70,13 +76,13 @@
 
   {{-- ===== TRENDS + HEALTH ===== --}}
   @php
-    $ordersPerDay = $ordersPerDay ?? [3,6,4,9,7,10,5];
-    $max = max($ordersPerDay) ?: 1;
-    $pts = collect($ordersPerDay)->map(fn($v,$i)=> ($i*100/(max(1,count($ordersPerDay)-1))).','. (100 - ($v/$max*100)) )->implode(' ');
+    $ordersPerDay    = $ordersPerDay ?? [3,6,4,9,7,10,5];
+    $max             = max($ordersPerDay) ?: 1;
+    $pts             = collect($ordersPerDay)->map(fn($v,$i)=> ($i*100/(max(1,count($ordersPerDay)-1))).','. (100 - ($v/$max*100)) )->implode(' ');
     $orders7dPeakDay = $orders7dPeakDay ?? '—';
-    $ordersPending = (int)($ordersPending ?? 0);
-    $refunds30d    = (int)($refunds30d ?? 0);
-    $newCustomers7d= (int)($newCustomers7d ?? 0);
+    $ordersPending   = (int)($ordersPending ?? 0);
+    $refunds30d      = (int)($refunds30d ?? 0);
+    $newCustomers7d  = (int)($newCustomers7d ?? 0);
   @endphp
 
   <section class="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -142,7 +148,12 @@
     ];
     $contentTotal = collect($contentMix)->sum('value') ?: 1;
     $acc=0; $stops=[];
-    foreach ($contentMix as $row) { $pct = round(($row['value'] / $contentTotal) * 100); $from = $acc; $to = min(100, $acc + $pct); $stops[] = "{$row['color']} {$from}% {$to}%"; $acc = $to; }
+    foreach ($contentMix as $row) {
+      $pct = round(($row['value'] / $contentTotal) * 100);
+      $from = $acc; $to = min(100, $acc + $pct);
+      $stops[] = "{$row['color']} {$from}% {$to}%";
+      $acc = $to;
+    }
     $donutGradient = 'conic-gradient('.implode(', ', $stops).')';
   @endphp
 
@@ -181,121 +192,112 @@
         </div>
       </div>
     </div>
-
-    {{-- ==== RECENT PURCHASES FULL WIDTH (col-span-full sotto) ==== --}}
   </section>
 
-  {{-- spacer per chiudere la sezione sopra e inserire il full width --}}
-  <section class="mb-6"></section>
+  {{-- ===== RECENT PURCHASES (full width slider) ===== --}}
+  <section class="mb-8 w-full">
+    <div class="rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900/60 dark:ring-white/10">
+      <div class="flex items-center justify-between px-4 py-3">
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-50">Recent purchases</h3>
+        <a href="{{ route('admin.orders.index') }}" class="text-xs opacity-70 hover:opacity-100">View all</a>
+      </div>
 
-  {{-- === Recent purchases (slider full width, fixed height, no vertical scroll) === --}}
-<section class="mb-8 w-full">
-  <div class="rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900/60 dark:ring-white/10">
-    <div class="flex items-center justify-between px-4 py-3">
-      <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-50">Recent purchases</h3>
-      <a href="{{ route('admin.orders.index') }}" class="text-xs opacity-70 hover:opacity-100">View all</a>
-    </div>
+      <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .edge-fade {
+          -webkit-mask-image: linear-gradient(to right, transparent 0, black 32px, black calc(100% - 32px), transparent 100%);
+          mask-image: linear-gradient(to right, transparent 0, black 32px, black calc(100% - 32px), transparent 100%);
+        }
+      </style>
 
-    <style>
-      .no-scrollbar::-webkit-scrollbar { display: none; }
-      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      .edge-fade {
-        -webkit-mask-image: linear-gradient(to right, transparent 0, black 32px, black calc(100% - 32px), transparent 100%);
-        mask-image: linear-gradient(to right, transparent 0, black 32px, black calc(100% - 32px), transparent 100%);
-      }
-    </style>
+      {{-- Desktop slider --}}
+      <div class="relative hidden sm:block">
+        <div x-data="rp()" x-init="init()" class="group relative">
+          <div id="rp-track" class="edge-fade no-scrollbar overflow-x-auto whitespace-nowrap scroll-smooth px-4 pb-4" style="-webkit-overflow-scrolling:touch;">
+            @forelse($recentOrders as $o)
+              @php
+                $cart  = $o->meta['cart'] ?? [];
+                $line  = is_array($cart) ? ($cart[0] ?? null) : null;
+                $img   = $line['image'] ?? null;
+                $name  = $line['name']  ?? ('Order #'.$o->id);
+                $type  = strtoupper($line['type'] ?? 'ITEM');
+                $amt   = (int)($line['unit_amount_cents'] ?? $o->amount_cents);
+                $cur   = strtoupper($line['currency'] ?? $o->currency ?? 'EUR');
+                $extra = max(0, count($cart) - 1);
+              @endphp
 
-    {{-- Desktop slider --}}
-    <div class="relative hidden sm:block">
-      <div x-data="rp()" x-init="init()" class="group relative">
-        <div id="rp-track"
-             class="edge-fade no-scrollbar overflow-x-auto whitespace-nowrap scroll-smooth px-4 pb-4"
-             style="-webkit-overflow-scrolling:touch;">
-          @forelse($recentOrders as $o)
-            @php
-              $cart = $o->meta['cart'] ?? [];
-              $line = is_array($cart) ? ($cart[0] ?? null) : null;
-              $img  = $line['image'] ?? null;
-              $name = $line['name']  ?? ('Order #'.$o->id);
-              $type = strtoupper($line['type'] ?? 'ITEM');
-              $amt  = (int)($line['unit_amount_cents'] ?? $o->amount_cents);
-              $cur  = strtoupper($line['currency'] ?? $o->currency ?? 'EUR');
-              $extra = max(0, count($cart) - 1);
-            @endphp
-
-            <a href="{{ route('admin.orders.show', $o->id) }}"
-               class="inline-flex h-24 w-[420px] shrink-0 items-center gap-4 rounded-xl border border-gray-200 bg-white/85 p-4 shadow-sm ring-1 ring-black/5 transition hover:ring-black/10 dark:border-gray-800 dark:bg-gray-900/70 dark:ring-white/10 mr-3 align-top">
-              <div class="h-16 w-16 overflow-hidden rounded-xl ring-1 ring-black/5 dark:ring-white/10">
-                @if($img)
-                  <img src="{{ $img }}" alt="" class="h-full w-full object-cover">
-                @else
-                  <div class="grid h-full w-full place-items-center bg-gray-200 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">IMG</div>
-                @endif
-              </div>
-              <div class="min-w-0 grow">
-                <div class="truncate text-sm font-semibold">{{ $name }}</div>
-                <div class="mt-0.5 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                  <span>by {{ optional($o->user)->name ?? '—' }}</span><span aria-hidden="true">•</span>
-                  <span>{{ $o->created_at->diffForHumans() }}</span>
-                  @if($extra>0)
-                    <span class="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">+{{ $extra }}</span>
+              <a href="{{ route('admin.orders.show', $o->id) }}"
+                 class="inline-flex h-24 w-[420px] shrink-0 items-center gap-4 rounded-xl border border-gray-200 bg-white/85 p-4 shadow-sm ring-1 ring-black/5 transition hover:ring-black/10 dark:border-gray-800 dark:bg-gray-900/70 dark:ring-white/10 mr-3 align-top">
+                <div class="h-16 w-16 overflow-hidden rounded-xl ring-1 ring-black/5 dark:ring-white/10">
+                  @if($img)
+                    <img src="{{ $img }}" alt="" class="h-full w-full object-cover">
+                  @else
+                    <div class="grid h-full w-full place-items-center bg-gray-200 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">IMG</div>
                   @endif
                 </div>
-              </div>
-              <div class="text-right">
-                <span class="inline-flex items-center justify-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{{ $type }}</span>
-                <div class="mt-1 text-sm font-semibold">@money($amt, $cur)</div>
-              </div>
-            </a>
-          @empty
-            <div class="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No recent purchases.</div>
-          @endforelse
-        </div>
+                <div class="min-w-0 grow">
+                  <div class="truncate text-sm font-semibold">{{ $name }}</div>
+                  <div class="mt-0.5 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <span>by {{ optional($o->user)->name ?? '—' }}</span><span aria-hidden="true">•</span>
+                    <span>{{ $o->created_at->diffForHumans() }}</span>
+                    @if($extra>0)
+                      <span class="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">+{{ $extra }}</span>
+                    @endif
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="inline-flex items-center justify-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{{ $type }}</span>
+                  <div class="mt-1 text-sm font-semibold">@money($amt, $cur)</div>
+                </div>
+              </a>
+            @empty
+              <div class="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No recent purchases.</div>
+            @endforelse
+          </div>
 
-        {{-- navigation arrows --}}
-        <button type="button" @click="scroll(-1)"
-                class="absolute left-1 top-1/2 hidden -translate-y-1/2 rounded-full border bg-white/90 p-2 shadow-sm ring-1 ring-black/5 backdrop-blur hover:bg-white group-hover:block dark:border-gray-800 dark:bg-gray-900/80 dark:ring-white/10">‹</button>
-        <button type="button" @click="scroll(1)"
-                class="absolute right-1 top-1/2 hidden -translate-y-1/2 rounded-full border bg-white/90 p-2 shadow-sm ring-1 ring-black/5 backdrop-blur hover:bg-white group-hover:block dark:border-gray-800 dark:bg-gray-900/80 dark:ring-white/10">›</button>
+          <button type="button" @click="scroll(-1)"
+                  class="absolute left-1 top-1/2 hidden -translate-y-1/2 rounded-full border bg-white/90 p-2 shadow-sm ring-1 ring-black/5 backdrop-blur hover:bg-white group-hover:block dark:border-gray-800 dark:bg-gray-900/80 dark:ring-white/10">‹</button>
+          <button type="button" @click="scroll(1)"
+                  class="absolute right-1 top-1/2 hidden -translate-y-1/2 rounded-full border bg-white/90 p-2 shadow-sm ring-1 ring-black/5 backdrop-blur hover:bg-white group-hover:block dark:border-gray-800 dark:bg-gray-900/80 dark:ring-white/10">›</button>
+        </div>
+      </div>
+
+      {{-- Mobile list --}}
+      <div class="sm:hidden divide-y dark:divide-gray-800">
+        @foreach($recentOrders as $o)
+          @php
+            $cart = $o->meta['cart'] ?? [];
+            $line = is_array($cart) ? ($cart[0] ?? null) : null;
+            $img  = $line['image'] ?? null;
+            $name = $line['name']  ?? ('Order #'.$o->id);
+            $amt  = (int)($line['unit_amount_cents'] ?? $o->amount_cents);
+            $cur  = strtoupper($line['currency'] ?? $o->currency ?? 'EUR');
+          @endphp
+          <a href="{{ route('admin.orders.show', $o->id) }}" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800">
+            <div class="h-12 w-12 overflow-hidden rounded-lg ring-1 ring-black/5 dark:ring-white/10">
+              @if($img)
+                <img src="{{ $img }}" alt="" class="h-full w-full object-cover">
+              @else
+                <div class="grid h-full w-full place-items-center bg-gray-200 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">IMG</div>
+              @endif
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="truncate text-sm font-medium">{{ $name }}</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">
+                by {{ optional($o->user)->name ?? '—' }} • {{ $o->created_at->diffForHumans() }}
+              </div>
+            </div>
+            <div class="text-right text-sm font-semibold">@money($amt, $cur)</div>
+          </a>
+        @endforeach
       </div>
     </div>
-
-    {{-- Mobile list --}}
-    <div class="sm:hidden divide-y dark:divide-gray-800">
-      @foreach($recentOrders as $o)
-        @php
-          $cart = $o->meta['cart'] ?? [];
-          $line = is_array($cart) ? ($cart[0] ?? null) : null;
-          $img  = $line['image'] ?? null;
-          $name = $line['name']  ?? ('Order #'.$o->id);
-          $type = strtoupper($line['type'] ?? 'ITEM');
-          $amt  = (int)($line['unit_amount_cents'] ?? $o->amount_cents);
-          $cur  = strtoupper($line['currency'] ?? $o->currency ?? 'EUR');
-        @endphp
-        <a href="{{ route('admin.orders.show', $o->id) }}" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800">
-          <div class="h-12 w-12 overflow-hidden rounded-lg ring-1 ring-black/5 dark:ring-white/10">
-            @if($img)
-              <img src="{{ $img }}" alt="" class="h-full w-full object-cover">
-            @else
-              <div class="grid h-full w-full place-items-center bg-gray-200 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">IMG</div>
-            @endif
-          </div>
-          <div class="min-w-0 flex-1">
-            <div class="truncate text-sm font-medium">{{ $name }}</div>
-            <div class="text-xs text-gray-500 dark:text-gray-400">
-              by {{ optional($o->user)->name ?? '—' }} • {{ $o->created_at->diffForHumans() }}
-            </div>
-          </div>
-          <div class="text-right text-sm font-semibold">@money($amt, $cur)</div>
-        </a>
-      @endforeach
-    </div>
-  </div>
-</section>
+  </section>
 
   {{-- ===== TOP SELLING + COUPONS ===== --}}
   <section class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-    {{-- Top selling (spazio 2/3 su desktop) --}}
+    {{-- Top selling --}}
     <div class="lg:col-span-2 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900">
       <div class="mb-3 flex items-center justify-between">
         <h3 class="font-semibold">Top selling (90d)</h3>
@@ -334,113 +336,94 @@
     </div>
 
     {{-- Coupons --}}
-    @php
-  $siteCurrency = optional(\App\Models\SiteSetting::first())->currency ?? 'EUR';
-@endphp
+    @php $siteCurrency = optional(\App\Models\SiteSetting::first())->currency ?? 'EUR'; @endphp
+    <div class="rounded-2xl border border-gray-200 bg-white/70 p-5 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900/60">
+      <div class="mb-3 flex items-center justify-between">
+        <h3 class="font-semibold text-gray-900 dark:text-gray-50">Coupons</h3>
+        @if(Route::has('admin.coupons.index'))
+          <a href="{{ route('admin.coupons.index') }}" class="text-xs opacity-70 hover:opacity-100">Manage</a>
+        @endif
+      </div>
 
-<div class="rounded-2xl border border-gray-200 bg-white/70 p-5 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900/60">
-  <div class="mb-3 flex items-center justify-between">
-    <h3 class="font-semibold text-gray-900 dark:text-gray-50">Coupons</h3>
-    @if(Route::has('admin.coupons.index'))
-      <a href="{{ route('admin.coupons.index') }}" class="text-xs opacity-70 hover:opacity-100">Manage</a>
-    @endif
-  </div>
+      <div class="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
+        <table class="min-w-full text-sm">
+          <thead class="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-gray-900 dark:text-gray-400">
+            <tr>
+              <th class="px-3 py-2 text-left">Code</th>
+              <th class="px-3 py-2 text-left">Type</th>
+              <th class="px-3 py-2 text-left">Value</th>
+              <th class="px-3 py-2 text-left">Usage</th>
+              <th class="px-3 py-2 text-left">Validity</th>
+              <th class="px-3 py-2 text-left">Status</th>
+              <th class="px-3 py-2"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y dark:divide-gray-800">
+            @forelse($coupons as $c)
+              @php
+                $valueLabel = $c->type === 'percent'
+                  ? (int)($c->value ?? 0).'%'
+                  : \App\Support\Money::formatCents((int)($c->value_cents ?? 0), $siteCurrency);
 
-  <div class="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
-    <table class="min-w-full text-sm">
-      <thead class="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-gray-900 dark:text-gray-400">
-        <tr>
-          <th class="px-3 py-2 text-left">Code</th>
-          <th class="px-3 py-2 text-left">Type</th>
-          <th class="px-3 py-2 text-left">Value</th>
-          <th class="px-3 py-2 text-left">Usage</th>
-          <th class="px-3 py-2 text-left">Validity</th>
-          <th class="px-3 py-2 text-left">Status</th>
-          <th class="px-3 py-2"></th>
-        </tr>
-      </thead>
-      <tbody class="divide-y dark:divide-gray-800">
-        @forelse($coupons as $c)
-          @php
-            // Value: se percentuale prendi "value" (es. 10 -> 10%), se fisso prendi "value_cents".
-            $valueLabel = $c->type === 'percent'
-              ? (int)($c->value ?? 0).'%'
-              : \App\Support\Money::formatCents((int)($c->value_cents ?? 0), $siteCurrency);
+                $status = $c->is_active ? 'Active' : 'Disabled';
+                if ($c->is_active && $c->starts_at && $c->starts_at->isFuture()) $status = 'Scheduled';
+                if ($c->ends_at && $c->ends_at->isPast()) $status = 'Expired';
 
-            // Stato leggibile
-            $now = now();
-            $status = $c->is_active ? 'Active' : 'Disabled';
-            if ($c->is_active && $c->starts_at && $c->starts_at->isFuture()) $status = 'Scheduled';
-            if ($c->ends_at && $c->ends_at->isPast()) $status = 'Expired';
+                $badgeCls = [
+                  'Active'    => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200',
+                  'Scheduled' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200',
+                  'Expired'   => 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200',
+                  'Disabled'  => 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200',
+                ][$status];
 
-            $badgeCls = [
-              'Active'    => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200',
-              'Scheduled' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200',
-              'Expired'   => 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200',
-              'Disabled'  => 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200',
-            ][$status];
+                $used  = (int)($c->usage_count ?? 0);
+                $limit = $c->max_uses;
+                $pct   = $limit ? min(100, round($used * 100 / max(1,$limit))) : null;
+              @endphp
 
-            // progress usage (0..1)
-            $used  = (int)($c->usage_count ?? 0);
-            $limit = $c->max_uses; // può essere null
-            $pct   = $limit ? min(100, round($used * 100 / max(1,$limit))) : null;
-          @endphp
-
-          <tr class="hover:bg-gray-50/60 dark:hover:bg-gray-800/40">
-            <td class="px-3 py-2 font-mono text-[13px]">{{ $c->code }}</td>
-            <td class="px-3 py-2">
-              <span class="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">
-                {{ strtoupper($c->type) }}
-              </span>
-            </td>
-            <td class="px-3 py-2 font-medium">{{ $valueLabel }}</td>
-            <td class="px-3 py-2">
-              <div class="flex items-center gap-2">
-                <span>{{ $used }}</span>
-                @if(!is_null($limit))
-                  <span class="opacity-60">/ {{ (int)$limit }}</span>
-                  <div class="ml-2 h-1.5 w-24 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
-                    <div class="h-full" style="width: {{ $pct }}%; background: color-mix(in oklab, var(--accent) 85%, #000 0%);"></div>
+              <tr class="hover:bg-gray-50/60 dark:hover:bg-gray-800/40">
+                <td class="px-3 py-2 font-mono text-[13px]">{{ $c->code }}</td>
+                <td class="px-3 py-2">
+                  <span class="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                    {{ strtoupper($c->type) }}
+                  </span>
+                </td>
+                <td class="px-3 py-2 font-medium">{{ $valueLabel }}</td>
+                <td class="px-3 py-2">
+                  <div class="flex items-center gap-2">
+                    <span>{{ $used }}</span>
+                    @if(!is_null($limit))
+                      <span class="opacity-60">/ {{ (int)$limit }}</span>
+                      <div class="ml-2 h-1.5 w-24 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
+                        <div class="h-full" style="width: {{ $pct }}%; background: color-mix(in oklab, var(--accent) 85%, #000 0%);"></div>
+                      </div>
+                    @endif
                   </div>
-                @endif
-              </div>
-            </td>
-            <td class="px-3 py-2">
-              @if($c->starts_at)
-                <span title="{{ $c->starts_at }}">{{ $c->starts_at->toDateString() }}</span>
-              @else
-                —
-              @endif
-              <span class="opacity-50">→</span>
-              @if($c->ends_at)
-                <span title="{{ $c->ends_at }}">{{ $c->ends_at->toDateString() }}</span>
-              @else
-                —
-              @endif
-            </td>
-            <td class="px-3 py-2">
-              <span class="rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $badgeCls }}">{{ $status }}</span>
-            </td>
-            <td class="px-3 py-2 text-right">
-              @if(Route::has('admin.coupons.edit'))
-                <a href="{{ route('admin.coupons.edit', $c->id) }}"
-                   class="rounded-lg border px-2 py-1 text-xs hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
-                  Edit
-                </a>
-              @endif
-            </td>
-          </tr>
-        @empty
-          <tr>
-            <td colspan="7" class="px-3 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-              No coupons found.
-            </td>
-          </tr>
-        @endforelse
-      </tbody>
-    </table>
-  </div>
-</div>
+                </td>
+                <td class="px-3 py-2">
+                  {{ $c->starts_at ? $c->starts_at->toDateString() : '—' }}
+                  <span class="opacity-50">→</span>
+                  {{ $c->ends_at ? $c->ends_at->toDateString() : '—' }}
+                </td>
+                <td class="px-3 py-2">
+                  <span class="rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $badgeCls }}">{{ $status }}</span>
+                </td>
+                <td class="px-3 py-2 text-right">
+                  @if(Route::has('admin.coupons.edit'))
+                    <a href="{{ route('admin.coupons.edit', $c->id) }}"
+                       class="rounded-lg border px-2 py-1 text-xs hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">Edit</a>
+                  @endif
+                </td>
+              </tr>
+            @empty
+              <tr>
+                <td colspan="7" class="px-3 py-6 text-center text-sm text-gray-500 dark:text-gray-400">No coupons found.</td>
+              </tr>
+            @endforelse
+          </tbody>
+        </table>
+      </div>
+    </div>
   </section>
 
   {{-- ==== helpers Recent purchases ==== --}}
@@ -448,8 +431,10 @@
     function rp(){
       return {
         step: 480, _el:null, _down:false, _sx:0, _sl:0,
-        init(){ this._el = document.getElementById('rp-track');
+        init(){
+          this._el = document.getElementById('rp-track');
           const el=this._el;
+          if(!el) return;
           el.addEventListener('pointerdown', e => { this._down=true; this._sx=e.pageX; this._sl=el.scrollLeft; el.setPointerCapture(e.pointerId); });
           el.addEventListener('pointermove', e => { if(!this._down) return; el.scrollLeft = this._sl - (e.pageX - this._sx); });
           ['pointerup','pointerleave','pointercancel'].forEach(t => el.addEventListener(t, ()=> this._down=false));
