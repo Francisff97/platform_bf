@@ -13,6 +13,17 @@ class PlatformInfoController extends Controller
 {
     public function index(Request $request)
     {
+        try {
+        \Log::info('platform_info.entry', [
+            'env' => app()->environment(),
+            'url_env' => env('PLATFORM_INFO_URL')
+        ]);
+    } catch (\Throwable $e) {
+        // anche se Log non va
+        file_put_contents(storage_path('logs/platform-info-debug.log'),
+            date('c').' — entry failed: '.$e->getMessage().PHP_EOL, FILE_APPEND);
+    }
+
         $rid = (string) Str::uuid();                 // trace id per correlare i log
         Log::withContext(['rid' => $rid, 'route' => 'admin.platform-info']);
 
@@ -23,7 +34,14 @@ class PlatformInfoController extends Controller
             Log::error('platform_info.misconfigured', [
                 'reason' => 'PLATFORM_INFO_URL assente'
             ]);
-            abort(500, 'PLATFORM_INFO_URL non configurato');
+            if (empty($url)) {
+    \Log::error('platform_info.missing_url', ['rid' => $rid ?? null]);
+    return response()->view('admin.platform.info', [
+        'info' => ['error' => true, 'message' => 'PLATFORM_INFO_URL non configurato'],
+        'url' => null,
+        'error' => true,
+    ]);
+}
         }
 
         // 2) TTL cache
