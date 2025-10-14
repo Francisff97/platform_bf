@@ -331,48 +331,113 @@
     </div>
 
     {{-- Coupons --}}
-    <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900">
-      <div class="mb-3 flex items-center justify-between">
-        <h3 class="font-semibold">Active coupons</h3>
-        <a href="{{ route('admin.coupons.index') }}" class="text-xs opacity-70 hover:opacity-100">Manage</a>
-      </div>
+    @php
+  $siteCurrency = optional(\App\Models\SiteSetting::first())->currency ?? 'EUR';
+@endphp
 
-      @if($coupons->isEmpty())
-        <div class="py-8 text-center text-sm text-gray-500 dark:text-gray-400">No coupons found.</div>
-      @else
-        <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800">
-          <table class="min-w-full text-sm">
-            <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500 dark:bg-gray-900 dark:text-gray-400">
-              <tr>
-                <th class="px-3 py-2">Code</th>
-                <th class="px-3 py-2">Type</th>
-                <th class="px-3 py-2">Value</th>
-                <th class="px-3 py-2">Usage</th>
-                <th class="px-3 py-2">Expires</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y dark:divide-gray-800">
-              @foreach($coupons as $c)
-                @php
-                if ($val = $c->type === 'percent'){
-                        $val = ($c->amount_cents ?? 0= . '%';
-                } else {
-                        $val = numer_format(($c->amount_cents ?? 0)/100, 2). '$/€';
-                }
-                @endphp
-                <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-800/40">
-                  <td class="px-3 py-2 font-medium">{{ $c->code }}</td>
-                  <td class="px-3 py-2">{{ strtoupper($c->type ?? '—') }}</td>
-                  <td class="px-3 py-2">{{ $val }}</td>
-                  <td class="px-3 py-2">{{ $usage }}</td>
-                  <td class="px-3 py-2">{{ optional($c->expires_at)->diffForHumans() ?? '—' }}</td>
-                </tr>
-              @endforeach
-            </tbody>
-          </table>
-        </div>
-      @endif
-    </div>
+<div class="rounded-2xl border border-gray-200 bg-white/70 p-5 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900/60">
+  <div class="mb-3 flex items-center justify-between">
+    <h3 class="font-semibold text-gray-900 dark:text-gray-50">Coupons</h3>
+    @if(Route::has('admin.coupons.index'))
+      <a href="{{ route('admin.coupons.index') }}" class="text-xs opacity-70 hover:opacity-100">Manage</a>
+    @endif
+  </div>
+
+  <div class="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-gray-900 dark:text-gray-400">
+        <tr>
+          <th class="px-3 py-2 text-left">Code</th>
+          <th class="px-3 py-2 text-left">Type</th>
+          <th class="px-3 py-2 text-left">Value</th>
+          <th class="px-3 py-2 text-left">Usage</th>
+          <th class="px-3 py-2 text-left">Validity</th>
+          <th class="px-3 py-2 text-left">Status</th>
+          <th class="px-3 py-2"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y dark:divide-gray-800">
+        @forelse($coupons as $c)
+          @php
+            // Value: se percentuale prendi "value" (es. 10 -> 10%), se fisso prendi "value_cents".
+            $valueLabel = $c->type === 'percent'
+              ? (int)($c->value ?? 0).'%'
+              : \App\Support\Money::formatCents((int)($c->value_cents ?? 0), $siteCurrency);
+
+            // Stato leggibile
+            $now = now();
+            $status = $c->is_active ? 'Active' : 'Disabled';
+            if ($c->is_active && $c->starts_at && $c->starts_at->isFuture()) $status = 'Scheduled';
+            if ($c->ends_at && $c->ends_at->isPast()) $status = 'Expired';
+
+            $badgeCls = [
+              'Active'    => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200',
+              'Scheduled' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200',
+              'Expired'   => 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200',
+              'Disabled'  => 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200',
+            ][$status];
+
+            // progress usage (0..1)
+            $used  = (int)($c->usage_count ?? 0);
+            $limit = $c->max_uses; // può essere null
+            $pct   = $limit ? min(100, round($used * 100 / max(1,$limit))) : null;
+          @endphp
+
+          <tr class="hover:bg-gray-50/60 dark:hover:bg-gray-800/40">
+            <td class="px-3 py-2 font-mono text-[13px]">{{ $c->code }}</td>
+            <td class="px-3 py-2">
+              <span class="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                {{ strtoupper($c->type) }}
+              </span>
+            </td>
+            <td class="px-3 py-2 font-medium">{{ $valueLabel }}</td>
+            <td class="px-3 py-2">
+              <div class="flex items-center gap-2">
+                <span>{{ $used }}</span>
+                @if(!is_null($limit))
+                  <span class="opacity-60">/ {{ (int)$limit }}</span>
+                  <div class="ml-2 h-1.5 w-24 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
+                    <div class="h-full" style="width: {{ $pct }}%; background: color-mix(in oklab, var(--accent) 85%, #000 0%);"></div>
+                  </div>
+                @endif
+              </div>
+            </td>
+            <td class="px-3 py-2">
+              @if($c->starts_at)
+                <span title="{{ $c->starts_at }}">{{ $c->starts_at->toDateString() }}</span>
+              @else
+                —
+              @endif
+              <span class="opacity-50">→</span>
+              @if($c->ends_at)
+                <span title="{{ $c->ends_at }}">{{ $c->ends_at->toDateString() }}</span>
+              @else
+                —
+              @endif
+            </td>
+            <td class="px-3 py-2">
+              <span class="rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $badgeCls }}">{{ $status }}</span>
+            </td>
+            <td class="px-3 py-2 text-right">
+              @if(Route::has('admin.coupons.edit'))
+                <a href="{{ route('admin.coupons.edit', $c->id) }}"
+                   class="rounded-lg border px-2 py-1 text-xs hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
+                  Edit
+                </a>
+              @endif
+            </td>
+          </tr>
+        @empty
+          <tr>
+            <td colspan="7" class="px-3 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+              No coupons found.
+            </td>
+          </tr>
+        @endforelse
+      </tbody>
+    </table>
+  </div>
+</div>
   </section>
 
   {{-- ==== helpers Recent purchases ==== --}}
