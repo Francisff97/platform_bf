@@ -4,24 +4,26 @@
     $isAdmin = $isAdmin ?? false;
     $action  = $isAdmin ? route('register.admin.store') : route('register');
     $title   = $isAdmin ? 'Create Admin' : 'Create your account';
+    $subtitle= $isAdmin ? 'Set up the first administrator account.' : 'Start selling or booking in minutes.';
   @endphp
 
   <div class="mx-auto max-w-[560px] px-4">
     {{-- Card glass --}}
-    <div class="relative rounded-2xl border px-6 py-6 shadow-xl backdrop-blur-xl
-                border-black/10 bg-white/60
-                dark:border-white/10 dark:bg-white/5">
+    <div
+      x-data="{ show:false, show2:false, submitting:false }"
+      class="relative rounded-2xl border px-6 py-6 shadow-xl backdrop-blur-xl
+             border-black/10 bg-white/60
+             dark:border-white/10 dark:bg-white/5"
+    >
       {{-- soft glow --}}
       <div class="pointer-events-none absolute -inset-1 rounded-2xl opacity-30 blur-2xl"
            style="background: radial-gradient(120px 80px at 18% -10%, var(--accent), transparent 60%);"></div>
 
       {{-- Header --}}
-      <div class="mb-5 flex items-start justify-between gap-3">
+      <div class="mb-6 flex items-start justify-between gap-3">
         <div>
           <h1 class="text-2xl font-semibold tracking-tight">{{ $title }}</h1>
-          <p class="mt-1 text-sm opacity-80">
-            {{ $isAdmin ? 'Set up the first administrator account.' : 'Start selling or booking in minutes.' }}
-          </p>
+          <p class="mt-1 text-sm opacity-80">{{ $subtitle }}</p>
         </div>
         @if($isAdmin)
           <span class="rounded-full bg-[var(--accent)] px-2 py-1 text-[11px] font-semibold text-white">
@@ -39,7 +41,8 @@
       @endif
 
       {{-- Form --}}
-      <form method="POST" action="{{ $action }}" x-data="{show:false, show2:false}">
+      <form method="POST" action="{{ $action }}"
+            @submit.prevent="submitting=true; $el.submit()">
         @csrf
 
         <div class="grid gap-4">
@@ -48,7 +51,7 @@
             <label for="name" class="block text-sm opacity-90">Full name</label>
             <input id="name" name="name" type="text" value="{{ old('name') }}" required autofocus autocomplete="name"
                    class="mt-1 w-full rounded-xl border px-3 py-2 ring-1 ring-black/10
-                          focus:outline-none focus:ring-2 focus:ring-[var(--accent)]
+                          focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/70
                           dark:bg-gray-900 dark:text-white dark:ring-white/10">
             @error('name')
               <div class="mt-1 text-xs text-red-600 dark:text-red-300">{{ $message }}</div>
@@ -60,7 +63,7 @@
             <label for="email" class="block text-sm opacity-90">Email</label>
             <input id="email" name="email" type="email" value="{{ old('email') }}" required autocomplete="username"
                    class="mt-1 w-full rounded-xl border px-3 py-2 ring-1 ring-black/10
-                          focus:outline-none focus:ring-2 focus:ring-[var(--accent)]
+                          focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/70
                           dark:bg-gray-900 dark:text-white dark:ring-white/10">
             @error('email')
               <div class="mt-1 text-xs text-red-600 dark:text-red-300">{{ $message }}</div>
@@ -73,7 +76,7 @@
             <div class="mt-1 flex items-stretch gap-2">
               <input :type="show ? 'text' : 'password'" id="password" name="password" required autocomplete="new-password"
                      class="w-full rounded-xl border px-3 py-2 ring-1 ring-black/10
-                            focus:outline-none focus:ring-2 focus:ring-[var(--accent)]
+                            focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/70
                             dark:bg-gray-900 dark:text-white dark:ring-white/10">
               <button type="button" @click="show=!show"
                       class="rounded-xl border px-3 text-sm ring-1 ring-black/10 hover:bg-black/5
@@ -92,7 +95,7 @@
             <div class="mt-1 flex items-stretch gap-2">
               <input :type="show2 ? 'text' : 'password'" id="password_confirmation" name="password_confirmation" required autocomplete="new-password"
                      class="w-full rounded-xl border px-3 py-2 ring-1 ring-black/10
-                            focus:outline-none focus:ring-2 focus:ring-[var(--accent)]
+                            focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/70
                             dark:bg-gray-900 dark:text-white dark:ring-white/10">
               <button type="button" @click="show2=!show2"
                       class="rounded-xl border px-3 text-sm ring-1 ring-black/10 hover:bg-black/5
@@ -112,8 +115,19 @@
               Already registered?
             </a>
 
-            <button class="rounded-xl bg-[var(--accent)] px-4 py-2.5 text-white shadow-sm ring-1 ring-white/10 hover:opacity-95">
-              {{ $isAdmin ? 'Create Admin' : 'Register' }}
+            {{-- Primary CTA: accent background, full width on mobile --}}
+            <button
+              type="submit"
+              :disabled="submitting"
+              class="inline-flex w-full justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-white shadow-sm
+                     ring-1 ring-white/10 transition hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60
+                     disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+            >
+              <svg x-show="submitting" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-30" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="4"/>
+              </svg>
+              <span x-text="submitting ? 'Registering…' : '{{ $isAdmin ? 'Create Admin' : 'Register' }}'"></span>
             </button>
           </div>
         </div>
