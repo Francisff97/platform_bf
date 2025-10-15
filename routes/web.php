@@ -118,7 +118,7 @@ Route::middleware('auth')->group(function () {
 | Area ADMIN (auth + admin)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', AdminOnly::class])
+Route::middleware(['auth', 'demo.readonly', AdminOnly::class])
     ->prefix('admin')->name('admin.')
     ->group(function () {
         // routes/web.php (admin group, auth middleware)
