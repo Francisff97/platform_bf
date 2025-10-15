@@ -6,7 +6,7 @@
                 Demo Mode active
             </h1>
             <p class="text-gray-600 dark:text-gray-400 mb-6">
-                {{ $message ?? 'You can't edit or update data into Demo mode' }}
+                {{ $message ?? "You can't edit or update data into Demo mode" }}
             </p>
             <a href="{{ url()->previous() }}"
                class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded transition">
