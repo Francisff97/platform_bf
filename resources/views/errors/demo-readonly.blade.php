@@ -9,12 +9,12 @@
                 {{ $message ?? "You can't edit or update data into Demo mode" }}
             </p>
             <a href="{{ url()->previous() }}"
-               class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded transition">
+               class="md:text-[1rem] inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded transition text-[0.875rem]">
                 Go Back
             </a>
             <a href="{{ route('admin.dashboard') }}"
-               class="ml-2 inline-block bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium px-4 py-2 rounded transition">
-Go to the Dashboard
+               class="md:text-[1rem] text-[0.875rem] ml-2 inline-block bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium px-4 py-2 rounded transition">
+Go to Dashboard
             </a>
         </div>
     </div>
