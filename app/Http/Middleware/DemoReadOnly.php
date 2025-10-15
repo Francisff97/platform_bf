@@ -22,7 +22,7 @@ class DemoReadOnly
             // Mostra una Blade invece di JSON
             return response()
                 ->view('errors.demo-readonly', [
-                    'message' => 'Questa azione è disabilitata nella modalità demo.',
+                    'message' => 'This action is not allowed into Demo Mode.',
                     'path' => $request->path(),
                 ], Response::HTTP_FORBIDDEN);
         }
