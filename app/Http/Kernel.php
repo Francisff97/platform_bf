@@ -51,7 +51,7 @@ class Kernel extends HttpKernel
         // Spatie (se servono, NON usati ora)
         'role'        => \Spatie\Permission\Middlewares\RoleMiddleware::class,
         'permission'  => \Spatie\Permission\Middlewares\PermissionMiddleware::class,
-        'demoreadonly' => \App\Http\Middleware\DemoReadOnly::class,
+        'demo.readonly' => \App\Http\Middleware\DemoReadOnly::class,
 
         'adminonly' => \App\Http\Middleware\AdminOnly::class,
         'feature' => \App\Http\Middleware\FeatureGate::class,
