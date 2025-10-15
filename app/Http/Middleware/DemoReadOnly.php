@@ -12,16 +12,19 @@ class DemoReadOnly
     {
         $user = $request->user();
 
-        // se non loggato o non demo -> non fare nulla
+        // Se non loggato o non demo -> continua normalmente
         if (!$user || empty($user->is_demo)) {
             return $next($request);
         }
 
-        // consenti solo GET/HEAD per gli utenti demo
+        // Consenti solo GET/HEAD per gli utenti demo
         if (!in_array($request->method(), ['GET', 'HEAD'], true)) {
-            return response()->json([
-                'message' => 'Demo account: azione non consentita.',
-            ], Response::HTTP_FORBIDDEN);
+            // Mostra una Blade invece di JSON
+            return response()
+                ->view('errors.demo-readonly', [
+                    'message' => 'Questa azione è disabilitata nella modalità demo.',
+                    'path' => $request->path(),
+                ], Response::HTTP_FORBIDDEN);
         }
 
         return $next($request);
