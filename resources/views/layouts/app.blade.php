@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
+  window.dataLayer = window.dataLayer || [];
+function trackEvent(eventName, data = {}) {
+  window.dataLayer.push({
+    event: eventName,
+    ...data,
+  });
+}
   <!-- ===============================
        🌐 BASE META
   =============================== -->
