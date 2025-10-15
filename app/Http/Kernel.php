@@ -37,7 +37,7 @@ class Kernel extends HttpKernel
     ];
 
     protected $routeMiddleware = [
-       /* 'auth'             => \App\Http\Middleware\Authenticate::class,
+        'auth'             => \App\Http\Middleware\Authenticate::class,
         'auth.basic'       => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
         'auth.session'     => \Illuminate\Session\Middleware\AuthenticateSession::class,
         'cache.headers'    => \Illuminate\Http\Middleware\SetCacheHeaders::class,
@@ -55,30 +55,8 @@ class Kernel extends HttpKernel
 
         'adminonly' => \App\Http\Middleware\AdminOnly::class,
         'feature' => \App\Http\Middleware\FeatureGate::class,
-    'verify.platform' => \App\Http\Middleware\VerifyPlatformSignature::class, */
+    'verify.platform' => \App\Http\Middleware\VerifyPlatformSignature::class,
     ];
      // ✅ usa questo nome su Laravel 10+ (12 compreso)
-    protected $middlewareAliases = [
-        'auth'              => \App\Http\Middleware\Authenticate::class,
-        'auth.basic'        => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
-        'auth.session'      => \Illuminate\Session\Middleware\AuthenticateSession::class,
-        'cache.headers'     => \Illuminate\Http\Middleware\SetCacheHeaders::class,
-        'can'               => \Illuminate\Auth\Middleware\Authorize::class,
-        'guest'             => \App\Http\Middleware\RedirectIfAuthenticated::class,
-        'password.confirm'  => \Illuminate\Auth\Middleware\RequirePassword::class,
-        'signed'            => \Illuminate\Routing\Middleware\ValidateSignature::class,
-        'throttle'          => \Illuminate\Routing\Middleware\ThrottleRequests::class,
-        'verified'          => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
-
-        // tuoi alias
-        'role'              => \Spatie\Permission\Middlewares\RoleMiddleware::class,
-        'permission'        => \Spatie\Permission\Middlewares\PermissionMiddleware::class,
-
-        // 👇 il nostro
-        'demo.readonly'     => \App\Http\Middleware\DemoReadOnly::class,
-
-        'adminonly'         => \App\Http\Middleware\AdminOnly::class,
-        'feature'           => \App\Http\Middleware\FeatureGate::class,
-        'verify.platform'   => \App\Http\Middleware\VerifyPlatformSignature::class,
-    ];
+    
 }
