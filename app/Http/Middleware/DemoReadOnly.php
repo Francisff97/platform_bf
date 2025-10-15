@@ -8,19 +8,19 @@ use Symfony\Component\HttpFoundation\Response;
 
 class DemoReadOnly
 {
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next)
     {
         $user = $request->user();
 
-        // Se non loggato o non demo -> passa
-        if (!$user || !$user->is_demo) {
+        // se non loggato o non demo -> non fare nulla
+        if (!$user || empty($user->is_demo)) {
             return $next($request);
         }
 
-        // Consenti solo lettura
-        if (!in_array($request->method(), ['GET', 'HEAD'])) {
+        // consenti solo GET/HEAD per gli utenti demo
+        if (!in_array($request->method(), ['GET', 'HEAD'], true)) {
             return response()->json([
-                'message' => 'Demo account: action not allowed',
+                'message' => 'Demo account: azione non consentita.',
             ], Response::HTTP_FORBIDDEN);
         }
 
