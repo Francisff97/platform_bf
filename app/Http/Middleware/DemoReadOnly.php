@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Middleware;
 
 use Closure;
@@ -7,26 +8,19 @@ use Symfony\Component\HttpFoundation\Response;
 
 class DemoReadOnly
 {
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
 
-        // se non c'è user o non è demo, passa
-        if (!$user || !($user->is_demo || $user->role === 'admin_view')) {
+        // Se non loggato o non demo -> passa
+        if (!$user || !$user->is_demo) {
             return $next($request);
         }
 
-        // solo permit GET e HEAD
-        if (!in_array($request->method(), ['GET','HEAD'])) {
-            // opzionale: log dell'azione
-            \Log::info('Blocked demo write attempt', [
-                'user_id' => $user->id,
-                'method' => $request->method(),
-                'path' => $request->path(),
-                'payload' => $request->except(['password','_token']),
-            ]);
+        // Consenti solo lettura
+        if (!in_array($request->method(), ['GET', 'HEAD'])) {
             return response()->json([
-                'message' => 'Demo account: modifica non permessa.'
+                'message' => 'Demo account: action not allowed',
             ], Response::HTTP_FORBIDDEN);
         }
 
