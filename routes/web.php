@@ -1,23 +1,45 @@
 <?php
+// SEO //
+use App\Http\Controllers\Admin\SeoPageController;
+use App\Http\Controllers\Admin\SeoMediaController;
+
+use App\Http\Controllers\Admin\CouponController;
+use App\Http\Controllers\CheckoutCouponController;
+
+use App\Http\Controllers\RobotsController;
+
+use App\Http\Controllers\Admin\AdminUserController;
+
+//Privacy //
+use App\Http\Controllers\PrivacyPublicController;
+use App\Http\Controllers\Admin\PrivacyController;
+
+// DISCORD PUBLIC //
+use App\Http\Controllers\DiscordPublicController;
+use App\Http\Middleware\FeatureGate;
+use App\Http\Controllers\Admin\EmailTemplateController;
+use App\Support\FeatureFlags;
+// routes/web.php (o routes/admin.php se lo usi)
+use App\Http\Controllers\Admin\DiscordAddonsController;
+
+// Partner Controller //
+use App\Http\Controllers\Admin\PartnerController;
+
+// BOT
+use App\Http\Controllers\DiscordController;
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Middleware\AdminOnly;
+use App\Http\Middleware\DemoReadOnly;
 use Illuminate\Http\Request;
-
-// Facades usate nei closure
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Cache;
+use App\Services\FlagsClient;
 
 // Public controllers
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\PublicPackController;
 use App\Http\Controllers\AboutController;
-use App\Http\Controllers\DiscordPublicController;
-use App\Http\Controllers\DiscordFeedController;
-use App\Http\Controllers\CheckoutController;
-use App\Http\Controllers\CartController;
-use App\Http\Controllers\Auth\RegisteredUserController;
 
 // Admin controllers
 use App\Http\Controllers\Admin\DashboardController;
@@ -30,27 +52,15 @@ use App\Http\Controllers\Admin\SlideController as AdminSlideController;
 use App\Http\Controllers\Admin\AppearanceController as AdminAppearanceController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\AboutSectionController as AboutSectionController;
-use App\Http\Controllers\Admin\PartnerController;
-use App\Http\Controllers\Admin\AdminUserController;
-use App\Http\Controllers\Admin\CouponController;
-use App\Http\Controllers\Admin\SeoPageController;
-use App\Http\Controllers\Admin\SeoMediaController;
-use App\Http\Controllers\Admin\AnalyticsController;
-use App\Http\Controllers\Admin\EmailTemplateController;
-use App\Http\Controllers\Admin\DiscordAddonController;
-use App\Http\Controllers\Admin\PrivacyController;
 
-// Varie
-use App\Http\Controllers\PrivacyPublicController;
-use App\Http\Controllers\RobotsController;
-use App\Http\Middleware\AdminOnly;
-use App\Http\Middleware\DemoReadOnly;
-use App\Http\Middleware\FeatureGate;
+// User / account
 use App\Http\Controllers\ProfileController;
-use App\Support\FeatureFlags;
-use App\Services\FlagsClient;
 
-// Models usati nei closure
+// Cart / Checkout
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
+
+// Models for public listing closures
 use App\Models\Builder;
 use App\Models\Coach;
 
@@ -434,7 +444,6 @@ Route::get('/cookie-policy',  [PrivacyPublicController::class, 'cookies'])->name
 // Sitemap & Robots //
 Route::get('/robots.txt', [\App\Http\Controllers\RobotsController::class, 'index']);
 Route::get('/sitemap.xml', [\App\Http\Controllers\SitemapController::class, 'index']);
-
 
 Route::middleware(['auth', AdminOnly::class]) // oppure il tuo middleware d'admin
     ->prefix('admin/users')
