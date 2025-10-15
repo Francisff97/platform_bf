@@ -1,5 +1,10 @@
 @props(['title' => 'Admin'])
 
+@if(auth()->check() && auth()->user()->is_demo)
+<div class="w-full bg-yellow-400 text-black text-center py-2 font-semibold">
+    ⚠️ Modalità Demo: le modifiche non sono consentite.
+</div>
+@endif
 <!DOCTYPE html>
 <html lang="it">
 <head>
