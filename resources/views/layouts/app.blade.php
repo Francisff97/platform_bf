@@ -1,3 +1,7 @@
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+<script>
   window.dataLayer = window.dataLayer || [];
 function trackEvent(eventName, data = {}) {
   window.dataLayer.push({
@@ -5,10 +9,7 @@ function trackEvent(eventName, data = {}) {
     ...data,
   });
 }
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-
+</script>
   <!-- ===============================
        🌐 BASE META
   =============================== -->
