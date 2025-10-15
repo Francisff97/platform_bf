@@ -71,8 +71,8 @@
 </head>
 <body class="min-h-screen bg-[var(--bg-light)] dark:bg-[var(--bg-dark)] text-gray-900 dark:text-gray-100">
 @if(auth()->check() && auth()->user()->is_demo)
-<div class="w-full bg-yellow-400 text-black text-center py-2 font-semibold">
-    ⚠️ Modalità Demo: le modifiche non sono consentite.
+<div class="w-full bg-orange-400 text-black text-center py-2 font-semibold">
+    ⚠️ Demo Mode: Edits and creations not allowed.
 </div>
 @endif
 
