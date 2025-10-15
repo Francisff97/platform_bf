@@ -1,4 +1,4 @@
-
+<?php
 public function up()
 {
     Schema::table('users', function (Blueprint $table) {
