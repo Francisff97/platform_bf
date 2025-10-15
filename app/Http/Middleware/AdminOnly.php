@@ -11,21 +11,18 @@ class AdminOnly
     {
         $user = $request->user();
 
-        // Se non loggato → vai al login
+        // 1) se non loggato -> login
         if (!$user) {
             return redirect()->route('login');
         }
 
-        // Se è un account demo → sempre verso la dashboard admin
-        if ($user->is_demo) {
-            // Evita loop infiniti se già su dashboard
-            if (!$request->routeIs('admin.dashboard')) {
-                return redirect()->route('admin.dashboard');
-            }
+        // 2) se è un account DEMO -> lascia passare SEMPRE
+        //    (la sola-lettura la fa 'demo.readonly')
+        if (!empty($user->is_demo)) {
             return $next($request);
         }
 
-        // Normalizza e controlla il ruolo
+        // 3) per gli altri richiedi ruolo admin
         $role = strtolower((string) $user->role);
         if ($role !== 'admin') {
             return redirect()->route('home')->with('error', 'Accesso riservato agli amministratori.');
