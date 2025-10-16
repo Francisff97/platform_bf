@@ -11,32 +11,35 @@
   <section class="mx-auto mt-12 max-w-6xl px-4">
     <div class="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
       @foreach($builders as $b)
+        @php
+          use App\Support\Img;
+          $p   = $b->image_path ?? null;
+          $src = $p ? img_url($p, 720, 300, 82, 'cover') : null;
+          $org = $p ? Img::origin($p) : null;
+          $alt = img_alt($b) ?: ($b->name ?? 'Builder');
+        @endphp
+
         <a href="{{ route('builders.show',$b->slug) }}"
            class="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white/90 shadow-sm transition
                   hover:-translate-y-1 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900/70">
 
-          {{-- Cover image (URL diretto da Storage) --}}
-          @php
-            $img = $b->image_path
-              ? \Illuminate\Support\Facades\Storage::disk('public')->url($b->image_path)
-              : null;
-          @endphp
-
-          @if($img)
-            <div class="relative h-44 w-full overflow-hidden">
-              <img
-                src="{{ $img }}"
-                alt="{{ $b->name ?: 'Builder' }}"
-                class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+          {{-- Cover --}}
+          <div class="relative h-44 w-full overflow-hidden">
+            @if($org)
+              <x-img
+                :src="$src"
+                :origin="$org"
+                :alt="$alt"
                 width="720" height="300"
-                loading="lazy" decoding="async"
-              >
+                class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                loading="lazy"
+              />
               <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-0
                           transition-opacity duration-500 group-hover:opacity-80"></div>
-            </div>
-          @else
-            <div class="h-44 w-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700"></div>
-          @endif
+            @else
+              <div class="h-full w-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700"></div>
+            @endif
+          </div>
 
           {{-- Texts --}}
           <div class="relative z-10 p-5">
@@ -46,7 +49,7 @@
               </h3>
               @if($b->team)
                 <span class="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-medium text-gray-700 ring-1 ring-gray-200
-                               dark:bg-gray-800 dark:text-gray-200 dark:ring-gray-700">
+                             dark:bg-gray-800 dark:text-gray-200 dark:ring-gray-700">
                   {{ $b->team }}
                 </span>
               @endif
