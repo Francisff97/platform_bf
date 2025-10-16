@@ -72,6 +72,51 @@
           <p class="text-gray-600 dark:text-gray-300">Coach profile.</p>
         @endif
       </div>
+      
+          {{-- DESCRIZIONE + BUY --}}
+    <section class="md:col-span-2">
+      <div class="rounded-2xl border border-gray-100 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/60">
+        @if(!empty($coach->description))
+          <div class="prose max-w-none prose-p:leading-relaxed prose-headings:scroll-mt-24 dark:prose-invert">{!! nl2br(e($coach->description)) !!}</div>
+        @else
+          <p class="text-gray-600 dark:text-gray-300">Coach profile.</p>
+        @endif
+      </div>
+
+      <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-5">
+        <div class="lg:col-span-3"></div>
+        <div class="lg:col-span-2">
+          <div class="lg:sticky lg:top-24">
+            <div class="rounded-2xl border border-[color:var(--accent)]/30 bg-white/80 p-5 shadow-sm backdrop-blur dark:border-[color:var(--accent)]/30 dark:bg-gray-900/60">
+              @auth
+                @if($coach->prices->count())
+                  <form method="POST" action="{{ route('cart.add.coach', $coach) }}" class="space-y-3">
+                    @csrf
+                    <div>
+                      <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">Select duration</label>
+                      <select name="price_id" class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:ring-2 focus:ring-[var(--accent)]/30 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100">
+                        @foreach($coach->prices as $price)
+                          <option value="{{ $price->id }}">{{ $price->duration }} — @money($price->price_cents, $price->currency)</option>
+                        @endforeach
+                      </select>
+                    </div>
+                    <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-white shadow transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
+                      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3h2l.4 2M7 13h10l3-6H6.4M7 13l-2 7h14M10 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm8 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/></svg>
+                      Add to cart
+                    </button>
+                  </form>
+                @else
+                  <div class="text-sm text-gray-600 dark:text-gray-300">No Prices available for this coach.</div>
+                @endif
+              @else
+                <a href="{{ route('login') }}" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800">
+                  Login to buy coaching
+                </a>
+              @endauth
+            </div>
+          </div>
+        </div>
+      </div>
 
         {{-- ====== VIDEO / TUTORIALS (Coach) — identico ai packs ====== --}}
 @php
