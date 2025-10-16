@@ -11,84 +11,87 @@
     #homeHero .swiper-pagination-bullet-active{ background:#fff; }
     .card-ghost{ box-shadow: 0 8px 24px rgba(0,0,0,.08); }
     .ring-soft{ box-shadow: 0 1px 0 rgba(0,0,0,.04), inset 0 0 0 1px rgba(0,0,0,.06); }
-      @media screen and (max-width: 767px){
-        #homeHero .slide-figure{ height:400px; min-height:480px; }
-      }
+    @media screen and (max-width: 767px){
+      #homeHero .slide-figure{ height:400px; min-height:480px; }
+    }
   </style>
-    <style>
-  /* —— CARD FX —— */
-  .neo-card{
-    position: relative; overflow: hidden; border-radius: 22px;
-    background: linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.75));
-    box-shadow: 0 12px 40px rgba(0,0,0,.10);
-  }
-  .dark .neo-card{
-    background: linear-gradient(180deg, rgba(17,24,39,.75), rgba(17,24,39,.65));
-    box-shadow: 0 12px 40px rgba(0,0,0,.35);
-  }
-  .neo-ring{
-    position: relative;
-  }
-  .neo-ring::before{
-    content:""; position:absolute; inset:-1px; border-radius: 24px;
-    padding:1px;
-    background:
-      radial-gradient(1200px 1200px at var(--mx,50%) var(--my,50%),
-        color-mix(in oklab, var(--accent), white 20%) 0,
-        transparent 45%),
-      linear-gradient(90deg,
-        color-mix(in oklab, var(--accent), white 25%),
-        color-mix(in oklab, var(--accent), black 25%));
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor; mask-composite: exclude;
-    pointer-events:none;
-  }
-  .neo-tilt{ transform-style: preserve-3d; will-change: transform }
-  .neo-tilt:hover{ transition: transform .08s ease-out }
+  <style>
+    /* —— CARD FX —— */
+    .neo-card{
+      position: relative; overflow: hidden; border-radius: 22px;
+      background: linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.75));
+      box-shadow: 0 12px 40px rgba(0,0,0,.10);
+    }
+    .dark .neo-card{
+      background: linear-gradient(180deg, rgba(17,24,39,.75), rgba(17,24,39,.65));
+      box-shadow: 0 12px 40px rgba(0,0,0,.35);
+    }
+    .neo-ring{ position: relative }
+    .neo-ring::before{
+      content:""; position:absolute; inset:-1px; border-radius: 24px; padding:1px;
+      background:
+        radial-gradient(1200px 1200px at var(--mx,50%) var(--my,50%),
+          color-mix(in oklab, var(--accent), white 20%) 0,
+          transparent 45%),
+        linear-gradient(90deg,
+          color-mix(in oklab, var(--accent), white 25%),
+          color-mix(in oklab, var(--accent), black 25%));
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+              mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      pointer-events:none;
+    }
+    .neo-tilt{ transform-style: preserve-3d; will-change: transform }
+    .neo-tilt:hover{ transition: transform .08s ease-out }
 
-  /* —— AVATAR HALO —— */
-  .avatar-wrap{ position: relative }
-  .avatar-wrap::after{
-    content:""; position:absolute; inset:-8px; border-radius: 9999px; z-index:0;
-    background: radial-gradient(120px 120px at 50% 40%, var(--accent) 0, transparent 70%);
-    opacity:.25; filter: blur(12px);
-  }
+    /* —— AVATAR HALO —— */
+    .avatar-wrap{ position: relative }
+    .avatar-wrap::after{
+      content:""; position:absolute; inset:-8px; border-radius: 9999px; z-index:0;
+      background: radial-gradient(120px 120px at 50% 40%, var(--accent) 0, transparent 70%);
+      opacity:.25; filter: blur(12px);
+    }
 
-  /* —— CHIPS SCROLLER —— */
-  .chips{
-    display:flex; gap:.5rem; overflow:auto; scrollbar-width: none; -ms-overflow-style: none;
-  }
-  .chips::-webkit-scrollbar{ display:none }
-  .chip{
-    white-space:nowrap; font-size:11px; padding:.35rem .6rem; border-radius:9999px;
-    background: color-mix(in oklab, var(--accent), white 85%);
-    color: color-mix(in oklab, var(--accent), black 10%);
-    border: 1px solid color-mix(in oklab, var(--accent), black 20%);
-  }
-  .dark .chip{
-    background: color-mix(in oklab, var(--accent), black 85%);
-    color: color-mix(in oklab, var(--accent), white 15%);
-    border-color: color-mix(in oklab, var(--accent), black 40%);
-  }
-</style>
-@php
-  // Prendi il path della prima slide (adatta alla tua struttura)
-  /** @var \App\Models\Slide[]|\Illuminate\Support\Collection $slides */
-  $firstSlidePath = isset($slides[0]) ? ($slides[0]->image_path ?? null) : null;
+    /* —— CHIPS SCROLLER —— */
+    .chips{ display:flex; gap:.5rem; overflow:auto; scrollbar-width: none; -ms-overflow-style: none; }
+    .chips::-webkit-scrollbar{ display:none }
+    .chip{
+      white-space:nowrap; font-size:11px; padding:.35rem .6rem; border-radius:9999px;
+      background: color-mix(in oklab, var(--accent), white 85%);
+      color: color-mix(in oklab, var(--accent), black 10%);
+      border: 1px solid color-mix(in oklab, var(--accent), black 20%);
+    }
+    .dark .chip{
+      background: color-mix(in oklab, var(--accent), black 85%);
+      color: color-mix(in oklab, var(--accent), white 15%);
+      border-color: color-mix(in oklab, var(--accent), black 40%);
+    }
+  </style>
 
-  // URL pubblico (continua a usare Storage::url: Nginx rewriter servirà WebP se esiste)
-  $firstSlideUrl = $firstSlidePath ? \Illuminate\Support\Facades\Storage::url($firstSlidePath) : null;
-@endphp
+  @php
+    /** @var \App\Models\Slide[]|\Illuminate\Support\Collection $slides */
+    $firstSlidePath = isset($slides[0]) ? ($slides[0]->image_path ?? null) : null;
+    $firstSlideUrl  = $firstSlidePath ? \Illuminate\Support\Facades\Storage::url($firstSlidePath) : null;
 
-@if($firstSlideUrl)
-  {{-- Preload immagine LCP (il browser può usare anche imagesrcset/sizes se li passi) --}}
-  <link rel="preload" as="image"
-        href="{{ $firstSlideUrl }}"
-        imagesrcset="{{ $firstSlideUrl }} 1920w, {{ $firstSlideUrl }} 1280w, {{ $firstSlideUrl }} 768w"
-        imagesizes="(min-width:1024px) 1200px, 100vw"
-        fetchpriority="high">
-@endif
+    // helper inline per costruire lo srcset CF con width fisse
+    $cfSrcset = function (?string $publicUrl): ?string {
+      if (!$publicUrl) return null;
+      $path = ltrim(parse_url($publicUrl, PHP_URL_PATH) ?: '', '/'); // es. storage/...
+      if ($path === '') return null;
+      $w = [480, 768, 1024, 1440, 1920];
+      return collect($w)->map(fn($x)=>"/cdn-cgi/image/width={$x},quality=82,format=auto,fit=cover/{$path} {$x}w")->implode(', ');
+    };
+  @endphp
+
+  @if($firstSlideUrl)
+    {{-- Preload LCP con le stesse varianti CF (width fisse) --}}
+    <link rel="preload" as="image"
+          href="{{ $firstSlideUrl }}"
+          imagesrcset="{{ $cfSrcset($firstSlideUrl) }}"
+          imagesizes="(min-width:1024px) 1920px, 100vw"
+          fetchpriority="high">
+  @endif
+
   <section class="full-bleed">
     <div id="homeHero" class="swiper w-full">
       <div class="swiper-wrapper">
@@ -96,33 +99,30 @@
           <div class="swiper-slide">
             <figure style="aspect-ratio: 16 / 9;" class="slide-figure relative w-full">
               @php
-  $imgUrl = $s->image_path ? Storage::url($s->image_path) : null;
-@endphp
+                $imgUrl = $s->image_path ? Storage::url($s->image_path) : null;
+              @endphp
 
-@if($imgUrl)
-  @if($loop->first)
-    {{-- PRIMA SLIDE (LCP): eager + fetchpriority="high" + dimensioni per azzerare CLS --}}
-    <img
-      src="{{ $imgUrl }}"
-      alt="{{ $s->title }}"
-      width="1600" height="900"     {{-- metti le dimensioni reali se le conosci --}}
-      loading="eager"
-      fetchpriority="high"
-      decoding="async"
-      class="absolute inset-0 h-full w-full object-cover" />
-  @else
-    {{-- ALTRE SLIDE: lazy --}}
-    <img
-      src="{{ $imgUrl }}"
-      alt="{{ $s->title }}"
-      width="1600" height="900"
-      loading="lazy"
-      decoding="async"
-      class="absolute inset-0 h-full w-full object-cover" />
-  @endif
-@else
-  <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
-@endif
+              @if($imgUrl)
+                @if($loop->first)
+                  {{-- PRIMA SLIDE: LCP --}}
+                  <x-img
+                    :src="$imgUrl"
+                    :alt="$s->title"
+                    class="absolute inset-0 h-full w-full object-cover"
+                    width="1920" height="1080"
+                    loading="eager" />
+                @else
+                  {{-- ALTRE SLIDE --}}
+                  <x-img
+                    :src="$imgUrl"
+                    :alt="$s->title"
+                    class="absolute inset-0 h-full w-full object-cover"
+                    width="1920" height="1080"
+                    loading="lazy" />
+                @endif
+              @else
+                <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
+              @endif
 
               <div class="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/60"></div>
 
@@ -251,103 +251,103 @@
   </section>
 
   {{-- ====== BUILDERS ====== --}}
-<section class="mx-auto my-[90px] max-w-6xl px-4">
-  <div class="mb-6 flex items-end justify-between gap-3">
-    <div>
-      <h3 class="font-orbitron text-2xl sm:text-3xl">Our Builders</h3>
-      <p class="text-sm text-gray-500 dark:text-gray-400">Meet the makers shaping the meta.</p>
+  <section class="mx-auto my-[90px] max-w-6xl px-4">
+    <div class="mb-6 flex items-end justify-between gap-3">
+      <div>
+        <h3 class="font-orbitron text-2xl sm:text-3xl">Our Builders</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Meet the makers shaping the meta.</p>
+      </div>
     </div>
-  </div>
 
-  <div class="swiper" id="buildersSwiper">
-    <div class="swiper-wrapper">
-      @foreach($builders as $b)
-        <div class="swiper-slide">
-          <a href="{{ route('builders.show',$b->slug) }}"
-             class="group relative flex flex-col items-center justify-between overflow-hidden rounded-[22px] border border-transparent 
-                    bg-gradient-to-b from-white/90 to-white/70 p-5 shadow-sm backdrop-blur-md transition hover:-translate-y-1 hover:shadow-lg
-                    dark:from-gray-900/70 dark:to-gray-800/70">
-            
-            <div class="absolute inset-0 bg-gradient-to-br from-[color:var(--accent)]/10 to-transparent opacity-0 transition group-hover:opacity-100"></div>
+    <div class="swiper" id="buildersSwiper">
+      <div class="swiper-wrapper">
+        @foreach($builders as $b)
+          <div class="swiper-slide">
+            <a href="{{ route('builders.show',$b->slug) }}"
+               class="group relative flex flex-col items-center justify-between overflow-hidden rounded-[22px] border border-transparent 
+                      bg-gradient-to-b from-white/90 to-white/70 p-5 shadow-sm backdrop-blur-md transition hover:-translate-y-1 hover:shadow-lg
+                      dark:from-gray-900/70 dark:to-gray-800/70">
+              
+              <div class="absolute inset-0 bg-gradient-to-br from-[color:var(--accent)]/10 to-transparent opacity-0 transition group-hover:opacity-100"></div>
 
-            <div class="relative mb-4 h-20 w-20 overflow-hidden rounded-full ring-4 ring-white/60 dark:ring-gray-900/60">
-              @if($b->image_path)
-                <x-img :src="Storage::url($b->image_path)" class="h-full w-full object-cover" :alt="$b->name" />
-              @endif
-            </div>
-
-            <h4 class="text-base font-semibold text-gray-900 dark:text-white">{{ $b->name }}</h4>
-            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $b->team ?? '—' }}</p>
-
-            @if($b->skills)
-              <div class="mt-3 flex flex-wrap justify-center gap-2">
-                @foreach($b->skills as $s)
-                  <span class="rounded-full bg-[color:var(--accent)]/10 px-3 py-1 text-[11px] font-medium text-[color:var(--accent)]
-                                 ring-1 ring-[color:var(--accent)]/20 backdrop-blur-sm">
-                    {{ $s }}
-                  </span>
-                @endforeach
+              <div class="relative mb-4 h-20 w-20 overflow-hidden rounded-full ring-4 ring-white/60 dark:ring-gray-900/60">
+                @if($b->image_path)
+                  <x-img :src="Storage::url($b->image_path)" class="h-full w-full object-cover" :alt="$b->name" />
+                @endif
               </div>
-            @endif
-          </a>
-        </div>
-      @endforeach
-    </div>
-  </div>
-</section>
 
-{{-- ====== COACHES ====== --}}
-@if($coaches->isNotEmpty())
-<section class="mx-auto my-[90px] max-w-6xl px-4">
-  <div class="mb-6 flex items-end justify-between gap-3">
-    <div>
-      <h3 class="font-orbitron text-2xl sm:text-3xl">Our Coaches</h3>
-      <p class="text-sm text-gray-500 dark:text-gray-400">Learn faster with 1:1 guidance.</p>
-    </div>
-  </div>
+              <h4 class="text-base font-semibold text-gray-900 dark:text-white">{{ $b->name }}</h4>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ $b->team ?? '—' }}</p>
 
-  <div class="swiper" id="coachesSwiper">
-    <div class="swiper-wrapper">
-      @foreach($coaches as $c)
-        <div class="swiper-slide">
-          <a href="{{ route('coaches.show',$c->slug) }}"
-             class="group relative flex flex-col items-center justify-between overflow-hidden rounded-[22px] border border-transparent
-                    bg-gradient-to-b from-white/90 to-white/70 p-5 shadow-sm backdrop-blur-md transition hover:-translate-y-1 hover:shadow-lg
-                    dark:from-gray-900/70 dark:to-gray-800/70">
-            
-            <div class="absolute inset-0 bg-gradient-to-br from-[color:var(--accent)]/10 to-transparent opacity-0 transition group-hover:opacity-100"></div>
-
-            <div class="relative mb-4 h-20 w-20 overflow-hidden rounded-full ring-4 ring-white/60 dark:ring-gray-900/60">
-              @if($c->image_path)
-                <x-img :src="Storage::url($c->image_path)" class="h-full w-full object-cover" :alt="$c->name" />
+              @if($b->skills)
+                <div class="mt-3 flex flex-wrap justify-center gap-2">
+                  @foreach($b->skills as $s)
+                    <span class="rounded-full bg-[color:var(--accent)]/10 px-3 py-1 text-[11px] font-medium text-[color:var(--accent)]
+                                   ring-1 ring-[color:var(--accent)]/20 backdrop-blur-sm">
+                      {{ $s }}
+                    </span>
+                  @endforeach
+                </div>
               @endif
-            </div>
-
-            <h4 class="text-base font-semibold text-gray-900 dark:text-white">{{ $c->name }}</h4>
-            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $c->team ?? '—' }}</p>
-
-            @if($c->skills)
-              <div class="mt-3 flex flex-wrap justify-center gap-2">
-                @foreach($c->skills as $s)
-                  <span class="rounded-full bg-[color:var(--accent)]/10 px-3 py-1 text-[11px] font-medium text-[color:var(--accent)]
-                                 ring-1 ring-[color:var(--accent)]/20 backdrop-blur-sm">
-                    {{ $s }}
-                  </span>
-                @endforeach
-              </div>
-            @endif
-
-            <div class="mt-4 inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--accent)] transition group-hover:translate-x-1">
-              Book session
-              <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </div>
-          </a>
-        </div>
-      @endforeach
+            </a>
+          </div>
+        @endforeach
+      </div>
     </div>
-  </div>
-</section>
-@endif
+  </section>
+
+  {{-- ====== COACHES ====== --}}
+  @if($coaches->isNotEmpty())
+    <section class="mx-auto my-[90px] max-w-6xl px-4">
+      <div class="mb-6 flex items-end justify-between gap-3">
+        <div>
+          <h3 class="font-orbitron text-2xl sm:text-3xl">Our Coaches</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Learn faster with 1:1 guidance.</p>
+        </div>
+      </div>
+
+      <div class="swiper" id="coachesSwiper">
+        <div class="swiper-wrapper">
+          @foreach($coaches as $c)
+            <div class="swiper-slide">
+              <a href="{{ route('coaches.show',$c->slug) }}"
+                 class="group relative flex flex-col items-center justify-between overflow-hidden rounded-[22px] border border-transparent
+                        bg-gradient-to-b from-white/90 to-white/70 p-5 shadow-sm backdrop-blur-md transition hover:-translate-y-1 hover:shadow-lg
+                        dark:from-gray-900/70 dark:to-gray-800/70">
+                
+                <div class="absolute inset-0 bg-gradient-to-br from-[color:var(--accent)]/10 to-transparent opacity-0 transition group-hover:opacity-100"></div>
+
+                <div class="relative mb-4 h-20 w-20 overflow-hidden rounded-full ring-4 ring-white/60 dark:ring-gray-900/60">
+                  @if($c->image_path)
+                    <x-img :src="Storage::url($c->image_path)" class="h-full w-full object-cover" :alt="$c->name" />
+                  @endif
+                </div>
+
+                <h4 class="text-base font-semibold text-gray-900 dark:text-white">{{ $c->name }}</h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $c->team ?? '—' }}</p>
+
+                @if($c->skills)
+                  <div class="mt-3 flex flex-wrap justify-center gap-2">
+                    @foreach($c->skills as $s)
+                      <span class="rounded-full bg-[color:var(--accent)]/10 px-3 py-1 text-[11px] font-medium text-[color:var(--accent)]
+                                     ring-1 ring-[color:var(--accent)]/20 backdrop-blur-sm">
+                        {{ $s }}
+                      </span>
+                    @endforeach
+                  </div>
+                @endif
+
+                <div class="mt-4 inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--accent)] transition group-hover:translate-x-1">
+                  Book session
+                  <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </div>
+              </a>
+            </div>
+          @endforeach
+        </div>
+      </div>
+    </section>
+  @endif
 
   {{-- ====== ABOUT FEATURE (opzionale) ====== --}}
   @php
@@ -357,57 +357,43 @@
     @include('partials.about-section', ['s' => $aboutFeature])
   @endif
 
-    <div class="my-[50px]"></div>
-                      
+  <div class="my-[50px]"></div>
+
   {{-- ====== PARTNER STRIP ====== --}}
   <x-partners-slider />
 
   {{-- ====== CTA ====== --}}
-<section class="full-bleed relative mt-[90px] w-full overflow-hidden py-14 text-white"
-         style="background: var(--accent)">
-  {{-- decor sottili (safe) --}}
-  <div class="pointer-events-none absolute inset-0 opacity-20">
-    <div class="absolute -top-24 -left-24 h-72 w-72 rounded-full blur-3xl"
-         style="background: rgba(255,255,255,.25)"></div>
-    <div class="absolute -bottom-24 -right-24 h-72 w-72 rounded-full blur-3xl"
-         style="background: rgba(0,0,0,.25)"></div>
-  </div>
-
-  <div class="relative mx-auto grid max-w-6xl items-center gap-8 px-4 md:grid-cols-2">
-    <div>
-      <h2 class="font-orbitron text-3xl sm:text-4xl">Let’s build something great</h2>
-      <p class="mt-3 text-white/90 text-sm sm:text-base">
-        Tell us your goal. We’ll turn it into a repeatable engine.
-      </p>
+  <section class="full-bleed relative mt-[90px] w-full overflow-hidden py-14 text-white" style="background: var(--accent)">
+    <div class="pointer-events-none absolute inset-0 opacity-20">
+      <div class="absolute -top-24 -left-24 h-72 w-72 rounded-full blur-3xl" style="background: rgba(255,255,255,.25)"></div>
+      <div class="absolute -bottom-24 -right-24 h-72 w-72 rounded-full blur-3xl" style="background: rgba(0,0,0,.25)"></div>
     </div>
 
-    <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
-      <a href="{{ route('contacts') }}"
-         class="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 text-black shadow-lg ring-1 ring-black/5 transition
-                hover:translate-y-[-1px] hover:shadow-xl active:translate-y-0">
-        Contact us
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M5 12h14M12 5l7 7-7 7"/>
-        </svg>
-      </a>
+    <div class="relative mx-auto grid max-w-6xl items-center gap-8 px-4 md:grid-cols-2">
+      <div>
+        <h2 class="font-orbitron text-3xl sm:text-4xl">Let’s build something great</h2>
+        <p class="mt-3 text-white/90 text-sm sm:text-base">Tell us your goal. We’ll turn it into a repeatable engine.</p>
+      </div>
 
-      @php
-        $s = \App\Models\SiteSetting::first();
-        $discord = $s?->discord_url ?? $s?->discord_link ?? '#';
-      @endphp
-      <a href="{{ $discord }}" target="_blank" rel="noopener"
-         class="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-white shadow-lg ring-1 ring-white/20 transition
-                hover:translate-y-[-1px] hover:shadow-xl active:translate-y-0"
-         style="background:#1f2937;">
-        {{-- icona discord minimal --}}
-        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M20 4.4a18 18 0 0 0-4.5-1.4l-.2.5a16 16 0 0 1 3.8 1.3c-3.4-1.6-7.1-1.6-10.5 0A16 16 0 0 1 12.9 3l-.2-.5C8.4 3 6 4 6 4s-5 7.3-5 13.1C3.7 19.7 6.2 20 6.2 20l1.1-1.6c-.6-.2-1.2-.5-1.8-.8l.4-.3c3.6 1.7 7.8 1.7 11.4 0l.4.3c-.6.3-1.2.6-1.8.8L17.8 20s2.5-.3 5.2-2.9C25 11.3 20 4.4 20 4.4Zm-9.5 9.2c-.9 0-1.6-.8-1.6-1.7 0-.9.7-1.6 1.6-1.6.9 0 1.7.7 1.7 1.6 0 .9-.8 1.7-1.7 1.7Zm6 0c-.9 0-1.6-.8-1.6-1.7 0-.9.7-1.6 1.6-1.6s1.7.7 1.7 1.6c0 .9-.8 1.7-1.7 1.7Z"/>
-        </svg>
-        Join our Discord
-      </a>
+      <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+        <a href="{{ route('contacts') }}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 text-black shadow-lg ring-1 ring-black/5 transition hover:translate-y-[-1px] hover:shadow-xl active:translate-y-0">
+          Contact us
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+
+        @php
+          $s = \App\Models\SiteSetting::first();
+          $discord = $s?->discord_url ?? $s?->discord_link ?? '#';
+        @endphp
+        <a href="{{ $discord }}" target="_blank" rel="noopener" class="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-white shadow-lg ring-1 ring-white/20 transition hover:translate-y-[-1px] hover:shadow-xl active:translate-y-0" style="background:#1f2937;">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M20 4.4a18 18 0 0 0-4.5-1.4l-.2.5a16 16 0 0 1 3.8 1.3c-3.4-1.6-7.1-1.6-10.5 0A16 16 0 0 1 12.9 3l-.2-.5C8.4 3 6 4 6 4s-5 7.3-5 13.1C3.7 19.7 6.2 20 6.2 20l1.1-1.6c-.6-.2-1.2-.5-1.8-.8l.4-.3c3.6 1.7 7.8 1.7 11.4 0l.4.3c-.6.3-1.2.6-1.8.8L17.8 20s2.5-.3 5.2-2.9C25 11.3 20 4.4 20 4.4Zm-9.5 9.2c-.9 0-1.6-.8-1.6-1.7 0-.9.7-1.6 1.6-1.6.9 0 1.7.7 1.7 1.6 0 .9-.8 1.7-1.7 1.7Zm6 0c-.9 0-1.6-.8-1.6-1.7 0-.9.7-1.6 1.6-1.6s1.7.7 1.7 1.6c0 .9-.8 1.7-1.7 1.7Z"/>
+          </svg>
+          Join our Discord
+        </a>
+      </div>
     </div>
-  </div>
-</section>
+  </section>
 
   {{-- ====== SWIPER INIT ====== --}}
   <script>
@@ -424,18 +410,16 @@
       const makeSwiper = (id, prevSel, nextSel, breakpoints) => {
         return new Swiper(id, {
           spaceBetween: 16,
-          slidesPerView: 1, // mobile: 1
+          slidesPerView: 1,
           breakpoints: breakpoints,
           navigation: prevSel && nextSel ? { prevEl: prevSel, nextEl: nextSel } : undefined,
           watchOverflow: true,
         });
       };
 
-      // Packs & Services: 1 / 2 / 3
       makeSwiper('#packsSwiper',    '#packsPrev',    '#packsNext',    { 640:{slidesPerView:2}, 1024:{slidesPerView:3} });
       makeSwiper('#servicesSwiper', '#servicesPrev', '#servicesNext', { 640:{slidesPerView:2}, 1024:{slidesPerView:3} });
 
-      // Builders & Coaches più compatti: 2 / 3 / 5
       new Swiper('#buildersSwiper', {
         spaceBetween: 16,
         slidesPerView: 1,
@@ -452,46 +436,44 @@
         watchOverflow: true,
       });
     });
-      function attachTilt(root){
-    root.querySelectorAll('.neo-tilt').forEach(card => {
-      const ringHost = card; // ha ::before con il gradient ring
-      const inner = card.querySelector('.neo-card');
-      let raf = 0;
 
-      function onMove(e){
-        const r = card.getBoundingClientRect();
-        const x = (e.clientX - r.left) / r.width;
-        const y = (e.clientY - r.top)  / r.height;
-        cancelAnimationFrame(raf);
-        raf = requestAnimationFrame(() => {
-          const rx = (y - .5) * -10;
-          const ry = (x - .5) *  10;
-          inner.style.transform = `perspective(800px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(0)`;
-          ringHost.style.setProperty('--mx', `${x*100}%`);
-          ringHost.style.setProperty('--my', `${y*100}%`);
-        });
-      }
-      function reset(){
-        cancelAnimationFrame(raf);
-        inner.style.transform = `perspective(800px) rotateX(0deg) rotateY(0deg)`;
-      }
-      card.addEventListener('mousemove', onMove, {passive:true});
-      card.addEventListener('mouseleave', reset);
-      card.addEventListener('touchend', reset);
+    function attachTilt(root){
+      root.querySelectorAll('.neo-tilt').forEach(card => {
+        const ringHost = card;
+        const inner = card.querySelector('.neo-card');
+        let raf = 0;
+
+        function onMove(e){
+          const r = card.getBoundingClientRect();
+          const x = (e.clientX - r.left) / r.width;
+          const y = (e.clientY - r.top)  / r.height;
+          cancelAnimationFrame(raf);
+          raf = requestAnimationFrame(() => {
+            const rx = (y - .5) * -10;
+            const ry = (x - .5) *  10;
+            inner.style.transform = `perspective(800px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(0)`;
+            ringHost.style.setProperty('--mx', `${x*100}%`);
+            ringHost.style.setProperty('--my', `${y*100}%`);
+          });
+        }
+        function reset(){
+          cancelAnimationFrame(raf);
+          inner.style.transform = `perspective(800px) rotateX(0deg) rotateY(0deg)`;
+        }
+        card.addEventListener('mousemove', onMove, {passive:true});
+        card.addEventListener('mouseleave', reset);
+        card.addEventListener('touchend', reset);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      attachTilt(document);
+      ['buildersSwiper','coachesSwiper'].forEach(id => {
+        const swEl = document.getElementById(id);
+        if (!swEl || !swEl.swiper) return;
+        swEl.swiper.on('slideChangeTransitionEnd', () => attachTilt(swEl));
+        swEl.swiper.on('resize', () => attachTilt(swEl));
+      });
     });
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    // attacca tilt alle slide renderizzate all’avvio
-    attachTilt(document);
-
-    // quando Swiper cambia, ri-attacca (le slide sono clonate)
-    ['buildersSwiper','coachesSwiper'].forEach(id => {
-      const swEl = document.getElementById(id);
-      if (!swEl || !swEl.swiper) return;
-      swEl.swiper.on('slideChangeTransitionEnd', () => attachTilt(swEl));
-      swEl.swiper.on('resize', () => attachTilt(swEl));
-    });
-  });
   </script>
 </x-app-layout>
