@@ -70,10 +70,10 @@
   </style>
 </head>
 <body class="min-h-screen bg-[var(--bg-light)] dark:bg-[var(--bg-dark)] text-gray-900 dark:text-gray-100">
-@if(auth()->check() && auth()->user()->is_demo)
-<div class="w-full dark:text-white bg-gray-900/50 text-black text-center py-2 font-semibold">
-    ⚠️ Demo Mode: Edits and creations not allowed.
-</div>
+@if(config('demo.enabled') && auth()->check() && auth()->user()->is_demo && config('demo.show_banner'))
+    <div class="w-full text-center py-2 font-semibold bg-gray-600 dark:text-white">
+        ⚠️ Demo Mode: changes are disabled for this account.
+    </div>
 @endif
 
 @if($gtm)
