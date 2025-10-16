@@ -12,6 +12,8 @@
   #homeHero .swiper-pagination-bullet-active{ background:#fff; }
   @media screen and (max-width: 767px){
     #homeHero .slide-figure{ height:400px; min-height:480px; }
+      #homeHero, #homeHero .swiper, #homeHero .swiper-wrapper, #homeHero .swiper-slide { height:auto!important }
+  #homeHero, #homeHero .swiper, #homeHero .swiper-wrapper, #homeHero .swiper-slide, #homeHero .slide-figure { overflow:hidden } 
   }
 </style>
   
@@ -19,37 +21,38 @@
   <div id="homeHero" class="swiper w-full overflow-hidden">
     <div class="swiper-wrapper">
       @foreach($slides as $s)
-        @php
-  $slidePath = $s->image_path ?? null;
-  $src_1200  = $slidePath ? cf_img($slidePath, 1200, 675) : null;   // default src
-  $set       = $slidePath ? implode(', ', [
-                  cf_img($slidePath, 768, 432).' 768w',
-                  cf_img($slidePath, 1200, 675).' 1200w',
-                  cf_img($slidePath, 1920, 1080).' 1920w',
-                ]) : null;
+       @php
+  $path = $s->image_path ?? null;
+
+  // URL ottimizzati con i TUOI helper
+  $src    = $path ? img_url($path, 1200, 675) : null;
+  $srcset = $path ? implode(', ', [
+              img_url($path, 768, 432).' 768w',
+              img_url($path, 1200, 675).' 1200w',
+              img_url($path, 1920, 1080).' 1920w',
+            ]) : null;
+  $sizes  = '100vw';
+  $alt    = img_alt($s) ?: ($s->title ?? 'Slide');
 @endphp
 
-@if($loop->first && $slidePath)
-  {{-- PRELOAD con lo STESSO URL della LCP --}}
+@if($loop->first && $src)
+  {{-- PRELOAD con lo stesso identico URL della LCP --}}
   <link rel="preload" as="image"
-        href="{{ $src_1200 }}"
-        imagesrcset="{{ $set }}"
-        imagesizes="100vw"
+        href="{{ $src }}"
+        @if($srcset) imagesrcset="{{ $srcset }}" imagesizes="{{ $sizes }}" @endif
         fetchpriority="high">
 @endif
 
-@if($slidePath)
+@if($src)
   <img
-    src="{{ $src_1200 }}"
-    srcset="{{ $set }}"
-    sizes="100vw"
-    alt="{{ $s->title ?? 'Slide' }}"
+    src="{{ $src }}"
+    @if($srcset) srcset="{{ $srcset }}" sizes="{{ $sizes }}" @endif
+    alt="{{ $alt }}"
     width="1200" height="675"
     class="absolute inset-0 h-full w-full object-cover"
     loading="{{ $loop->first ? 'eager' : 'lazy' }}"
     {{ $loop->first ? 'fetchpriority=high importance=high' : '' }}
-    decoding="async"
-  >
+    decoding="async">
 @else
   <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
 @endif
