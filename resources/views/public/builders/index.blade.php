@@ -33,7 +33,6 @@
   @else
     <div class="h-full w-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700"></div>
   @endif
-</div>
           {{-- Texts --}}
           <div class="relative z-10 p-5">
             <div class="flex items-center justify-between gap-3">
