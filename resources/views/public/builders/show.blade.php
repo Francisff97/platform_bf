@@ -19,18 +19,20 @@
     <div class="md:col-span-1">
       <div class="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
         @php
-          // 1) tenta Cloudflare (/cdn-cgi/image...) via accessor/preset
-          $img = $builder->showSrc()
-              // 2) accessor generico (internamente può preferire webp)
-              ?? $builder->image_url
-              // 3) URL storage diretto
-              ?? ($builder->image_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($builder->image_path) : null);
+          // Path grezzo dal DB
+          $path = $builder->image_path;
+
+          // Src ottimizzato (CF Image se attivo, altrimenti WebP/Storage)
+          $src  = $path ? img_url($path, 1200, 900) : null;
+
+          // ALT dal backend SEO → Media con fallback al nome builder
+          $alt  = $path ? img_alt($path, $builder->seo_title ?? $builder->name) : null;
         @endphp
 
-        @if($img)
-          <x-img :src="img_url($builder->image_path, 1200, 900)"
-       :alt="$builder->name"
-       class="aspect-[4/3] w-full object-cover" />
+        @if($src)
+          <x-img :src="$src"
+                 :alt="$alt"
+                 class="aspect-[4/3] w-full object-cover" />
         @else
           <div class="aspect-[4/3] w-full rounded-2xl bg-gray-200 dark:bg-gray-800"></div>
         @endif
