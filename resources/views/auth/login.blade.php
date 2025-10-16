@@ -95,7 +95,7 @@
     </div>
   </form>
   @if(config('demo.enabled') && config('demo.show_banner'))
-    <div class="w-full text-black bg-gray-300 text-center py-2 font-semibold dark:bg-gray-800 dark:text-white my-[20px]">
+    <div class="w-full text-gray-600 bg-gray-300 text-center py-2 dark:bg-gray-800 dark:text-white my-[20px]">
         Want to see the admin part?<br> 
         username: admindemo@base-forge.com<br>
         password: admindemo123
