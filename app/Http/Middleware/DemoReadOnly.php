@@ -8,25 +8,33 @@ use Symfony\Component\HttpFoundation\Response;
 
 class DemoReadOnly
 {
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next): Response
     {
+        // Se la demo è disattivata → non fa nulla
+        if (!config('demo.enabled')) {
+            return $next($request);
+        }
+
         $user = $request->user();
 
-        // Se non loggato o non demo -> continua normalmente
+        // Se non loggato o non è demo → passa
         if (!$user || empty($user->is_demo)) {
             return $next($request);
         }
 
-        // Consenti solo GET/HEAD per gli utenti demo
-        if (!in_array($request->method(), ['GET', 'HEAD'], true)) {
-            // Mostra una Blade invece di JSON
-            return response()
-                ->view('errors.demo-readonly', [
-                    'message' => 'This action is not allowed into Demo Mode.',
-                    'path' => $request->path(),
-                ], Response::HTTP_FORBIDDEN);
+        // Consenti solo GET/HEAD agli utenti demo
+        if (in_array($request->method(), ['GET', 'HEAD'], true)) {
+            return $next($request);
         }
 
-        return $next($request);
+        // Risposta carina (blade) oppure JSON se AJAX
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Demo account: action not permitted.',
+            ], Response::HTTP_FORBIDDEN);
+        }
+
+        return response()
+            ->view('errors.demo-readonly', [], Response::HTTP_FORBIDDEN);
     }
 }
