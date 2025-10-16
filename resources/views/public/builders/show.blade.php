@@ -15,16 +15,30 @@
   </section>
 
   {{-- TESTATA --}}
-  <section class="mx-auto max-w-6xl grid grid-cols-1 gap-8 px-4 py-8 md:grid-cols-3">
-    <div class="md:col-span-1">
-      <div class="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
-        @php($path = $builder->image_path)
+<section class="mx-auto max-w-6xl grid grid-cols-1 gap-8 px-4 py-8 md:grid-cols-3">
+  <div class="md:col-span-1">
+    <div class="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
+      @php
+        $path   = $builder->image_path;
+        $origin = $path ? \Illuminate\Support\Facades\Storage::disk('public')->url($path) : null;
+        $cf     = $path ? img_url($path, 1200, 900) : null;  // può restituire lo stesso origin se CF off
+        $alt    = img_alt($builder);
+      @endphp
 
-<x-img
-  :src="img_url($path, 1200, 900)"
-  :alt="img_alt($builder)"  {{-- legge da media_assets.path o fallback --}}
-  class="aspect-[4/3] w-full object-cover"
-/>
+      @if($origin)
+        <img
+          src="{{ $cf }}"
+          alt="{{ $alt }}"
+          width="1200" height="900"
+          loading="lazy" decoding="async"
+          class="aspect-[4/3] w-full object-cover"
+          onerror="this.onerror=null; this.src='{{ $origin }}'">
+        {{-- debug non invasivo: vedi gli URL nel sorgente --}}
+        {{-- CF: {{ $cf }} | ORIGIN: {{ $origin }} --}}
+      @else
+        <div class="aspect-[4/3] w-full rounded-2xl bg-gray-200 dark:bg-gray-800"></div>
+      @endif
+    </div>
 
       @if(is_iterable($builder->skills) && count($builder->skills))
         <div class="mt-4">
