@@ -4,6 +4,10 @@
     ($seoSubject = $pack);
     $catColor = $pack->category->color ?? 'indigo';
 
+    // Path immagine: stessa logica della pack-card
+    $img = $pack->image_url
+      ?? ($pack->image_path ? asset('storage/'.$pack->image_path) : null);
+
     $titleColorMap = [
       'indigo'  => 'text-indigo-600 dark:text-indigo-300',
       'emerald' => 'text-emerald-600 dark:text-emerald-300',
@@ -51,16 +55,22 @@
     </div>
   </section>
 
-  {{-- COVER --}}
-  @if($pack->image_path)
+  {{-- COVER (usa <x-img> + stessa path della card) --}}
+  @if($img)
     <div class="mx-auto max-w-6xl px-4 pt-6">
       <div class="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
-        <img
-  src="{{ $pack->detailSrc() }}"
-  srcset="{{ $pack->detailSrcset() }}"
-  sizes="100vw"
-  alt="{{ $pack->title }}"
-  loading="lazy" decoding="async">
+        <x-img
+          :src="$img"
+          alt="{{ $pack->title }}"
+          ratio="16/9"
+          class="w-full h-auto block"
+          loading="lazy"
+          decoding="async"
+          sizes="(min-width: 1024px) 960px, 100vw"
+          {{-- opzionali: se hai definito questi prop nel componente x-img, li puoi lasciare; altrimenti rimuovili --}}
+          fit="cover"
+          rounded="none"
+        />
       </div>
     </div>
   @endif
@@ -290,7 +300,7 @@
     @endif
   @endif
 
-  {{-- ==== Alpine helper: anteprima + autoplay all click ==== --}}
+  {{-- ==== Alpine helper: anteprima + autoplay al click ==== --}}
   <script>
     function videoPlayer(src){
       return {
