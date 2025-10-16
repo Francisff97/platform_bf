@@ -10,14 +10,13 @@
 ])
 
 @php
-  $h    = $hero->height_css ?? $height ?? '60vh';
-  $fb   = isset($hero) ? (bool)$hero->full_bleed : (bool)$fullBleed;
-  $full = $fb ? 'full-bleed' : '';
-
-  $path   = $hero->image_path ?? $image ?? null;
-  $src    = $path ? img_url($path, 1920, 1080, 82, 'cover') : null;
-  $origin = $path ? img_origin($path) : null;
-  $alt    = img_alt($hero ?? null) ?: ($hero->title ?? $title ?? 'Hero');
+  $path = $hero?->image_path;
+  $src  = $path ? cf_img($path, 1200, 675) : ($image ?? null);
+  $set  = $path ? implode(', ', [
+            cf_img($path, 768, 432).' 768w',
+            cf_img($path, 1200, 675).' 1200w',
+            cf_img($path, 1920, 1080).' 1920w',
+          ]) : null;
 @endphp
 
 <style>
@@ -27,18 +26,27 @@
 
 <section class="{{ $full }}">
   <figure class="inizio relative w-full" style="height: {{ $h }};">
-    @if($origin)
-      <x-img
-        :src="$src"
-        :origin="$origin"
-        :alt="$alt"
-        width="1920" height="1080"
-        class="absolute inset-0 h-full w-full object-cover"
-        loading="eager"
-      />
-    @else
-      <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
-    @endif
+   @if($path)
+  {{-- Preload coerente con l’img sottostante --}}
+  <link rel="preload" as="image"
+        href="{{ $src }}"
+        imagesrcset="{{ $set }}"
+        imagesizes="100vw"
+        fetchpriority="high">
+@endif
+
+@if($src)
+  <img
+    src="{{ $src }}"
+    @if($set) srcset="{{ $set }}" sizes="100vw" @endif
+    alt="{{ $hero->title ?? $title ?? 'Hero' }}"
+    width="1200" height="675"
+    class="absolute inset-0 h-full w-full object-cover"
+    loading="eager" fetchpriority="high" importance="high"
+    decoding="async">
+@else
+  <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
+@endif
 
     <div class="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/60"></div>
 
