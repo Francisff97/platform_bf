@@ -1,119 +1,151 @@
 {{-- resources/views/home.blade.php --}}
 <x-app-layout>
   {{-- ====== HERO FULL-BLEED (slides) ====== --}}
-  <style>
-    /* full-bleed e contenitori */
-    .full-bleed{
-      width:100vw; position:relative; left:50%; right:50%;
-      margin-left:-50vw; margin-right:-50vw; overflow:hidden;
-    }
-    #homeHero{ overflow:hidden; }
+<style>
+  .full-bleed{
+    width:100vw; position:relative; left:50%; right:50%;
+    margin-left:-50vw; margin-right:-50vw; overflow:hidden;
+  }
+  /* keep the whole hero from “jumping” or showing blank */
+  #homeHero{ overflow:hidden; contain: paint; }
 
-    /* Ogni slide crea uno stacking context separato */
-    #homeHero .swiper-slide{ position:relative; contain:paint; }
+  /* slide sizing */
+  #homeHero .slide-figure{ height:70vh; min-height:480px; }
+  @supports (height:70svh){ #homeHero .slide-figure{ height:70svh; } }
+  @media (max-width: 767px){
+    #homeHero .slide-figure{ height:400px; min-height:400px; }
+  }
 
-    /* Altezza visiva della singola slide */
-    #homeHero .slide-figure{
-      position:relative; overflow:hidden;
-      height:70vh; min-height:480px;
-      backface-visibility:hidden; transform:translateZ(0);
-      will-change:transform;
-    }
-    @supports (height:70svh){
-      #homeHero .slide-figure{ height:70svh; }
-    }
-    @media (max-width: 767px){
-      #homeHero .slide-figure{ height:400px; min-height:400px; }
-    }
+  /* prevent translucent overlay / flicker on first nav */
+  #homeHero .swiper, 
+  #homeHero .swiper-wrapper, 
+  #homeHero .swiper-slide{ height:auto !important; }
+  #homeHero .swiper-slide{ position:relative; backface-visibility:hidden; transform: translateZ(0); }
+  #homeHero .swiper-slide > *{ pointer-events:auto; }
 
-    /* Il layer sfumato non deve intercettare eventi */
-    #homeHero .fade-layer{ position:absolute; inset:0; pointer-events:none; }
+  /* UI */
+  #homeHero .swiper-button-next, #homeHero .swiper-button-prev { color:#fff; }
+  #homeHero .swiper-pagination-bullet{ background:rgba(255,255,255,.6); opacity:1; }
+  #homeHero .swiper-pagination-bullet-active{ background:#fff; }
+</style>
 
-    /* UI Swiper */
-    #homeHero .swiper-button-next, #homeHero .swiper-button-prev { color:#fff; }
-    #homeHero .swiper-pagination-bullet{ background:rgba(255,255,255,.6); opacity:1; }
-    #homeHero .swiper-pagination-bullet-active{ background:#fff; }
-  </style>
+<section class="full-bleed">
+  <div id="homeHero" class="swiper w-full">
+    <div class="swiper-wrapper">
 
-  <section class="full-bleed">
-    <div id="homeHero" class="swiper w-full">
-      <div class="swiper-wrapper">
+      @foreach($slides as $s)
+        @php
+          $path = $s->image_path ?? null;
+          $src    = $path ? img_url($path, 1200, 675) : null;
+          $srcset = $path ? implode(', ', [
+                        img_url($path, 768, 432).' 768w',
+                        img_url($path, 1200, 675).' 1200w',
+                        img_url($path, 1920, 1080).' 1920w',
+                      ]) : null;
+          $sizes  = '100vw';
+          $alt    = img_alt($s) ?: ($s->title ?? 'Slide');
+        @endphp
 
-        @foreach($slides as $s)
-          @php
-            $path = $s->image_path ?? null;
+        @if($src)
+          <link rel="preload" as="image"
+                href="{{ $src }}"
+                @if($srcset) imagesrcset="{{ $srcset }}" imagesizes="{{ $sizes }}" @endif
+                fetchpriority="high">
+        @endif
 
-            // URL ottimizzati (usa i tuoi helper)
-            $src    = $path ? img_url($path, 1200, 675) : null;
-            $srcset = $path ? implode(', ', [
-                          img_url($path, 768, 432).' 768w',
-                          img_url($path, 1200, 675).' 1200w',
-                          img_url($path, 1920, 1080).' 1920w',
-                        ]) : null;
-            $sizes  = '100vw';
-            $alt    = img_alt($s) ?: ($s->title ?? 'Slide');
-          @endphp
+        <div class="swiper-slide">
+          <figure class="slide-figure relative w-full">
+            @if($src)
+              <img
+                src="{{ $src }}"
+                @if($srcset) srcset="{{ $srcset }}" sizes="{{ $sizes }}" @endif
+                alt="{{ $alt }}"
+                width="1200" height="675"
+                class="absolute inset-0 h-full w-full object-cover"
+                loading="eager" fetchpriority="high" importance="high" decoding="async">
+            @else
+              <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
+            @endif
 
-          {{-- Preload della stessa risorsa che useremo nel tag <img> --}}
-          @if($src)
-            <link rel="preload" as="image"
-                  href="{{ $src }}"
-                  @if($srcset) imagesrcset="{{ $srcset }}" imagesizes="{{ $sizes }}" @endif
-                  fetchpriority="high">
-          @endif
+            <div class="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/60 pointer-events-none"></div>
 
-          <div class="swiper-slide">
-            <figure class="slide-figure w-full">
-              @if($src)
-                <img
-                  src="{{ $src }}"
-                  @if($srcset) srcset="{{ $srcset }}" sizes="{{ $sizes }}" @endif
-                  alt="{{ $alt }}"
-                  width="1200" height="675"
-                  class="absolute inset-0 h-full w-full object-cover"
-                  loading="eager"
-                  fetchpriority="high"
-                  importance="high"
-                  decoding="async">
-              @else
-                <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
-              @endif
+            <figcaption class="relative z-10 mx-auto flex h-full max-w-[1200px] items-center px-4 sm:px-6">
+              <div class="max-w-xl">
+                @if($s->title)
+                  <h2 class="font-orbitron text-3xl sm:text-4xl md:text-5xl text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
+                    {{ $s->title }}
+                  </h2>
+                @endif
+                @if($s->subtitle)
+                  <p class="mt-2 text-white/90 text-base sm:text-lg">{{ $s->subtitle }}</p>
+                @endif
+                @if($s->cta_url)
+                  <a href="{{ $s->cta_url }}"
+                     class="mt-5 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-white hover:opacity-90"
+                     style="background:var(--accent)">
+                    {{ $s->cta_label ?? 'Learn more' }}
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                  </a>
+                @endif
+              </div>
+            </figcaption>
+          </figure>
+        </div>
+      @endforeach
 
-              <div class="fade-layer bg-gradient-to-b from-black/55 via-black/35 to-black/60"></div>
-
-              <figcaption class="relative z-10 mx-auto flex h-full max-w-[1200px] items-center px-4 sm:px-6">
-                <div class="max-w-xl">
-                  @if($s->title)
-                    <h2 class="font-orbitron text-3xl sm:text-4xl md:text-5xl text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
-                      {{ $s->title }}
-                    </h2>
-                  @endif
-                  @if($s->subtitle)
-                    <p class="mt-2 text-white/90 text-base sm:text-lg">{{ $s->subtitle }}</p>
-                  @endif
-                  @if($s->cta_url)
-                    <a href="{{ $s->cta_url }}"
-                       class="mt-5 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-white hover:opacity-90"
-                       style="background:var(--accent)">
-                      {{ $s->cta_label ?? 'Learn more' }}
-                      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M5 12h14M12 5l7 7-7 7"/>
-                      </svg>
-                    </a>
-                  @endif
-                </div>
-              </figcaption>
-            </figure>
-          </div>
-        @endforeach
-
-      </div>
-
-      <div class="swiper-pagination !bottom-3"></div>
-      <div class="swiper-button-prev"></div>
-      <div class="swiper-button-next"></div>
     </div>
-  </section>
+
+    <div class="swiper-pagination !bottom-3"></div>
+    <div class="swiper-button-prev"></div>
+    <div class="swiper-button-next"></div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!window.Swiper) return;
+
+      const hero = new Swiper('#homeHero', {
+        // keep transitions solid (no ghost layer)
+        effect: 'slide',
+        speed: 550,
+
+        loop: true,
+        loopAdditionalSlides: 2,
+
+        autoplay: { delay: 4500, disableOnInteraction: false },
+
+        // make Swiper re-measure when DOM changes / first nav
+        observer: true,
+        observeParents: true,
+        watchSlidesProgress: true,
+        preloadImages: false, // we already preload
+        lazy: false,
+
+        // avoid zero height glitches
+        autoHeight: false,
+        updateOnWindowResize: true,
+
+        pagination: { el: '#homeHero .swiper-pagination', clickable: true },
+        navigation: { nextEl: '#homeHero .swiper-button-next', prevEl: '#homeHero .swiper-button-prev' },
+
+        on: {
+          init(sw){ sw.update(); },
+          imagesReady(sw){ sw.update(); },
+          slideChangeTransitionStart(sw){
+            // force repaint so the previous slide doesn’t “stick” transparent
+            sw.el.style.willChange = 'transform';
+          },
+          slideChangeTransitionEnd(sw){
+            sw.el.style.willChange = 'auto';
+            sw.update();
+          }
+        }
+      });
+    });
+  </script>
+</section>
 {{-- ====== PACKS ====== --}}
   <section class="mx-auto my-[70px] max-w-6xl px-4">
     <div class="mb-5 flex items-end justify-between gap-3">
