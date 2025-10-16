@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use App\Traits\ConvertsToWebp;
 
@@ -23,13 +24,12 @@ class AboutSection extends Model
     {
         static::saved(function (self $m) {
             if ($m->image_path) {
-                // manteniamo il WebP locale come fallback
                 $m->toWebp('public', $m->image_path, 75);
             }
         });
     }
 
-    /** Blade: {{ $about->image_url }}  (nessuna modifica alle view) */
+    /** Blade: {{ $about->image_url }} */
     public function getImageUrlAttribute(): ?string
     {
         if (!$this->image_path) return null;
@@ -38,19 +38,12 @@ class AboutSection extends Model
         $path   = ltrim(parse_url($origin, PHP_URL_PATH), '/');
 
         if ($this->useCloudflareImage()) {
-            $ops = [
-                'format=auto',
-                'quality='.self::IMG_Q,
-                'fit='.self::IMG_FIT,
-                // se vuoi fisso: aggiungi width=..., altrimenti lo imposti da Blade con srcset
-            ];
+            $ops = ['format=auto', 'quality='.self::IMG_Q, 'fit='.self::IMG_FIT];
             return '/cdn-cgi/image/'.implode(',', $ops).'/'.$path;
         }
-
         return $this->preferWebp($this->image_path);
     }
 
-    /** Variante dimensionata on-demand se ti serve dal controller */
     public function imageUrl(?int $w=null, ?int $h=null, int $q=self::IMG_Q, string $fit=self::IMG_FIT): ?string
     {
         if (!$this->image_path) return null;
@@ -64,30 +57,44 @@ class AboutSection extends Model
             if ($h) $ops[] = "height={$h}";
             return '/cdn-cgi/image/'.implode(',', $ops).'/'.$path;
         }
-
         return $this->preferWebp($this->image_path);
     }
 
-    /* ========= Query Scopes (FIX) ========= */
+    /* ========= Query Scopes ========= */
 
-    /** Usato da: AboutSection::featured()->... */
     public function scopeFeatured($q)
     {
-        // Non abbiamo una colonna is_featured:
-        // interpreto "featured" come le sezioni attive ordinate.
-        return $q->where('is_active', true)->orderBy('sort_order');
+        $q->where('is_active', true);
+        return $this->applyDefaultOrder($q);
     }
 
-    /** Comodo se in qualche punto usi ->active() */
     public function scopeActive($q)
     {
         return $q->where('is_active', true);
     }
 
-    /** Ordinamento standard */
     public function scopeOrdered($q)
     {
-        return $q->orderBy('sort_order');
+        return $this->applyDefaultOrder($q);
+    }
+
+    /** Usa sort_order se esiste, altrimenti ripiega su id */
+    protected function applyDefaultOrder($q)
+    {
+        if (self::hasSortOrderColumn()) {
+            return $q->orderBy('sort_order', 'asc');
+        }
+        return $q->orderBy('id', 'asc');
+    }
+
+    /** Cache del check colonna */
+    protected static function hasSortOrderColumn(): bool
+    {
+        static $has = null;
+        if ($has === null) {
+            $has = Schema::hasColumn((new static)->getTable(), 'sort_order');
+        }
+        return $has;
     }
 
     /* ===== Helpers ===== */
