@@ -5,18 +5,17 @@
 ])
 
 @php
-  $img = $pack->image_path ? asset('storage/'.$pack->image_path) : null;
-
-  // Badge categoria: supporta keyword Tailwind (es. 'indigo') o HEX (es. '#ffcc00')
+  // usa l'accessor del modello (serve CF /cdn-cgi/image o fallback webp)
+  $img = $pack->image_url; 
+  // Badge categoria (come avevi)
   $badgeClass = 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-100';
   $badgeStyle = '';
 
   $cat   = optional($pack->category);
-  $color = $cat->color ?? null;       // es. 'indigo'
-  $hex   = $cat->badge_color ?? null; // es. '#FFCC00'
+  $color = $cat->color ?? null;
+  $hex   = $cat->badge_color ?? null;
 
   if ($hex && \Illuminate\Support\Str::startsWith($hex, '#')) {
-      // colore custom HEX
       $badgeClass = '';
       $badgeStyle = "background: {$hex}; color:#111; padding:2px 8px; border-radius:9999px; font-size:12px; font-weight:600;";
   } elseif ($color) {
@@ -40,16 +39,28 @@
 <a href="{{ route('packs.show', $pack->slug) }}"
    class="group relative block overflow-hidden rounded-3xl shadow-sm ring-1 ring-black/5 transition hover:shadow-md">
 
-  {{-- Pannello con immagine di sfondo --}}
-  <div class="{{ $ratio }} w-full bg-gray-200 dark:bg-gray-800"
-       @if($img) style="background-image:url('{{ $img }}'); background-size:cover; background-position:center;" @endif>
+  {{-- Pannello immagine: usiamo <img> per permettere il resize Cloudflare --}}
+  <div class="relative {{ $ratio }} w-full bg-gray-200 dark:bg-gray-800">
+    @if($img)
+      <img
+        src="{{ $img }}"
+        alt="{{ $pack->title }}"
+        class="absolute inset-0 h-full w-full object-cover"
+        loading="lazy"
+        decoding="async"
+        referrerpolicy="no-referrer"
+      >
+    @else
+      {{-- fallback super leggero --}}
+      <div class="absolute inset-0 grid place-items-center text-xs text-gray-500">No image</div>
+    @endif
 
-    {{-- Overlay per leggibilità --}}
-    <div class="flex h-full w-full flex-col justify-between p-4
+    {{-- Overlay + contenuti --}}
+    <div class="absolute inset-0 flex flex-col justify-between p-4
                 bg-gradient-to-b from-black/10 via-black/0 to-black/40
                 dark:from-black/20 dark:via-black/0 dark:to-black/60">
 
-      {{-- Badge categoria in alto a sinistra --}}
+      {{-- Badge categoria --}}
       @if($cat && $cat->name)
         <span class="inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold {{ $badgeClass }}"
               @if($badgeStyle) style="{{ $badgeStyle }}" @endif>
@@ -70,7 +81,7 @@
           @endif
         </div>
 
-        <div class="text-right shrink-0">
+        <div class="shrink-0 text-right">
           <div class="font-orbitron text-base font-extrabold text-white drop-shadow">
             @money($pack->price_cents, $pack->currency)
           </div>
