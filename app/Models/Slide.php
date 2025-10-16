@@ -23,9 +23,41 @@ class Slide extends Model
         });
     }
 
+    /** {{ $slide->image_url }} */
     public function getImageUrlAttribute(): ?string
     {
+        // Slide: 1600 è un buon default (caroselli full-width)
+        return $this->imageUrl(1600, null, 85);
+    }
+
+    public function imageUrl(?int $w = null, ?int $h = null, int $q = 85): ?string
+    {
+        if (!$this->image_path) return null;
+
+        if ($this->useCloudflareImage()) {
+            return $this->cdnFromDisk($this->image_path, $w, $h, $q);
+        }
+
         return $this->preferWebp($this->image_path);
+    }
+
+    /** ========= Helper interni ========= */
+
+    private function useCloudflareImage(): bool
+    {
+        return (bool) (config('cdn.use_cloudflare', env('USE_CF_IMAGE', true)));
+    }
+
+    private function cdnFromDisk(string $diskPath, ?int $w, ?int $h, int $q): string
+    {
+        $origin = Storage::disk('public')->url($diskPath);
+        $path   = ltrim(parse_url($origin, PHP_URL_PATH), '/');
+
+        $params = ['format=auto', "quality={$q}"];
+        if ($w) $params[] = "width={$w}";
+        if ($h) $params[] = "height={$h}";
+
+        return '/cdn-cgi/image/' . implode(',', $params) . '/' . $path;
     }
 
     private function preferWebp(?string $path): ?string
