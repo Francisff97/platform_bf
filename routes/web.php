@@ -276,9 +276,22 @@ Route::middleware('auth')->group(function () {
 
 // Compat: vecchi riferimenti a route('dashboard')
 Route::get('/dashboard', function () {
-    if (auth()->check() && auth()->user()->role === 'admin') {
+    $user = auth()->user();
+
+    if (!$user) {
+        return redirect()->route('home');
+    }
+
+    // Demo Mode attiva e utente demo
+    if (config('demo.enabled') && $user->is_demo) {
         return redirect()->route('admin.dashboard');
     }
+
+    // Admin normale
+    if (strtolower((string) $user->role) === 'admin') {
+        return redirect()->route('admin.dashboard');
+    }
+
     return redirect()->route('home');
 })->name('dashboard');
 
