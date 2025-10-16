@@ -25,10 +25,6 @@
   :alt="img_alt($builder)"  {{-- legge da media_assets.path o fallback --}}
   class="aspect-[4/3] w-full object-cover"
 />
-        @else
-          <div class="aspect-[4/3] w-full rounded-2xl bg-gray-200 dark:bg-gray-800"></div>
-        @endif
-      </div>
 
       @if(is_iterable($builder->skills) && count($builder->skills))
         <div class="mt-4">
