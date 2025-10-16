@@ -11,6 +11,9 @@ class Kernel extends ConsoleKernel
     protected $commands = [
     \App\Console\Commands\SeoMediaBackfill::class,
     \App\Console\Commands\SeoSyncRoutes::class,
+    \App\Console\Commands\DemoEnable::class,
+    \App\Console\Commands\DemoDisable::class,
+
 ];
     protected function schedule(Schedule $schedule): void
     {
