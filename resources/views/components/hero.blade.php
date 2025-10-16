@@ -1,19 +1,23 @@
 @props([
-  'hero' => null,
-  'title' => null,
-  'subtitle' => null,
-  'image' => null,
-  'ctaLabel' => null,
-  'ctaUrl' => null,
-  'height' => '60vh',
+  'hero'      => null,
+  'title'     => null,
+  'subtitle'  => null,
+  'image'     => null,   // string opzionale se vuoi forzare una src custom
+  'ctaLabel'  => null,
+  'ctaUrl'    => null,
+  'height'    => '60vh',
   'fullBleed' => true,
 ])
 
 @php
-  $h  = $hero->height_css ?? $height ?? '60vh';
-  $fb = isset($hero) ? (bool)$hero->full_bleed : (bool)$fullBleed;
+  // altezza & full-bleed come avevi
+  $h   = $hero->height_css ?? $height ?? '60vh';
+  $fb  = isset($hero) ? (bool)$hero->full_bleed : (bool)$fullBleed;
   $full = $fb ? 'full-bleed' : '';
-  $src = $hero ? Storage::url($hero->image_path) : $image;
+
+  // SORGENTE IMMAGINE
+  // Priorità: model->image_url (passa da Cloudflare) → $image passato allo slot (stringa grezza)
+  $src = $hero?->image_url ?: $image;
 @endphp
 
 <style>
@@ -24,14 +28,16 @@
 <section class="{{ $full }}">
   <figure class="inizio relative w-full" style="height: {{ $h }};">
     @if($src)
-      <img
-        src="{{ $src }}"
-        alt="{{ $hero->title ?? $title ?? 'Hero' }}"
+      {{-- immagine eroe, eager + priority high come prima, full-cover --}}
+      <x-img
+        :src="$src"
+        :alt="$hero->title ?? $title ?? 'Hero'"
         class="absolute inset-0 h-full w-full object-cover"
-        fetchpriority="high"
         loading="eager"
-        decoding="async"
-      >
+        {{-- fetchpriority high viene gestito dal componente in base alla route,
+             ma qui vogliamo forzarlo sempre per l’hero: aggiungo l’attributo manuale --}}
+        {{ $attributes->merge(['fetchpriority' => 'high']) }}
+      />
     @else
       <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
     @endif
