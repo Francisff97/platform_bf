@@ -20,14 +20,50 @@ class Hero extends Model
     {
         static::saved(function (self $m) {
             if ($m->image_path) {
+                // rete di sicurezza lato origin
                 $m->toWebp('public', $m->image_path, 75);
             }
         });
     }
 
+    /** Accessor comodo per Blade: {{ $hero->image_url }} */
     public function getImageUrlAttribute(): ?string
     {
+        // Hero = probabile LCP → default più grande (es. 1920)
+        return $this->imageUrl(1920, null, 85);
+    }
+
+    /** Costruisce URL dinamico (Cloudflare) con fallback locale */
+    public function imageUrl(?int $w = null, ?int $h = null, int $q = 85): ?string
+    {
+        if (!$this->image_path) return null;
+
+        if ($this->useCloudflareImage()) {
+            return $this->cdnFromDisk($this->image_path, $w, $h, $q);
+        }
+
+        // Fallback locale (come avevi)
         return $this->preferWebp($this->image_path);
+    }
+
+    /** ========= Helper interni ========= */
+
+    private function useCloudflareImage(): bool
+    {
+        // .env: USE_CF_IMAGE=true
+        return (bool) (config('cdn.use_cloudflare', env('USE_CF_IMAGE', true)));
+    }
+
+    private function cdnFromDisk(string $diskPath, ?int $w, ?int $h, int $q): string
+    {
+        $origin = Storage::disk('public')->url($diskPath); // es. /storage/hero.jpg
+        $path   = ltrim(parse_url($origin, PHP_URL_PATH), '/');
+
+        $params = ['format=auto', "quality={$q}"];
+        if ($w) $params[] = "width={$w}";
+        if ($h) $params[] = "height={$h}";
+
+        return '/cdn-cgi/image/' . implode(',', $params) . '/' . $path;
     }
 
     private function preferWebp(?string $path): ?string
