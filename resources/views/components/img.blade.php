@@ -1,7 +1,7 @@
 {{-- resources/views/components/img.blade.php --}}
 @props([
   'src',
-  'origin' => null
+  'origin' => null,
   'alt'     => '',
   'class'   => '',
   'width'   => null,
