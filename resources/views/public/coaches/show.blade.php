@@ -64,14 +64,6 @@
       </div>
     </aside>
 
-    <section class="md:col-span-2">
-      <div class="rounded-2xl border border-gray-100 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/60">
-        @if(!empty($coach->description))
-          <div class="prose max-w-none prose-p:leading-relaxed prose-headings:scroll-mt-24 dark:prose-invert">{!! nl2br(e($coach->description)) !!}</div>
-        @else
-          <p class="text-gray-600 dark:text-gray-300">Coach profile.</p>
-        @endif
-      </div>
       
           {{-- DESCRIZIONE + BUY --}}
     <section class="md:col-span-2">
