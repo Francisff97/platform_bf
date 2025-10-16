@@ -1,11 +1,12 @@
 {{-- resources/views/components/img.blade.php --}}
 @props([
   'src',
-  'alt'     => null,
+  'origin' => null
+  'alt'     => '',
   'class'   => '',
   'width'   => null,
   'height'  => null,
-  'loading' => null,   // true/false oppure 'lazy'/'eager'
+  'loading' => lazy,   // true/false oppure 'lazy'/'eager'
 ])
 
 @php
@@ -67,13 +68,10 @@
 @endphp
 
 <img
-  src="{{ $srcUrl }}"
-  @if($srcset) srcset="{{ $srcset }}" sizes="100vw" @endif
-  @if($altFinal !== '') alt="{{ $altFinal }}" @endif
-  @if($finalWidth)  width="{{ $finalWidth }}"   @endif
-  @if($finalHeight) height="{{ $finalHeight }}" @endif
-  loading="{{ $finalLoading }}"
-  @if($fetchPriority) fetchpriority="{{ $fetchPriority }}" @endif
-  decoding="async"
-  class="{{ $class }}"
-/>
+  src="{{ $src }}"
+  alt="{{ $alt }}"
+  @if($width)  width="{{ $width }}"   @endif
+  @if($height) height="{{ $height }}" @endif
+  loading="{{ $loading }}" decoding="async"
+  {{ $attributes->merge(['class' => $class]) }}
+  @if($origin) onerror="this.onerror=null; this.src='{{ $origin }}'" @endif
