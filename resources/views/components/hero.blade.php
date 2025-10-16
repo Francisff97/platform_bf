@@ -2,7 +2,7 @@
   'hero'      => null,
   'title'     => null,
   'subtitle'  => null,
-  'image'     => null,
+  'image'     => null,   // opzionale: path storage o URL assoluto
   'ctaLabel'  => null,
   'ctaUrl'    => null,
   'height'    => '60vh',
@@ -10,43 +10,50 @@
 ])
 
 @php
-  $path = $hero?->image_path;
-  $src  = $path ? cf_img($path, 1200, 675) : ($image ?? null);
-  $set  = $path ? implode(', ', [
-            cf_img($path, 768, 432).' 768w',
-            cf_img($path, 1200, 675).' 1200w',
-            cf_img($path, 1920, 1080).' 1920w',
-          ]) : null;
+  // Altezza + full-bleed
+  $h   = $hero->height_css ?? $height ?? '60vh';
+  $fb  = isset($hero) ? (bool)$hero->full_bleed : (bool)$fullBleed;
+  $full = $fb ? 'full-bleed' : '';
+
+  // Path grezzo da DB (preferito per img_url); se non c’è, usa $image com’è
+  $path = $hero->image_path ?? null;
+
+  // Src ottimizzato (Cloudflare / WebP fallback) – MISMO URL usato anche per preload
+  $src     = $path ? img_url($path, 1200, 675) : ($image ?: null);
+  $srcset  = $path ? implode(', ', [
+                img_url($path, 768, 432).' 768w',
+                img_url($path, 1200, 675).' 1200w',
+                img_url($path, 1920, 1080).' 1920w',
+            ]) : null;
+  $sizes   = '100vw';
+  $altText = img_alt($hero) ?: ($hero->title ?? $title ?? 'Hero');
 @endphp
 
 <style>
   .full-bleed{width:100vw;position:relative;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw}
+  .inizio{overflow:hidden} /* evita scroll orizzontale */
   @media (max-width:767px){.inizio{height:250px!important}}
 </style>
 
 <section class="{{ $full }}">
   <figure class="inizio relative w-full" style="height: {{ $h }};">
-   @if($path)
-  {{-- Preload coerente con l’img sottostante --}}
-  <link rel="preload" as="image"
-        href="{{ $src }}"
-        imagesrcset="{{ $set }}"
-        imagesizes="100vw"
-        fetchpriority="high">
-@endif
+    @if($src)
+      {{-- Preload coerente con <img> (stesso URL) per LCP perfetto --}}
+      <link rel="preload" as="image"
+            href="{{ $src }}"
+            @if($srcset) imagesrcset="{{ $srcset }}" imagesizes="{{ $sizes }}" @endif
+            fetchpriority="high">
 
-@if($src)
-  <img
-    src="{{ $src }}"
-    @if($set) srcset="{{ $set }}" sizes="100vw" @endif
-    alt="{{ $hero->title ?? $title ?? 'Hero' }}"
-    width="1200" height="675"
-    class="absolute inset-0 h-full w-full object-cover"
-    loading="eager" fetchpriority="high" importance="high"
-    decoding="async">
-@else
-  <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
-@endif
+      <img
+        src="{{ $src }}"
+        @if($srcset) srcset="{{ $srcset }}" sizes="{{ $sizes }}" @endif
+        alt="{{ $altText }}"
+        width="1200" height="675"
+        class="absolute inset-0 h-full w-full object-cover"
+        loading="eager" fetchpriority="high" importance="high" decoding="async">
+    @else
+      <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
+    @endif
 
     <div class="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/60"></div>
 
