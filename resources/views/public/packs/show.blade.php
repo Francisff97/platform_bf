@@ -56,24 +56,21 @@
   </section>
 
   {{-- COVER (usa <x-img> + stessa path della card) --}}
+ @php $img = $pack->image_url; @endphp
+
+<div class="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-gray-200 dark:bg-gray-800">
   @if($img)
-    <div class="mx-auto max-w-6xl px-4 pt-6">
-      <div class="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
-        <x-img
-          :src="$img"
-          alt="{{ $pack->title }}"
-          ratio="16/9"
-          class="w-full h-auto block"
-          loading="lazy"
-          decoding="async"
-          sizes="(min-width: 1024px) 960px, 100vw"
-          {{-- opzionali: se hai definito questi prop nel componente x-img, li puoi lasciare; altrimenti rimuovili --}}
-          fit="cover"
-          rounded="none"
-        />
-      </div>
-    </div>
+    <x-img :src="$img"
+           alt="{{ $pack->title }}"
+           class="absolute inset-0 h-full w-full object-cover"
+           :width="1200"
+           :height="900"
+           loading="eager"
+    />
+  @else
+    <div class="absolute inset-0 grid place-items-center text-xs text-gray-500">No image</div>
   @endif
+</div>
 
   {{-- BODY + BUYBOX --}}
   <div class="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 py-10 md:grid-cols-3">
