@@ -55,7 +55,12 @@
   @if($pack->image_path)
     <div class="mx-auto max-w-6xl px-4 pt-6">
       <div class="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
-        <x-img :src="Storage::url($pack->image_path)" class="max-h-[420px] w-full object-cover" />
+        <img
+  src="{{ $pack->detailSrc() }}"
+  srcset="{{ $pack->detailSrcset() }}"
+  sizes="100vw"
+  alt="{{ $pack->title }}"
+  loading="lazy" decoding="async">
       </div>
     </div>
   @endif
