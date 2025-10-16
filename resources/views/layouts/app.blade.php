@@ -172,19 +172,36 @@
 
       <x-site-footer />
     </div>
-   @if(($privacySettings?->banner_enabled) && $privacySettings?->banner_body_code)
-  <script>
-    window.addEventListener('DOMContentLoaded', function () {
-      setTimeout(function () {
-        var s = document.createElement('script');
-        s.src = "https://cdn.iubenda.com/iubenda.js";
-        s.async = true;
-        document.body.appendChild(s);
-      }, 1200); // carica dopo ~1s per non bloccare FCP
-    });
-  </script>
-
+  @if(($privacySettings?->banner_enabled) && $privacySettings?->banner_body_code)
   {!! $privacySettings->banner_body_code !!}
+
+  <script>
+    (function () {
+      var loaded = false;
+      function loadIubenda() {
+        if (loaded) return;
+        loaded = true;
+        var s = document.createElement('script');
+        s.src = 'https://cdn.iubenda.com/iubenda.js';
+        s.async = true;
+        (document.head || document.body).appendChild(s);
+
+        // stacca i listener
+        window.removeEventListener('scroll', loadIubenda, opts);
+        window.removeEventListener('pointerdown', loadIubenda, opts);
+        window.removeEventListener('keydown', loadIubenda, opts);
+      }
+
+      var opts = { once: true, passive: true };
+      // primo evento utente: scroll / tocco / tasto
+      window.addEventListener('scroll', loadIubenda, opts);
+      window.addEventListener('pointerdown', loadIubenda, opts);
+      window.addEventListener('keydown', loadIubenda, { once: true });
+
+      // fallback: carica comunque dopo 2.5s
+      setTimeout(loadIubenda, 2500);
+    })();
+  </script>
 @endif
   </body>
 </html>
