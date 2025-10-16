@@ -7,7 +7,7 @@
     width:100vw; position:relative; left:50%; right:50%;
     margin-left:-50vw; margin-right:-50vw; overflow:hidden;
   }
-  /* NON forzare l'altezza di swiper/wrapper/slide: la gestisce Swiper */
+
   #homeHero{ overflow:hidden; }
 
   /* Altezza visiva della singola slide */
@@ -33,7 +33,7 @@
         @php
           $path = $s->image_path ?? null;
 
-          // URL ottimizzati con i tuoi helper (CF + fallback)
+          // URL ottimizzati (CF + fallback)
           $src    = $path ? img_url($path, 1200, 675) : null;
           $srcset = $path ? implode(', ', [
                         img_url($path, 768, 432).' 768w',
@@ -44,8 +44,8 @@
           $alt    = img_alt($s) ?: ($s->title ?? 'Slide');
         @endphp
 
-        {{-- Preload SOLO per la prima (LCP) con gli stessi URL che usiamo nell'img --}}
-        @if($loop->first && $src)
+        {{-- Preload tutte le immagini principali --}}
+        @if($src)
           <link rel="preload" as="image"
                 href="{{ $src }}"
                 @if($srcset) imagesrcset="{{ $srcset }}" imagesizes="{{ $sizes }}" @endif
@@ -61,8 +61,9 @@
                 alt="{{ $alt }}"
                 width="1200" height="675"
                 class="absolute inset-0 h-full w-full object-cover"
-                loading="{{ $loop->first ? 'eager' : 'lazy' }}"
-                {{ $loop->first ? 'fetchpriority=high importance=high' : '' }}
+                loading="eager"
+                fetchpriority="high"
+                importance="high"
                 decoding="async">
             @else
               <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
@@ -85,7 +86,9 @@
                      class="mt-5 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-white hover:opacity-90"
                      style="background:var(--accent)">
                     {{ $s->cta_label ?? 'Learn more' }}
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
                   </a>
                 @endif
               </div>
@@ -101,7 +104,6 @@
     <div class="swiper-button-next"></div>
   </div>
 </section>
-
   {{-- ====== PACKS ====== --}}
   <section class="mx-auto my-[70px] max-w-6xl px-4">
     <div class="mb-5 flex items-end justify-between gap-3">
