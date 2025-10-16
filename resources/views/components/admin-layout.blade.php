@@ -71,7 +71,7 @@
 </head>
 <body class="min-h-screen bg-[var(--bg-light)] dark:bg-[var(--bg-dark)] text-gray-900 dark:text-gray-100">
 @if(config('demo.enabled') && auth()->check() && auth()->user()->is_demo && config('demo.show_banner'))
-    <div class="w-full text-center py-2 bg-gray-600 dark:text-white">
+    <div class="w-full text-center py-2 bg-gray-700 text-white">
         ⚠️ Demo Mode: changes are disabled for this account.
     </div>
 @endif
