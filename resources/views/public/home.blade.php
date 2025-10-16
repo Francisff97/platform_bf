@@ -69,28 +69,27 @@
   </style>
 
   @php
-    /** @var \App\Models\Slide[]|\Illuminate\Support\Collection $slides */
-    $firstSlidePath = isset($slides[0]) ? ($slides[0]->image_path ?? null) : null;
-    $firstSlideUrl  = $firstSlidePath ? \Illuminate\Support\Facades\Storage::url($firstSlidePath) : null;
+  $firstSlidePath = isset($slides[0]) ? ($slides[0]->image_path ?? null) : null;
+  $firstSlideUrl  = $firstSlidePath ? \Illuminate\Support\Facades\Storage::url($firstSlidePath) : null;
 
-    // helper inline per costruire lo srcset CF con width fisse
-    $cfSrcset = function (?string $publicUrl): ?string {
-      if (!$publicUrl) return null;
-      $path = ltrim(parse_url($publicUrl, PHP_URL_PATH) ?: '', '/'); // es. storage/...
-      if ($path === '') return null;
-      $w = [480, 768, 1024, 1440, 1920];
-      return collect($w)->map(fn($x)=>"/cdn-cgi/image/width={$x},quality=82,format=auto,fit=cover/{$path} {$x}w")->implode(', ');
-    };
-  @endphp
+  $cfgWantsCF   = (bool) config('cdn.use_cloudflare', env('USE_CF_IMAGE', false));
+  $requestOnCF  = request()->server('HTTP_CF_RAY') || request()->header('Cf-Visitor') || request()->header('CF-Connecting-IP');
+  $useCF        = $cfgWantsCF && $requestOnCF;
 
-  @if($firstSlideUrl)
-    {{-- Preload LCP con le stesse varianti CF (width fisse) --}}
-    <link rel="preload" as="image"
-          href="{{ $firstSlideUrl }}"
-          imagesrcset="{{ $cfSrcset($firstSlideUrl) }}"
-          imagesizes="(min-width:1024px) 1920px, 100vw"
-          fetchpriority="high">
-  @endif
+  $cfSet = null;
+  if ($firstSlideUrl && $useCF) {
+      $p = ltrim(parse_url($firstSlideUrl, PHP_URL_PATH) ?: '', '/');
+      $ws = [480, 768, 1024, 1440, 1920];
+      $cfSet = collect($ws)->map(fn($w)=>"/cdn-cgi/image/width={$w},quality=82,format=auto,fit=cover/{$p} {$w}w")->implode(', ');
+  }
+@endphp
+
+@if($firstSlideUrl)
+  <link rel="preload" as="image"
+        href="{{ $firstSlideUrl }}"
+        @if($cfSet) imagesrcset="{{ $cfSet }}" imagesizes="(min-width:1024px) 1920px, 100vw" @endif
+        fetchpriority="high">
+@endif
 
   <section class="full-bleed">
     <div id="homeHero" class="swiper w-full">
