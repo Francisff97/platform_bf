@@ -51,7 +51,7 @@
 
 <section class="{{ $full }}">
   <figure class="inizio relative w-full" style="height: {{ $h }};">
-    @php $heroImg = isset($hero) ? ($hero->image_path ?? null) : ($image ?? null); @endphp
+    @php $heroImg = isset($hero) ? ($hero->image_url ?? null) : ($image ?? null); @endphp
 
 @if($heroImg)
   <x-img :src="$heroImg"
