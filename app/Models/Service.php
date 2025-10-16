@@ -5,11 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\Storage;
+
 use App\Traits\ConvertsToWebp;
 
 class Service extends Model
 {
     use HasFactory, ConvertsToWebp;
+
+    private const IMG_Q   = 82;
+    private const IMG_FIT = 'cover';
 
     protected $fillable = ['name','slug','excerpt','body','image_path','order','status'];
 
@@ -24,18 +28,47 @@ class Service extends Model
 
     public function getImageUrlAttribute(): ?string
     {
+        return $this->imageUrl();
+    }
+
+    /** Generico */
+    public function imageUrl(?int $w=null, ?int $h=null, int $q=self::IMG_Q, string $fit=self::IMG_FIT): ?string
+    {
+        if (!$this->image_path) return null;
+
+        $origin = Storage::disk('public')->url($this->image_path);
+        $path   = ltrim(parse_url($origin, PHP_URL_PATH), '/');
+
+        if ($this->useCloudflareImage()) {
+            $ops = ['format=auto', "quality={$q}", "fit={$fit}"];
+            if ($w) $ops[] = "width={$w}";
+            if ($h) $ops[] = "height={$h}";
+            return '/cdn-cgi/image/'.implode(',', $ops).'/'.$path;
+        }
         return $this->preferWebp($this->image_path);
     }
 
+    /** Preset per blade: card servizi (h-48 ≈ 192px) → 960x384 */
+    public function gridSrc(): ?string
+    {
+        return $this->imageUrl(960, 384);
+    }
+
+    /** Scope */
     public function scopePublished($q){ return $q->where('status','published'); }
+
+    /** Helpers */
+    private function useCloudflareImage(): bool
+    {
+        return (bool) (config('cdn.use_cloudflare', env('USE_CF_IMAGE', true)));
+    }
 
     private function preferWebp(?string $path): ?string
     {
         if (!$path) return null;
+        $disk = Storage::disk('public');
         $webp = preg_replace('/\.(jpe?g|png|gif|bmp)$/i', '.webp', $path);
-        if ($webp && Storage::disk('public')->exists($webp)) {
-            return Storage::disk('public')->url($webp);
-        }
-        return Storage::disk('public')->url($path);
+        if ($webp && $disk->exists($webp)) return $disk->url($webp);
+        return $disk->url($path);
     }
 }
