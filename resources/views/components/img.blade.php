@@ -6,7 +6,7 @@
   'class'   => '',
   'width'   => null,
   'height'  => null,
-  'loading' => lazy,   // true/false oppure 'lazy'/'eager'
+  'loading' => null,   // true/false oppure 'lazy'/'eager'
 ])
 
 @php
