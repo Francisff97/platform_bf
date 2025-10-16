@@ -19,7 +19,7 @@
     <div class="md:col-span-1">
       <div class="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
         @if($builder->image_url)
-          <x-img :src="$builder->detailSrc() ?? $builder->image_url"
+          <x-img :src="$img ?? $builder->image_url"
                  :alt="$builder->name"
                  class="aspect-[4/3] w-full object-cover" />
         @else
