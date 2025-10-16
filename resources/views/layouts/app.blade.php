@@ -172,7 +172,18 @@
 
       <x-site-footer />
     </div>
-    @if(($privacySettings?->banner_enabled) && $privacySettings?->banner_body_code)
+   @if(($privacySettings?->banner_enabled) && $privacySettings?->banner_body_code)
+  <script>
+    window.addEventListener('DOMContentLoaded', function () {
+      setTimeout(function () {
+        var s = document.createElement('script');
+        s.src = "https://cdn.iubenda.com/iubenda.js";
+        s.async = true;
+        document.body.appendChild(s);
+      }, 1200); // carica dopo ~1s per non bloccare FCP
+    });
+  </script>
+
   {!! $privacySettings->banner_body_code !!}
 @endif
   </body>
