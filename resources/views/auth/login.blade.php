@@ -94,7 +94,7 @@
       </button>
     </div>
   </form>
-  @if(config('demo.enabled') && auth()->check() && auth()->user()->is_demo && config('demo.show_banner'))
+  @if(config('demo.enabled') && config('demo.show_banner'))
     <div class="w-full text-center py-2 font-semibold bg-gray-800 dark:text-white">
         Want to see the admin part?<br> 
         username: admindemo@base-forge.com<br>
