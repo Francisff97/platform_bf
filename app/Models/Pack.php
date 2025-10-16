@@ -46,22 +46,26 @@ class Pack extends Model
      * -> ridimensionamento automatico in base a DPR/viewport (client hints)
      */
     public function getImageUrlAttribute(): ?string
-    {
-        if (!$this->image_path) return null;
+{
+    if (!$this->image_path) return null;
 
-        if ($this->useCloudflareImage()) {
-            return $this->cdnFromDisk($this->image_path, [
-                'width=auto:' . self::IMG_W_MAX, // autosize con cap a 1920px
-                'dpr=auto',                      // retina/HiDPI
-                'fit=' . self::IMG_FIT,          // cover/contain
-                'format=auto',                   // avif/webp/jpg
-                'quality=' . self::IMG_Q,
-            ]);
-        }
+    // origine locale
+    $origin = \Storage::disk('public')->url($this->image_path);
+    $path   = ltrim(parse_url($origin, PHP_URL_PATH), '/');
 
-        // Fallback locale se CF è disattivato
-        return $this->preferWebp($this->image_path);
+    if (config('cdn.use_cloudflare', env('USE_CF_IMAGE', true))) {
+        // width NUMERICO (niente auto/dpr)
+        $ops = ['format=auto', 'quality=82', 'fit=cover', 'width=800'];
+        return '/cdn-cgi/image/'.implode(',', $ops).'/'.$path;
     }
+
+    // fallback webp locale (come avevi)
+    $webp = preg_replace('/\.(jpe?g|png|gif|bmp)$/i', '.webp', $this->image_path);
+    if ($webp && \Storage::disk('public')->exists($webp)) {
+        return \Storage::disk('public')->url($webp);
+    }
+    return \Storage::disk('public')->url($this->image_path);
+}
 
     /* ================= Scopes & Relations (evitano gli errori visti) ================ */
 
