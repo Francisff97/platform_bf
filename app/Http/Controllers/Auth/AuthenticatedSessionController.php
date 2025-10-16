@@ -17,16 +17,24 @@ class AuthenticatedSessionController extends Controller
         return view('auth.login');
     }
 
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(LoginRequest $request)
 {
     $request->authenticate();
     $request->session()->regenerate();
 
     $user = $request->user();
-    if (strtolower((string)$user->role) === 'admin') {
+
+    // Se la Demo Mode è attiva e l'utente è demo → dashboard admin
+    if (config('demo.enabled') && $user && $user->is_demo) {
         return redirect()->route('admin.dashboard');
     }
 
+    // Se è un admin vero → dashboard admin
+    if ($user && strtolower((string) $user->role) === 'admin') {
+        return redirect()->route('admin.dashboard');
+    }
+
+    // Altrimenti → home classica
     return redirect()->route('home');
 }
 
