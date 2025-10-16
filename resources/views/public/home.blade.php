@@ -1,55 +1,36 @@
 {{-- resources/views/home.blade.php --}}
 <x-app-layout>
   {{-- ====== HERO FULL-BLEED ====== --}}
-<style>
-  .full-bleed{width:100vw;position:relative;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw}
-  #homeHero, #homeHero .swiper, #homeHero .swiper-wrapper, #homeHero .swiper-slide { height: auto !important; }
-  #homeHero .slide-figure{ height:70vh; min-height:480px; }
-  @supports (height:70svh){ #homeHero .slide-figure{ height:70svh; } }
-  #homeHero .swiper-button-next, #homeHero .swiper-button-prev { color:#fff; }
-  #homeHero .swiper-pagination-bullet{ background:rgba(255,255,255,.6); opacity:1; }
-  #homeHero .swiper-pagination-bullet-active{ background:#fff; }
-  @media screen and (max-width: 767px){
-    #homeHero .slide-figure{ height:400px; min-height:480px; }
-  }
-</style>
-
-@php
-  // Preload LCP
-  $first = $slides[0] ?? null;
-  $pFirst = $first?->image_path ?? null;
-  $srcFirst = $pFirst ? img_url($pFirst, 1600, 900, 82, 'cover') : null;
-@endphp
-
-@if($srcFirst)
-  <link rel="preload" as="image" href="{{ $srcFirst }}" fetchpriority="high">
-@endif
-
 <section class="full-bleed">
   <div id="homeHero" class="swiper w-full">
     <div class="swiper-wrapper">
-      @foreach($slides as $i => $s)
+      @foreach($slides as $s)
         @php
           $p   = $s->image_path ?? null;
           $src = $p ? img_url($p, 1920, 1080, 82, 'cover') : null;
           $org = $p ? img_origin($p) : null;
           $alt = img_alt($s) ?: ($s->title ?? 'Slide');
         @endphp
+
         <div class="swiper-slide">
-          <figure class="slide-figure relative w-full" style="aspect-ratio: 16 / 9;">
-            @if($org)
+          <figure class="slide-figure relative w-full overflow-hidden" style="aspect-ratio:16/9">
+            @if($src && $org)
               <x-img
                 :src="$src"
                 :origin="$org"
                 :alt="$alt"
-                width="1920" height="1080"
+                :width="1920"
+                :height="1080"
                 class="absolute inset-0 h-full w-full object-cover"
-                {{ $i === 0 ? 'loading=eager fetchpriority=high' : 'loading=lazy' }}
+                :loading="$loop->first ? 'eager' : 'lazy'"
+                :fetchpriority="$loop->first ? 'high' : null"
               />
             @else
               <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
             @endif
+
             <div class="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/60"></div>
+
             <figcaption class="relative z-10 mx-auto flex h-full max-w-[1200px] items-center px-4 sm:px-6">
               <div class="max-w-xl">
                 @if($s->title)
@@ -61,9 +42,7 @@
                   <p class="mt-2 text-white/90 text-base sm:text-lg">{{ $s->subtitle }}</p>
                 @endif
                 @if($s->cta_url)
-                  <a href="{{ $s->cta_url }}"
-                     class="mt-5 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-white hover:opacity-90"
-                     style="background:var(--accent)">
+                  <a href="{{ $s->cta_url }}" class="mt-5 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-white hover:opacity-90" style="background:var(--accent)">
                     {{ $s->cta_label ?? 'Learn more' }}
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                   </a>
@@ -74,6 +53,7 @@
         </div>
       @endforeach
     </div>
+
     <div class="swiper-pagination !bottom-3"></div>
     <div class="swiper-button-prev"></div>
     <div class="swiper-button-next"></div>
