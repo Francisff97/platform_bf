@@ -23,6 +23,7 @@ class AboutSection extends Model
     {
         static::saved(function (self $m) {
             if ($m->image_path) {
+                // manteniamo il WebP locale come fallback
                 $m->toWebp('public', $m->image_path, 75);
             }
         });
@@ -38,10 +39,10 @@ class AboutSection extends Model
 
         if ($this->useCloudflareImage()) {
             $ops = [
-                'width=auto', 'dpr=auto',
                 'format=auto',
                 'quality='.self::IMG_Q,
                 'fit='.self::IMG_FIT,
+                // se vuoi fisso: aggiungi width=..., altrimenti lo imposti da Blade con srcset
             ];
             return '/cdn-cgi/image/'.implode(',', $ops).'/'.$path;
         }
@@ -58,13 +59,35 @@ class AboutSection extends Model
         $path   = ltrim(parse_url($origin, PHP_URL_PATH), '/');
 
         if ($this->useCloudflareImage()) {
-            $ops = ['format=auto', "quality={$q}", "fit={$fit}", 'dpr=auto'];
-            $ops[] = $w ? "width={$w}" : 'width=auto';
+            $ops = ['format=auto', "quality={$q}", "fit={$fit}"];
+            if ($w) $ops[] = "width={$w}";
             if ($h) $ops[] = "height={$h}";
             return '/cdn-cgi/image/'.implode(',', $ops).'/'.$path;
         }
 
         return $this->preferWebp($this->image_path);
+    }
+
+    /* ========= Query Scopes (FIX) ========= */
+
+    /** Usato da: AboutSection::featured()->... */
+    public function scopeFeatured($q)
+    {
+        // Non abbiamo una colonna is_featured:
+        // interpreto "featured" come le sezioni attive ordinate.
+        return $q->where('is_active', true)->orderBy('sort_order');
+    }
+
+    /** Comodo se in qualche punto usi ->active() */
+    public function scopeActive($q)
+    {
+        return $q->where('is_active', true);
+    }
+
+    /** Ordinamento standard */
+    public function scopeOrdered($q)
+    {
+        return $q->orderBy('sort_order');
     }
 
     /* ===== Helpers ===== */
