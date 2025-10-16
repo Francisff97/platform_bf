@@ -31,7 +31,7 @@
       <div class="overflow-hidden rounded-2xl border border-gray-100 bg-white/80 shadow-sm ring-1 ring-black/5 backdrop-blur dark:border-gray-800 dark:bg-gray-900/60 dark:ring-white/10">
         <div class="relative">
           @if($coach->image_url)
-            <x-img :src="$coach->detailSrc() ?? $coach->image_url" class="h-64 w-full object-cover sm:h-72" />
+            <x-img :src="$img ?? $coach->image_url" class="h-64 w-full object-cover sm:h-72" />
           @else
             <div class="h-64 w-full bg-gray-200 dark:bg-gray-800"></div>
           @endif
