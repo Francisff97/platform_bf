@@ -18,10 +18,13 @@
   <section class="mx-auto max-w-6xl grid grid-cols-1 gap-8 px-4 py-8 md:grid-cols-3">
     <div class="md:col-span-1">
       <div class="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
-        @if($builder->image_url)
-          <x-img :src="$img ?? $builder->image_url"
-                 :alt="$builder->name"
-                 class="aspect-[4/3] w-full object-cover" />
+        @php $img = $builder->image_url ?? $builder->image_path; @endphp
+        @if($img)
+          <x-img
+            :src="$img"
+            :alt="$builder->name"
+            class="aspect-[4/3] w-full object-cover"
+          />
         @else
           <div class="aspect-[4/3] w-full rounded-2xl bg-gray-200 dark:bg-gray-800"></div>
         @endif
