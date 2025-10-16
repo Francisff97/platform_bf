@@ -58,7 +58,7 @@ class Pack extends Model
         $path   = ltrim(parse_url($origin, PHP_URL_PATH), '/');
 
         if ($this->useCloudflareImage()) {
-            $ops = ["format=auto", "quality={$q}", "dpr=auto", "fit={$fit}"];
+            $ops = ["format=auto", "quality={$q}", "fit={$fit}"];
             if ($w) $ops[] = "width={$w}";
             if ($h) $ops[] = "height={$h}";
             return '/cdn-cgi/image/' . implode(',', $ops) . '/' . $path;
