@@ -15,9 +15,7 @@
 </style>
 
 @php
-  use App\Support\Img;
-
-  // Preload LCP (prima slide)
+  // Preload LCP
   $first = $slides[0] ?? null;
   $pFirst = $first?->image_path ?? null;
   $srcFirst = $pFirst ? img_url($pFirst, 1600, 900, 82, 'cover') : null;
@@ -34,10 +32,9 @@
         @php
           $p   = $s->image_path ?? null;
           $src = $p ? img_url($p, 1920, 1080, 82, 'cover') : null;
-          $org = $p ? Img::origin($p) : null;
+          $org = $p ? img_origin($p) : null;
           $alt = img_alt($s) ?: ($s->title ?? 'Slide');
         @endphp
-
         <div class="swiper-slide">
           <figure class="slide-figure relative w-full" style="aspect-ratio: 16 / 9;">
             @if($org)
@@ -52,9 +49,7 @@
             @else
               <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
             @endif
-
             <div class="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/60"></div>
-
             <figcaption class="relative z-10 mx-auto flex h-full max-w-[1200px] items-center px-4 sm:px-6">
               <div class="max-w-xl">
                 @if($s->title)
@@ -79,7 +74,6 @@
         </div>
       @endforeach
     </div>
-
     <div class="swiper-pagination !bottom-3"></div>
     <div class="swiper-button-prev"></div>
     <div class="swiper-button-next"></div>
