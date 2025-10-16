@@ -64,7 +64,7 @@
            alt="{{ $pack->title }}"
            class="absolute inset-0 h-full w-full object-cover"
            :width="1200"
-           :height="900"
+           :height="600"
            loading="eager"
     />
   @else
