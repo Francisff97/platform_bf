@@ -12,35 +12,28 @@
     <div class="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
       @foreach($builders as $b)
         @php
-          use App\Support\Img;
-          $p   = $b->image_path ?? null;
-          $src = $p ? img_url($p, 720, 300, 82, 'cover') : null;
-          $org = $p ? Img::origin($p) : null;
-          $alt = img_alt($b) ?: ($b->name ?? 'Builder');
-        @endphp
+  $p   = $b->image_path ?? null;
+  $src = $p ? img_url($p, 720, 300, 82, 'cover') : null;
+  $org = $p ? img_origin($p) : null;
+  $alt = img_alt($b) ?: ($b->name ?? 'Builder');
+@endphp
 
-        <a href="{{ route('builders.show',$b->slug) }}"
-           class="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white/90 shadow-sm transition
-                  hover:-translate-y-1 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900/70">
-
-          {{-- Cover --}}
-          <div class="relative h-44 w-full overflow-hidden">
-            @if($org)
-              <x-img
-                :src="$src"
-                :origin="$org"
-                :alt="$alt"
-                width="720" height="300"
-                class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                loading="lazy"
-              />
-              <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-0
-                          transition-opacity duration-500 group-hover:opacity-80"></div>
-            @else
-              <div class="h-full w-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700"></div>
-            @endif
-          </div>
-
+<div class="relative h-44 w-full overflow-hidden">
+  @if($org)
+    <x-img
+      :src="$src"
+      :origin="$org"
+      :alt="$alt"
+      width="720" height="300"
+      class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+      loading="lazy"
+    />
+    <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-0
+                transition-opacity duration-500 group-hover:opacity-80"></div>
+  @else
+    <div class="h-full w-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700"></div>
+  @endif
+</div>
           {{-- Texts --}}
           <div class="relative z-10 p-5">
             <div class="flex items-center justify-between gap-3">
