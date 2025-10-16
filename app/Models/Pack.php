@@ -86,4 +86,9 @@ class Pack extends Model
         }
         return $disk->url($path);
     }
+    // --- SCOPE PUBBLICATO ---
+public function scopePublished($query)
+{
+    return $query->where('status', 'published');
+}
 }
