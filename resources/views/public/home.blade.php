@@ -1,7 +1,5 @@
 {{-- resources/views/home.blade.php --}}
 <x-app-layout>
-{{-- resources/views/home.blade.php --}}
-<x-app-layout>
   {{-- ====== HERO FULL-BLEED (slides) ====== --}}
   <style>
     /* full-bleed e contenitori */
