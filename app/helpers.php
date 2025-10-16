@@ -146,4 +146,25 @@ if (!function_exists('money_convert_and_format')) {
         $conv = Currency::convertCents($cents, strtoupper($from), $site['code'], $site['fx']);
         return Currency::format($conv, $site['code']);
     }
+    <?php
+
+use App\Support\Img;
+
+if (!function_exists('img_url')) {
+    function img_url(?string $p, ?int $w=null, ?int $h=null, int $q=82, string $fit='cover'): ?string {
+        return Img::url($p, $w, $h, $q, $fit);
+    }
+}
+
+if (!function_exists('img_origin')) {
+    function img_origin(?string $p): ?string {
+        return Img::origin($p);
+    }
+}
+
+if (!function_exists('img_alt')) {
+    function img_alt($subjectOrPath): ?string {
+        return Img::alt($subjectOrPath);
+    }
+}
 }
