@@ -58,7 +58,7 @@
   {{-- COVER (usa <x-img> + stessa path della card) --}}
  @php $img = $pack->image_url; @endphp
 
-<div class="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-gray-200 dark:bg-gray-800">
+<div class="relative aspect-[4/3] w-full h-[500px] overflow-hidden rounded-2xl bg-gray-200 dark:bg-gray-800">
   @if($img)
     <x-img :src="$img"
            alt="{{ $pack->title }}"
