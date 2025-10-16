@@ -2,7 +2,7 @@
   'hero'      => null,
   'title'     => null,
   'subtitle'  => null,
-  'image'     => null,   // path opzionale (storage path tipo "slides/foo.jpg")
+  'image'     => null,
   'ctaLabel'  => null,
   'ctaUrl'    => null,
   'height'    => '60vh',
@@ -10,23 +10,14 @@
 ])
 
 @php
-  use App\Support\Img;
-  use Illuminate\Support\Facades\Storage;
-
-  // Altezza & full-bleed
   $h    = $hero->height_css ?? $height ?? '60vh';
   $fb   = isset($hero) ? (bool)$hero->full_bleed : (bool)$fullBleed;
   $full = $fb ? 'full-bleed' : '';
 
-  // Path immagine (preferisci sempre il path su storage)
-  $path = $hero->image_path ?? $image ?? null;
-
-  // Src ottimizzato (CF) + origin fallback
+  $path   = $hero->image_path ?? $image ?? null;
   $src    = $path ? img_url($path, 1920, 1080, 82, 'cover') : null;
-  $origin = $path ? Img::origin($path) : null;
-
-  // ALT centralizzato (SEO -> Media) con fallback al titolo
-  $alt = img_alt($hero ?? null) ?: ($hero->title ?? $title ?? 'Hero');
+  $origin = $path ? img_origin($path) : null;
+  $alt    = img_alt($hero ?? null) ?: ($hero->title ?? $title ?? 'Hero');
 @endphp
 
 <style>
@@ -41,8 +32,7 @@
         :src="$src"
         :origin="$origin"
         :alt="$alt"
-        width="1920"
-        height="1080"
+        width="1920" height="1080"
         class="absolute inset-0 h-full w-full object-cover"
         loading="eager"
       />
