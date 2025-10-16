@@ -1,17 +1,13 @@
 <x-app-layout>
   <x-auto-hero/>
 
-  {{-- INTRO --}}
   <section class="relative mx-auto mt-[60px] max-w-5xl text-center px-4">
-    <h2 class="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl">
-      Our Builders
-    </h2>
+    <h2 class="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl">Our Builders</h2>
     <p class="mx-auto mt-4 max-w-2xl text-lg text-gray-600 dark:text-gray-300">
       Makers, tinkerers, product minds. Explore who’s crafting the packs you love.
     </p>
   </section>
 
-  {{-- GRID BUILDERS --}}
   <section class="mx-auto mt-12 max-w-6xl px-4">
     <div class="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
       @foreach($builders as $b)
@@ -22,7 +18,9 @@
           {{-- Cover image --}}
           @if($b->image_path)
             <div class="relative h-44 w-full overflow-hidden">
-              <x-img :src="Storage::url($b->image_path)" class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" :alt="$b->name" />
+              <x-img :src="$b->gridSrc()"
+                     :alt="$b->name"
+                     class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
               <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-0
                           transition-opacity duration-500 group-hover:opacity-80"></div>
             </div>
@@ -44,7 +42,6 @@
               @endif
             </div>
 
-            {{-- Skills chips (scroll orizzontale se tante) --}}
             @if(!empty($b->skills) && is_iterable($b->skills))
               <div class="mt-3 -mx-2 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
                 <div class="flex gap-2 px-2">
@@ -60,7 +57,6 @@
             @endif
           </div>
 
-          {{-- Accent underline animata --}}
           <div class="absolute bottom-0 left-0 h-1 w-0 bg-[color:var(--accent)] transition-all duration-500 group-hover:w-full"></div>
         </a>
       @endforeach
@@ -69,6 +65,5 @@
     <div class="mt-8">{{ $builders->links() }}</div>
   </section>
 
-  {{-- sfondo soft --}}
   <div class="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[360px] bg-gradient-to-b from-[color:var(--accent)]/8 to-transparent"></div>
 </x-app-layout>
