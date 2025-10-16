@@ -1,6 +1,20 @@
 {{-- resources/views/home.blade.php --}}
 <x-app-layout>
   {{-- ====== HERO FULL-BLEED ====== --}}
+  
+  <style>
+  .full-bleed{width:100vw;position:relative;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw}
+  #homeHero, #homeHero .swiper, #homeHero .swiper-wrapper, #homeHero .swiper-slide { height: auto !important; }
+  #homeHero .slide-figure{ height:70vh; min-height:480px; }
+  @supports (height:70svh){ #homeHero .slide-figure{ height:70svh; } }
+  #homeHero .swiper-button-next, #homeHero .swiper-button-prev { color:#fff; }
+  #homeHero .swiper-pagination-bullet{ background:rgba(255,255,255,.6); opacity:1; }
+  #homeHero .swiper-pagination-bullet-active{ background:#fff; }
+  @media screen and (max-width: 767px){
+    #homeHero .slide-figure{ height:400px; min-height:480px; }
+  }
+</style>
+  
 <section class="full-bleed">
   <div id="homeHero" class="swiper w-full">
     <div class="swiper-wrapper">
