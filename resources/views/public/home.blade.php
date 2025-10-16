@@ -16,7 +16,7 @@
 </style>
   
 <section class="full-bleed">
-  <div id="homeHero" class="swiper w-full overflox-hidden">
+  <div id="homeHero" class="swiper w-full overflow-hidden">
     <div class="swiper-wrapper">
       @foreach($slides as $s)
         @php
