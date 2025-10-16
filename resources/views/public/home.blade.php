@@ -20,28 +20,39 @@
     <div class="swiper-wrapper">
       @foreach($slides as $s)
         @php
-          $p   = $s->image_path ?? null;
-          $src = $p ? img_url($p, 1920, 1080, 82, 'cover') : null;
-          $org = $p ? img_origin($p) : null;
-          $alt = img_alt($s) ?: ($s->title ?? 'Slide');
-        @endphp
+  $slidePath = $s->image_path ?? null;
+  $src_1200  = $slidePath ? cf_img($slidePath, 1200, 675) : null;   // default src
+  $set       = $slidePath ? implode(', ', [
+                  cf_img($slidePath, 768, 432).' 768w',
+                  cf_img($slidePath, 1200, 675).' 1200w',
+                  cf_img($slidePath, 1920, 1080).' 1920w',
+                ]) : null;
+@endphp
 
-        <div class="swiper-slide">
-          <figure class="slide-figure relative w-full overflow-hidden" style="aspect-ratio:16/9">
-            @if($src && $org)
-              <x-img
-                :src="$src"
-                :origin="$org"
-                :alt="$alt"
-                :width="1920"
-                :height="1080"
-                class="absolute inset-0 h-full w-full object-cover"
-                :loading="$loop->first ? 'eager' : 'lazy'"
-                :fetchpriority="$loop->first ? 'high' : null"
-              />
-            @else
-              <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
-            @endif
+@if($loop->first && $slidePath)
+  {{-- PRELOAD con lo STESSO URL della LCP --}}
+  <link rel="preload" as="image"
+        href="{{ $src_1200 }}"
+        imagesrcset="{{ $set }}"
+        imagesizes="100vw"
+        fetchpriority="high">
+@endif
+
+@if($slidePath)
+  <img
+    src="{{ $src_1200 }}"
+    srcset="{{ $set }}"
+    sizes="100vw"
+    alt="{{ $s->title ?? 'Slide' }}"
+    width="1200" height="675"
+    class="absolute inset-0 h-full w-full object-cover"
+    loading="{{ $loop->first ? 'eager' : 'lazy' }}"
+    {{ $loop->first ? 'fetchpriority=high importance=high' : '' }}
+    decoding="async"
+  >
+@else
+  <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
+@endif
 
             <div class="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/60"></div>
 
