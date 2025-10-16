@@ -17,6 +17,12 @@ if (!function_exists('embed_from_url')) {
         return Currency::format($cents, $site['code']);
     }
 }
+use App\Support\Img;
+if (!function_exists('img_url')) {
+    function img_url(?string $p, ?int $w=null, ?int $h=null, int $q=82, string $fit='cover'): ?string {
+        return Img::url($p, $w, $h, $q, $fit);
+    }
+}
 
 if (!function_exists('money_convert_and_format')) {
     // converte da $from verso la valuta del sito, poi formatta
@@ -25,5 +31,6 @@ if (!function_exists('money_convert_and_format')) {
         $conv = Currency::convertCents($cents, strtoupper($from), $site['code'], $site['fx']);
         return Currency::format($conv, $site['code']);
     }
+    
 }
 }
