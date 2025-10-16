@@ -20,11 +20,9 @@
       <div class="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
         @php
           // 1) tenta Cloudflare (/cdn-cgi/image...) via accessor/preset
-          $img = $builder->showSrc()
-              // 2) accessor generico (internamente può preferire webp)
-              ?? $builder->image_url
-              // 3) URL storage diretto
-              ?? ($builder->image_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($builder->image_path) : null);
+          <x-img :src="img_url($builder->image_path, 1200, 900)"
+       :alt="$builder->name"
+       class="aspect-[4/3] w-full object-cover" />
         @endphp
 
         @if($img)
