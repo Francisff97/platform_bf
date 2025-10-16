@@ -12,9 +12,6 @@
   #homeHero .swiper-pagination-bullet-active{ background:#fff; }
   @media screen and (max-width: 767px){
     #homeHero .slide-figure{ height:400px; min-height:480px; }
-      #homeHero, #homeHero .swiper, #homeHero .swiper-wrapper, #homeHero .swiper-slide { height:auto!important }
-  #homeHero, #homeHero .swiper, #homeHero .swiper-wrapper, #homeHero .swiper-slide, #homeHero .slide-figure { overflow:hidden } 
-  }
 </style>
   
 <section class="full-bleed">
