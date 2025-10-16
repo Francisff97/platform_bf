@@ -5,68 +5,85 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use App\Traits\ConvertsToWebp;
+use Illuminate\Support\Str;
 
 class Slide extends Model
 {
     use ConvertsToWebp;
 
+    // default qualità/fit
+    private const IMG_Q   = 82;
+    private const IMG_FIT = 'cover';
+
     protected $fillable = [
         'title','subtitle','image_path','cta_label','cta_url','sort_order','is_active'
     ];
+
+    protected $casts = ['is_active' => 'boolean'];
 
     protected static function booted()
     {
         static::saved(function (self $m) {
             if ($m->image_path) {
+                // mantieni WebP locale come fallback
                 $m->toWebp('public', $m->image_path, 75);
             }
         });
     }
 
-    /** {{ $slide->image_url }} */
+    /** Blade continua: {{ $slide->image_url }} */
     public function getImageUrlAttribute(): ?string
-    {
-        // Slide: 1600 è un buon default (caroselli full-width)
-        return $this->imageUrl(1600, null, 85);
-    }
-
-    public function imageUrl(?int $w = null, ?int $h = null, int $q = 85): ?string
     {
         if (!$this->image_path) return null;
 
+        $origin = Storage::disk('public')->url($this->image_path);
+        $path   = ltrim(parse_url($origin, PHP_URL_PATH), '/');
+
         if ($this->useCloudflareImage()) {
-            return $this->cdnFromDisk($this->image_path, $w, $h, $q);
+            // Di solito lo slider è full-bleed: lascio width=auto,dpr=auto
+            $ops = [
+                'width=auto', 'dpr=auto',
+                'format=auto',
+                'quality='.self::IMG_Q,
+                'fit='.self::IMG_FIT,
+            ];
+            return '/cdn-cgi/image/'.implode(',', $ops).'/'.$path;
         }
 
         return $this->preferWebp($this->image_path);
     }
 
-    /** ========= Helper interni ========= */
+    /** Se ti serve una misura fissa dal controller: $slide->imageUrl(1600, 700) */
+    public function imageUrl(?int $w=null, ?int $h=null, int $q=self::IMG_Q, string $fit=self::IMG_FIT): ?string
+    {
+        if (!$this->image_path) return null;
+
+        $origin = Storage::disk('public')->url($this->image_path);
+        $path   = ltrim(parse_url($origin, PHP_URL_PATH), '/');
+
+        if ($this->useCloudflareImage()) {
+            $ops = ['format=auto', "quality={$q}", "fit={$fit}", 'dpr=auto'];
+            $ops[] = $w ? "width={$w}" : 'width=auto';
+            if ($h) $ops[] = "height={$h}";
+            return '/cdn-cgi/image/'.implode(',', $ops).'/'.$path;
+        }
+
+        return $this->preferWebp($this->image_path);
+    }
+
+    /* ===== Helpers comuni ===== */
 
     private function useCloudflareImage(): bool
     {
         return (bool) (config('cdn.use_cloudflare', env('USE_CF_IMAGE', true)));
     }
 
-    private function cdnFromDisk(string $diskPath, ?int $w, ?int $h, int $q): string
-    {
-        $origin = Storage::disk('public')->url($diskPath);
-        $path   = ltrim(parse_url($origin, PHP_URL_PATH), '/');
-
-        $params = ['format=auto', "quality={$q}"];
-        if ($w) $params[] = "width={$w}";
-        if ($h) $params[] = "height={$h}";
-
-        return '/cdn-cgi/image/' . implode(',', $params) . '/' . $path;
-    }
-
     private function preferWebp(?string $path): ?string
     {
         if (!$path) return null;
+        $disk = Storage::disk('public');
         $webp = preg_replace('/\.(jpe?g|png|gif|bmp)$/i', '.webp', $path);
-        if ($webp && Storage::disk('public')->exists($webp)) {
-            return Storage::disk('public')->url($webp);
-        }
-        return Storage::disk('public')->url($path);
+        if ($webp && $disk->exists($webp)) return $disk->url($webp);
+        return $disk->url($path);
     }
 }
