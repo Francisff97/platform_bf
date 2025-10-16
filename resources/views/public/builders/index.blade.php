@@ -15,23 +15,22 @@
            class="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white/90 shadow-sm transition
                   hover:-translate-y-1 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900/70">
 
-          {{-- Cover image --}}
+          {{-- Cover image (URL diretto da Storage) --}}
           @php
-            $img = $b->gridSrc()
-              ?? $b->image_url
-              ?? ($b->image_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($b->image_path) : null);
+            $img = $b->image_path
+              ? \Illuminate\Support\Facades\Storage::disk('public')->url($b->image_path)
+              : null;
           @endphp
 
           @if($img)
             <div class="relative h-44 w-full overflow-hidden">
-              <x-img
-                :src="$img"
-                :alt="$b->name ?: 'Builder'"
+              <img
+                src="{{ $img }}"
+                alt="{{ $b->name ?: 'Builder' }}"
                 class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                width="720"
-                height="300"
-                loading="lazy"
-              />
+                width="720" height="300"
+                loading="lazy" decoding="async"
+              >
               <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-0
                           transition-opacity duration-500 group-hover:opacity-80"></div>
             </div>
