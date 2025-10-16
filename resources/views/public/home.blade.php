@@ -3,7 +3,7 @@
   {{-- ====== HERO FULL-BLEED ====== --}}
   
   <style>
-  .full-bleed{width:100vw;position:relative;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw}
+  .full-bleed{width:100vw;position:relative;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw; overflow: hidden;}
   #homeHero, #homeHero .swiper, #homeHero .swiper-wrapper, #homeHero .swiper-slide { height: auto !important; }
   #homeHero .slide-figure{ height:70vh; min-height:480px; }
   @supports (height:70svh){ #homeHero .slide-figure{ height:70svh; } }
