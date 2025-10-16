@@ -75,3 +75,4 @@
   loading="{{ $loading }}" decoding="async"
   {{ $attributes->merge(['class' => $class]) }}
   @if($origin) onerror="this.onerror=null; this.src='{{ $origin }}'" @endif
+>
