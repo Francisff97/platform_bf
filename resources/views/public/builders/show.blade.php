@@ -18,21 +18,13 @@
   <section class="mx-auto max-w-6xl grid grid-cols-1 gap-8 px-4 py-8 md:grid-cols-3">
     <div class="md:col-span-1">
       <div class="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
-        @php
-          // Path grezzo dal DB
-          $path = $builder->image_path;
+        @php($path = $builder->image_path)
 
-          // Src ottimizzato (CF Image se attivo, altrimenti WebP/Storage)
-          $src  = $path ? img_url($path, 1200, 900) : null;
-
-          // ALT dal backend SEO → Media con fallback al nome builder
-          $alt  = $path ? img_alt($path, $builder->seo_title ?? $builder->name) : null;
-        @endphp
-
-        @if($src)
-          <x-img :src="$src"
-                 :alt="$alt"
-                 class="aspect-[4/3] w-full object-cover" />
+<x-img
+  :src="img_url($path, 1200, 900)"
+  :alt="img_alt($builder)"  {{-- legge da media_assets.path o fallback --}}
+  class="aspect-[4/3] w-full object-cover"
+/>
         @else
           <div class="aspect-[4/3] w-full rounded-2xl bg-gray-200 dark:bg-gray-800"></div>
         @endif
