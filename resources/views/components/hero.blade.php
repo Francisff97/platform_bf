@@ -51,20 +51,19 @@
 
 <section class="{{ $full }}">
   <figure class="inizio relative w-full" style="height: {{ $h }};">
-    @if($origin)
-      {{-- Immagine hero: eager + fetchpriority high, cover full-bleed --}}
-      <x-img
-        :src="$src"
-        srcset="{{ $srcset }}"
-        sizes="{{ $sizes }}"
-        :alt="$hero->title ?? $title ?? 'Hero'"
-        class="absolute inset-0 h-full w-full object-cover"
-        loading="eager"
-        fetchpriority="high"
-      />
-    @else
-      <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
-    @endif
+    @php $heroImg = isset($hero) ? ($hero->image_url ?? null) : ($image ?? null); @endphp
+
+@if($heroImg)
+  <x-img :src="$heroImg"
+         :alt="$hero->title ?? $title ?? 'Hero'"
+         class="absolute inset-0 h-full w-full object-cover"
+         :width="1920"
+         :height="1080"
+         loading="eager"
+  />
+@else
+  <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
+@endif
 
     <div class="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/60"></div>
 
