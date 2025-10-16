@@ -5,9 +5,18 @@
 ])
 
 @php
-  // usa l'accessor del modello (serve CF /cdn-cgi/image o fallback webp)
+  // usa accessor modello (CF /cdn-cgi/image o fallback webp)
   $img = $pack->image_url; 
-  // Badge categoria (come avevi)
+
+  // testo alternativo: title > excerpt > nome categoria > fallback generico
+  $altText = trim(strip_tags(
+      $pack->title
+      ?? $pack->excerpt
+      ?? optional($pack->category)->name
+      ?? 'Pack image'
+  ));
+
+  // Badge categoria
   $badgeClass = 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-100';
   $badgeStyle = '';
 
@@ -39,19 +48,19 @@
 <a href="{{ route('packs.show', $pack->slug) }}"
    class="group relative block overflow-hidden rounded-3xl shadow-sm ring-1 ring-black/5 transition hover:shadow-md">
 
-  {{-- Pannello immagine: usiamo <img> per permettere il resize Cloudflare --}}
+  {{-- Pannello immagine --}}
   <div class="relative {{ $ratio }} w-full bg-gray-200 dark:bg-gray-800">
     @if($img)
       <img
         src="{{ $img }}"
-        alt="{{ $pack->title }}"
+        alt="{{ $altText }}"
         class="absolute inset-0 h-full w-full object-cover"
         loading="lazy"
         decoding="async"
+        fetchpriority="low"
         referrerpolicy="no-referrer"
       >
     @else
-      {{-- fallback super leggero --}}
       <div class="absolute inset-0 grid place-items-center text-xs text-gray-500">No image</div>
     @endif
 
