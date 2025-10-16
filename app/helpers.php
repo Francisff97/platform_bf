@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Storage;
 use App\Models\MediaAsset;
-
+use App\Support\Img;
 /* -----------------------------
  |  PATH helpers
  * ---------------------------*/
@@ -146,9 +146,6 @@ if (!function_exists('money_convert_and_format')) {
         $conv = Currency::convertCents($cents, strtoupper($from), $site['code'], $site['fx']);
         return Currency::format($conv, $site['code']);
     }
-    <?php
-
-use App\Support\Img;
 
 if (!function_exists('img_url')) {
     function img_url(?string $p, ?int $w=null, ?int $h=null, int $q=82, string $fit='cover'): ?string {
