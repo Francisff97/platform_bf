@@ -1,23 +1,16 @@
 {{-- resources/views/home.blade.php --}}
 <x-app-layout>
-{{-- ====== HERO FULL-BLEED (slides) ====== --}}
+{{-- ====== HERO FULL-BLEED (slides) — versione base ====== --}}
 <style>
   .full-bleed{
     width:100vw; position:relative; left:50%; right:50%;
     margin-left:-50vw; margin-right:-50vw; overflow:hidden;
   }
-
-  /* contenitori swiper */
-  #homeHero { overflow:hidden; }
-  #homeHero .swiper-wrapper{ will-change: transform; }
+  #homeHero{ overflow:hidden; }
   #homeHero .swiper-slide{ position:relative; overflow:hidden; }
-
-  /* altezza slide */
   #homeHero .slide-figure{ height:70vh; min-height:480px; }
   @supports (height:70svh){ #homeHero .slide-figure{ height:70svh; } }
   @media (max-width:767px){ #homeHero .slide-figure{ height:400px; min-height:400px; } }
-
-  /* UI */
   #homeHero .swiper-button-next, #homeHero .swiper-button-prev { color:#fff; }
   #homeHero .swiper-pagination-bullet{ background:rgba(255,255,255,.6); opacity:1; }
   #homeHero .swiper-pagination-bullet-active{ background:#fff; }
@@ -26,25 +19,17 @@
 <section class="full-bleed">
   <div id="homeHero" class="swiper w-full">
     <div class="swiper-wrapper">
+
       @foreach($slides as $s)
         @php
           $path = $s->image_path ?? null;
-          $src    = $path ? img_url($path, 1920, 1080) : null;  // sorgente principale
-          $srcset = $path ? implode(', ', [
-                      img_url($path, 768, 432).' 768w',
-                      img_url($path, 1200, 675).' 1200w',
-                      img_url($path, 1920, 1080).' 1920w',
-                    ]) : null;
-          $sizes  = '100vw';
-          $alt    = img_alt($s) ?: ($s->title ?? 'Slide');
+          $src  = $path ? img_url($path, 1920, 1080) : null;   // URL ottimizzato (CF/fallback)
+          $alt  = img_alt($s) ?: ($s->title ?? 'Slide');       // ALT dal backend SEO
         @endphp
 
         {{-- Preload SOLO la prima (LCP) con lo stesso URL usato sotto --}}
         @if($loop->first && $src)
-          <link rel="preload" as="image"
-                href="{{ $src }}"
-                @if($srcset) imagesrcset="{{ $srcset }}" imagesizes="{{ $sizes }}" @endif
-                fetchpriority="high">
+          <link rel="preload" as="image" href="{{ $src }}" fetchpriority="high">
         @endif
 
         <div class="swiper-slide">
@@ -52,7 +37,6 @@
             @if($src)
               <img
                 src="{{ $src }}"
-                @if($srcset) srcset="{{ $srcset }}" sizes="{{ $sizes }}" @endif
                 alt="{{ $alt }}"
                 width="1920" height="1080"
                 class="absolute inset-0 h-full w-full object-cover"
@@ -90,6 +74,7 @@
           </figure>
         </div>
       @endforeach
+
     </div>
 
     <div class="swiper-pagination !bottom-3"></div>
@@ -103,41 +88,15 @@
 
       new Swiper('#homeHero', {
         loop: true,
-        speed: 650,
-        spaceBetween: 0,
+        speed: 600,
         slidesPerView: 1,
-
-        /* anti-bug: lascia gestire il caricamento a Swiper */
-        preloadImages: false,
-        lazy: {
-          loadOnTransitionStart: true,
-          loadPrevNext: true,
-          loadPrevNextAmount: 1
-        },
-
-        /* anti-bug: se il container cambia dimensioni/visibilità */
-        observer: true,
-        observeParents: true,
-        watchSlidesProgress: true,
-        watchSlidesVisibility: true,
-
-        /* transizioni lisce */
-        cssMode: false,
-        touchRatio: 1,
-
+        spaceBetween: 0,
+        // semplice e stabile: niente lazy Swiper, niente preloadImages=false
         pagination: { el: '#homeHero .swiper-pagination', clickable: true },
         navigation: { nextEl: '#homeHero .swiper-button-next', prevEl: '#homeHero .swiper-button-prev' },
-
-        /* fix “trasparenza” alla prima navigazione */
-        on: {
-          init(sw) {
-            sw.slides.forEach(sl => sl.style.opacity = 1);
-          },
-          slideChangeTransitionStart(sw) {
-            const s = sw.slides[sw.activeIndex];
-            if (s) s.style.opacity = 1;
-          }
-        }
+        autoplay: { delay: 4500, disableOnInteraction: false },
+        observer: true,
+        observeParents: true
       });
     });
   </script>
