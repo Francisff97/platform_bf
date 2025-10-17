@@ -3,16 +3,47 @@
 {{-- ====== HERO FULL-BLEED (slides) — versione base ====== --}}
 <style>
   .full-bleed{
-    width:100vw; position:relative; left:50%; right:50%;
-    margin-left:-50vw; margin-right:-50vw; overflow:hidden;
+    width:100vw;position:relative;left:50%;right:50%;
+    margin-left:-50vw;margin-right:-50vw;overflow:hidden;
   }
+
+  /* Contenitori Swiper */
   #homeHero{ overflow:hidden; }
-  #homeHero .swiper-slide{ position:relative; overflow:hidden; }
-  #homeHero .slide-figure{ height:70vh; min-height:480px; }
-  @supports (height:70svh){ #homeHero .slide-figure{ height:70svh; } }
-  @media (max-width:767px){ #homeHero .slide-figure{ height:400px; min-height:400px; } }
-  #homeHero .swiper-button-next, #homeHero .swiper-button-prev { color:#fff; }
-  #homeHero .swiper-pagination-bullet{ background:rgba(255,255,255,.6); opacity:1; }
+  #homeHero .swiper { overflow: hidden; }
+  #homeHero .swiper-wrapper{ align-items:stretch; }
+
+  /* Safari fix: la slide deve avere una propria altezza */
+  #homeHero .swiper-slide{
+    display:block;             /* niente flex strani */
+    height:auto;               /* lascia che il figlio imposti l'altezza */
+    backface-visibility:hidden;
+    -webkit-transform:translateZ(0);
+            transform:translateZ(0);
+    contain: layout paint style; /* evita reflow strani tra slide */
+  }
+
+  /* La “figcaption” che usi resta assoluta sopra, ma
+     la figura fornisce l’altezza alla slide */
+  #homeHero .slide-figure{
+    position:relative;
+    height:70vh;min-height:480px;margin:0;
+  }
+  @supports (height:70svh){
+    #homeHero .slide-figure{ height:70svh; }
+  }
+  @media (max-width:767px){
+    #homeHero .slide-figure{ height:400px;min-height:400px; }
+  }
+
+  /* L’immagine può rimanere assoluta */
+  #homeHero .slide-figure > img{
+    position:absolute;inset:0;width:100%;height:100%;
+    object-fit:cover;display:block;
+  }
+
+  /* UI */
+  #homeHero .swiper-button-next,#homeHero .swiper-button-prev{ color:#fff; }
+  #homeHero .swiper-pagination-bullet{ background:rgba(255,255,255,.6);opacity:1; }
   #homeHero .swiper-pagination-bullet-active{ background:#fff; }
 </style>
 
