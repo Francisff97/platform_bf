@@ -62,49 +62,6 @@
       })(window,document,'script','dataLayer','{{ $gtm }}');
     </script>
   @endif
-  
-  <script>
-  (function () {
-    // carico web-vitals in modo leggero
-    var s = document.createElement('script');
-    s.src = 'https://unpkg.com/web-vitals@3.5.2/dist/web-vitals.attribution.umd.js';
-    s.defer = true;
-    s.onload = function () {
-      // funzione unica che invia sia a console che a GTM/GA
-      function reportToAnalytics(metric) {
-        // 1) console: utile in dev
-        console.log('[web-vitals]', metric.name, Math.round(metric.value), metric);
-
-        // 2) GTM dataLayer (se presente)
-        window.dataLayer = window.dataLayer || [];
-        window.dataLayer.push({
-          event: 'web_vitals',
-          web_vitals_metric: metric.name,         // LCP, FID, INP, CLS, FCP, TTFB
-          web_vitals_value: metric.value,
-          web_vitals_id: metric.id,
-          web_vitals_rating: metric.rating        // 'good' | 'needs-improvement' | 'poor'
-        });
-
-        // 3) gtag/GA4 diretto (opzionale)
-        if (typeof gtag === 'function') {
-          gtag('event', metric.name, {
-            value: metric.name === 'CLS' ? metric.value : Math.round(metric.value),
-            metric_id: metric.id,
-            metric_rating: metric.rating,
-            non_interaction: true
-          });
-        }
-      }
-      // misuro tutte le principali
-      webVitals.onLCP(reportToAnalytics, { reportAllChanges: true });
-      webVitals.onINP(reportToAnalytics, { reportAllChanges: true });
-      webVitals.onCLS(reportToAnalytics, { reportAllChanges: true });
-      webVitals.onFCP(reportToAnalytics, { reportAllChanges: true });
-      webVitals.onTTFB(reportToAnalytics);
-    };
-    document.head.appendChild(s);
-  })();
-</script>
 
   <!-- ===============================
        🖋️ Google Fonts + Swiper CSS
