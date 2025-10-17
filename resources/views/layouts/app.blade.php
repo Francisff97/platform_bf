@@ -125,49 +125,30 @@
     [x-cloak]{display:none!important}
   </style>
 
- <!-- IUBENDA: config + lazy loader (3s o prima interazione) -->
+ <!-- IUBENDA nuova versione: carica dopo 3s o al primo scroll/interazione -->
 <script>
-  // Config di Iubenda
-  window._iub = window._iub || [];
-  _iub.csConfiguration = {
-    siteId: YOUR_SITE_ID,            // <-- metti il tuo
-    cookiePolicyId: YOUR_POLICY_ID,  // <-- metti il tuo
-    lang: "it",
-    enableTcf: true,
-    perPurposeConsent: true,
-    consentOnContinuedBrowsing: false,
-    invalidateConsentWithoutLog: true,
-    timeoutLoad: 0,                  // non caricare automaticamente
-    banner: { position: "bottom" }
-  };
-
-  // Carica lo script di Iubenda dopo 3s oppure alla prima interazione
-  (function () {
+  (function(){
     let loaded = false;
-    function loadIubenda() {
+    function loadIubenda(){
       if (loaded) return; loaded = true;
       const s = document.createElement('script');
-      s.src   = "https://cdn.iubenda.com/cs/iubenda_cs.js";
+      s.type = "text/javascript";
+      s.src  = "https://embeds.iubenda.com/widgets/4ba02f66-006a-4b4e-85e2-42db144cce2.js"; // il tuo
       s.async = true;
       document.head.appendChild(s);
-      // rimuovi i listener dopo il load
-      ['scroll','touchstart','click','keydown','mousemove'].forEach(ev =>
-        window.removeEventListener(ev, trigger, opts)
-      );
-      clearTimeout(t);
     }
-    function trigger(){ loadIubenda(); }
 
-    // 1) Timer 3 secondi
+    // 1️⃣ Timer 3 secondi
     const t = setTimeout(loadIubenda, 3000);
 
-    // 2) Prima interazione
+    // 2️⃣ Carica subito se l’utente interagisce
+    const trigger = () => { clearTimeout(t); loadIubenda(); };
     const opts = { passive: true, once: true };
-    window.addEventListener('scroll',     trigger, opts);
+    window.addEventListener('scroll', trigger, opts);
     window.addEventListener('touchstart', trigger, opts);
-    window.addEventListener('click',      trigger, { once: true });
-    window.addEventListener('keydown',    trigger, { once: true });
-    window.addEventListener('mousemove',  trigger, opts);
+    window.addEventListener('click', trigger, { once:true });
+    window.addEventListener('keydown', trigger, { once:true });
+    window.addEventListener('mousemove', trigger, opts);
   })();
 </script>
 
