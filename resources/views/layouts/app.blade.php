@@ -126,32 +126,6 @@
     [x-cloak]{display:none!important}
   </style>
 
-  <!-- ===============================
-       🍪 Iubenda (NUOVA VERSIONE)
-       Caricata dopo 3s o alla prima interazione.
-       Usa SOLO questo widget (niente cdn.iubenda.js).
-  =============================== -->
-  <script>
-    (function(){
-      var loaded = false;
-      function loadIubenda(){
-        if (loaded) return; loaded = true;
-        var s = document.createElement('script');
-        s.type = "text/javascript";
-        s.src  = "https://embeds.iubenda.com/widgets/4ba02f66-006a-4b4e-85e2-42db144cce2.js"; /* tuo widget */
-        s.async = true;
-        document.head.appendChild(s);
-      }
-      var t = setTimeout(loadIubenda, 3000);                 // 3s
-      var opts = { passive:true, once:true };
-      var trigger = function(){ clearTimeout(t); loadIubenda(); };
-      window.addEventListener('scroll',      trigger, opts);
-      window.addEventListener('touchstart',  trigger, opts);
-      window.addEventListener('click',       trigger, {once:true});
-      window.addEventListener('keydown',     trigger, {once:true});
-      window.addEventListener('mousemove',   trigger, opts);
-    })();
-  </script>
 
   <!-- ===============================
        🧩 Vite bundle
@@ -194,8 +168,69 @@
     <x-site-footer />
   </div>
 
-  <!-- ❌ RIMOSSO: vecchio blocco che caricava cdn.iubenda.com/iubenda.js
-       Se lo rimetti, il banner rischia di non comparire o comparire due volte. -->
+  {{-- Iubenda dal back-end, con delay/interazione --}}
+@if(($privacySettings?->banner_enabled) && $privacySettings?->banner_body_code)
+  {{-- NON eseguiamo subito: lo mettiamo in <template> --}}
+  <template id="iubenda-snippet">{!! $privacySettings->banner_body_code !!}</template>
 
+  <script>
+    (function () {
+      var injected = false;
+
+      function injectIubenda() {
+        if (injected) return; injected = true;
+        var tpl = document.getElementById('iubenda-snippet');
+        if (!tpl) return;
+
+        // Valutiamo correttamente eventuali <script> presenti nello snippet
+        var wrap = document.createElement('div');
+        wrap.innerHTML = tpl.innerHTML;
+
+        while (wrap.firstChild) {
+          var node = wrap.firstChild;
+
+          if (node.tagName === 'SCRIPT') {
+            var s = document.createElement('script');
+            // Copia tutti gli attributi (src, type, async, data-*)
+            for (var i = 0; i < node.attributes.length; i++) {
+              var a = node.attributes[i];
+              s.setAttribute(a.name, a.value);
+            }
+            s.text = node.text || '';
+            document.body.appendChild(s);
+            wrap.removeChild(node);
+            continue;
+          }
+
+          document.body.appendChild(node);
+        }
+      }
+
+      // 1) Delay 3s
+      var t = setTimeout(injectIubenda, 3000);
+
+      // 2) Oppure al primo gesto dell'utente
+      var once = true, opts = { passive: true };
+      function trigger() {
+        if (!once) return; once = false;
+        clearTimeout(t);
+        cleanup();
+        injectIubenda();
+      }
+      function cleanup() {
+        window.removeEventListener('scroll', trigger, opts);
+        window.removeEventListener('pointerdown', trigger, opts);
+        window.removeEventListener('mousemove', trigger, opts);
+        window.removeEventListener('keydown', trigger);
+        window.removeEventListener('click', trigger);
+      }
+      window.addEventListener('scroll',      trigger, opts);
+      window.addEventListener('pointerdown', trigger, opts);
+      window.addEventListener('mousemove',   trigger, opts);
+      window.addEventListener('keydown',     trigger, { once:true });
+      window.addEventListener('click',       trigger, { once:true });
+    })();
+  </script>
+@endif
 </body>
 </html>
