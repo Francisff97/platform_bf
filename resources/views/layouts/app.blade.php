@@ -11,14 +11,14 @@
   <link rel="icon" href="/favicon.ico">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
-  <!-- HSTS / CSP / COEP / COOP: gestiti da NGINX (non qui) -->
-
   <!-- ===============================
        🔍 SEO (SeoManager)
   =============================== -->
   @php
     use App\Support\SeoManager;
     $meta = SeoManager::pageMeta(null, null, $seoCtx ?? []);
+    $s = \App\Models\SiteSetting::first();
+    $gtm = $s?->gtm_container_id;
   @endphp
   <title>{{ $meta['title'] ?? config('app.name') }}</title>
   @if(!empty($meta['description'])) <meta name="description" content="{{ $meta['description'] }}"> @endif
@@ -29,7 +29,7 @@
   <meta name="twitter:card" content="summary_large_image">
 
   <!-- ===============================
-       ⚡ Preconnect essenziali (<=4)
+       ⚡ Preconnect essenziali
   =============================== -->
   <link rel="dns-prefetch" href="//fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,17 +38,19 @@
   <link rel="dns-prefetch" href="//unpkg.com">
   <link rel="preconnect" href="https://unpkg.com" crossorigin>
 
-  <!-- Thumbnails YouTube per cover "Play" -->
+  <!-- Thumbnails YouTube -->
   <link rel="dns-prefetch" href="//i.ytimg.com">
   <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
+
+  <!-- Iubenda (nuova UI) -->
+  <link rel="dns-prefetch" href="//embeds.iubenda.com">
+  <link rel="preconnect" href="https://embeds.iubenda.com" crossorigin>
 
   <!-- ===============================
        🧩 Google Tag Manager (se presente)
   =============================== -->
-  @php $gtm = optional(\App\Models\SiteSetting::first())->gtm_container_id; @endphp
   @if($gtm)
     <script>
-      /* dataLayer prima del tag GTM */
       window.dataLayer = window.dataLayer || [];
       function trackEvent(eventName, data = {}) { window.dataLayer.push({ event: eventName, ...data }); }
     </script>
@@ -75,7 +77,8 @@
   <noscript><link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&display=swap"></noscript>
 
-  <link rel="preload" href="https://unpkg.com/swiper@10.3.1/swiper-bundle.min.css"
+  <link rel="preload"
+        href="https://unpkg.com/swiper@10.3.1/swiper-bundle.min.css"
         as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://unpkg.com/swiper@10.3.1/swiper-bundle.min.css"></noscript>
 
@@ -84,7 +87,6 @@
 
   <!-- ===============================
        🎨 Theme bootstrap (inline)
-       *Se usi CSP strict, ricorda di aggiungere nonce/hash lato server*
   =============================== -->
   <script>
     (function(){
@@ -115,7 +117,6 @@
   <!-- ===============================
        🎨 Colori globali (inline critico)
   =============================== -->
-  @php $s = \App\Models\SiteSetting::first(); @endphp
   <style>
     :root{
       --bg-light: {{ $s->color_light_bg ?? '#f8fafc' }};
@@ -125,103 +126,76 @@
     [x-cloak]{display:none!important}
   </style>
 
- <!-- IUBENDA nuova versione: carica dopo 3s o al primo scroll/interazione -->
-<script>
-  (function(){
-    let loaded = false;
-    function loadIubenda(){
-      if (loaded) return; loaded = true;
-      const s = document.createElement('script');
-      s.type = "text/javascript";
-      s.src  = "https://embeds.iubenda.com/widgets/4ba02f66-006a-4b4e-85e2-42db144cce2.js"; // il tuo
-      s.async = true;
-      document.head.appendChild(s);
-    }
-
-    // 1️⃣ Timer 3 secondi
-    const t = setTimeout(loadIubenda, 3000);
-
-    // 2️⃣ Carica subito se l’utente interagisce
-    const trigger = () => { clearTimeout(t); loadIubenda(); };
-    const opts = { passive: true, once: true };
-    window.addEventListener('scroll', trigger, opts);
-    window.addEventListener('touchstart', trigger, opts);
-    window.addEventListener('click', trigger, { once:true });
-    window.addEventListener('keydown', trigger, { once:true });
-    window.addEventListener('mousemove', trigger, opts);
-  })();
-</script>
+  <!-- ===============================
+       🍪 Iubenda (NUOVA VERSIONE)
+       Caricata dopo 3s o alla prima interazione.
+       Usa SOLO questo widget (niente cdn.iubenda.js).
+  =============================== -->
+  <script>
+    (function(){
+      var loaded = false;
+      function loadIubenda(){
+        if (loaded) return; loaded = true;
+        var s = document.createElement('script');
+        s.type = "text/javascript";
+        s.src  = "https://embeds.iubenda.com/widgets/4ba02f66-006a-4b4e-85e2-42db144cce2.js"; /* tuo widget */
+        s.async = true;
+        document.head.appendChild(s);
+      }
+      var t = setTimeout(loadIubenda, 3000);                 // 3s
+      var opts = { passive:true, once:true };
+      var trigger = function(){ clearTimeout(t); loadIubenda(); };
+      window.addEventListener('scroll',      trigger, opts);
+      window.addEventListener('touchstart',  trigger, opts);
+      window.addEventListener('click',       trigger, {once:true});
+      window.addEventListener('keydown',     trigger, {once:true});
+      window.addEventListener('mousemove',   trigger, opts);
+    })();
+  </script>
 
   <!-- ===============================
        🧩 Vite bundle
   =============================== -->
   @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<style>[x-cloak]{display:none!important}</style>
-  <body class="min-h-screen bg-[var(--bg-light)] dark:bg-[var(--bg-dark)] text-gray-900 dark:text-gray-100 font-sans">
-    @if($gtm)
-      <!-- Google Tag Manager (noscript) -->
-      <noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ $gtm }}"
+
+<body class="min-h-screen bg-[var(--bg-light)] dark:bg-[var(--bg-dark)] text-gray-900 dark:text-gray-100 font-sans">
+  @if($gtm)
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ $gtm }}"
       height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-      <!-- End Google Tag Manager (noscript) -->
-    @endif
+    <!-- End Google Tag Manager (noscript) -->
+  @endif
 
-    <div class="min-h-screen">
-      {{-- Navbar moderna --}}
-      <x-site-nav />
+  <div class="min-h-screen">
+    {{-- Navbar moderna --}}
+    <x-site-nav />
 
-      {{-- Page Heading (opzionale) --}}
-      @isset($header)
-        <header class="bg-white shadow dark:bg-neutral-900">
-          <div class="mx-auto max-w-7xl py-6 px-4 sm:px-6 lg:px-8">
-            {{ $header }}
-          </div>
-        </header>
-      @endisset
+    {{-- Page Heading (opzionale) --}}
+    @isset($header)
+      <header class="bg-white shadow dark:bg-neutral-900">
+        <div class="mx-auto max-w-7xl py-6 px-4 sm:px-6 lg:px-8">
+          {{ $header }}
+        </div>
+      </header>
+    @endisset
 
-      {{-- Page Content --}}
-      <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        @if (session('success'))
-          <div class="mb-6 rounded border border-green-200 bg-green-50 px-4 py-3 text-green-800">
-            {{ session('success') }}
-          </div>
-        @endif
+    {{-- Page Content --}}
+    <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+      @if (session('success'))
+        <div class="mb-6 rounded border border-green-200 bg-green-50 px-4 py-3 text-green-800">
+          {{ session('success') }}
+        </div>
+      @endif
 
-        {{ $slot }}
-      </main>
+      {{ $slot }}
+    </main>
 
-      <x-site-footer />
-    </div>
-  @if(($privacySettings?->banner_enabled) && $privacySettings?->banner_body_code)
-  {!! $privacySettings->banner_body_code !!}
+    <x-site-footer />
+  </div>
 
-  <script>
-    (function () {
-      var loaded = false;
-      function loadIubenda() {
-        if (loaded) return;
-        loaded = true;
-        var s = document.createElement('script');
-        s.src = 'https://cdn.iubenda.com/iubenda.js';
-        s.async = true;
-        (document.head || document.body).appendChild(s);
+  <!-- ❌ RIMOSSO: vecchio blocco che caricava cdn.iubenda.com/iubenda.js
+       Se lo rimetti, il banner rischia di non comparire o comparire due volte. -->
 
-        // stacca i listener
-        window.removeEventListener('scroll', loadIubenda, opts);
-        window.removeEventListener('pointerdown', loadIubenda, opts);
-        window.removeEventListener('keydown', loadIubenda, opts);
-      }
-
-      var opts = { once: true, passive: true };
-      // primo evento utente: scroll / tocco / tasto
-      window.addEventListener('scroll', loadIubenda, opts);
-      window.addEventListener('pointerdown', loadIubenda, opts);
-      window.addEventListener('keydown', loadIubenda, { once: true });
-
-      // fallback: carica comunque dopo 2.5s
-      setTimeout(loadIubenda, 4500);
-    })();
-  </script>
-@endif
-  </body>
+</body>
 </html>
