@@ -113,24 +113,32 @@
     <div class="swiper-button-next"></div>
   </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      if (!window.Swiper) return;
+ <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!window.Swiper) return;
 
-      new Swiper('#homeHero', {
-        loop: true,
-        speed: 600,
-        slidesPerView: 1,
-        spaceBetween: 0,
-        // semplice e stabile: niente lazy Swiper, niente preloadImages=false
-        pagination: { el: '#homeHero .swiper-pagination', clickable: true },
-        navigation: { nextEl: '#homeHero .swiper-button-next', prevEl: '#homeHero .swiper-button-prev' },
-        autoplay: { delay: 4500, disableOnInteraction: false },
-        observer: true,
-        observeParents: true
-      });
+    const hero = new Swiper('#homeHero', {
+      loop: true,
+      speed: 650,
+      // evita che Swiper aspetti le immagini per calcolare l'altezza
+      preloadImages: false,
+      // carica la prossima/precedente appena parte la transizione
+      lazy: { loadPrevNext: true, loadOnTransitionStart: true },
+      // osserva cambi di layout (Safari fix)
+      observer: true,
+      observeParents: true,
+      watchSlidesProgress: true,
+      // nav/pagination
+      pagination: { el: '#homeHero .swiper-pagination', clickable: true },
+      navigation: { nextEl: '#homeHero .swiper-button-next', prevEl: '#homeHero .swiper-button-prev' },
+      on: {
+        init(sw){ sw.updateAutoHeight(0); },
+        imagesReady(sw){ sw.update(); },
+        slideChange(sw){ sw.update(); }
+      }
     });
-  </script>
+  });
+</script>
 </section>
 {{-- ====== PACKS ====== --}}
   <section class="mx-auto my-[70px] max-w-6xl px-4">
