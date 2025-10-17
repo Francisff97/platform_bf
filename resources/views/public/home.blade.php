@@ -1,148 +1,144 @@
 {{-- resources/views/home.blade.php --}}
 <x-app-layout>
-  {{-- ====== HERO FULL-BLEED (slides) ====== --}}
-{{-- ====== HERO FULL-BLEED (slides) — SAFE MODE ====== --}}
+{{-- ====== HERO FULL-BLEED (slides) ====== --}}
 <style>
-  /* full-bleed */
   .full-bleed{
     width:100vw; position:relative; left:50%; right:50%;
     margin-left:-50vw; margin-right:-50vw; overflow:hidden;
   }
 
-  /* altezza stabile dell'hero */
-  #homeHeroWrap{ height:clamp(380px, 70svh, 820px); }
+  /* Contenitore Swiper */
+  #homeHero{ overflow:hidden; visibility:hidden; }      /* nascondo finché non è init */
+  #homeHero.is-ready{ visibility:visible; }
 
-  /* Swiper: tutto a 100% per evitare buchi */
-  #homeHero, #homeHero .swiper-wrapper, #homeHero .swiper-slide{ height:100%; }
+  /* Swiper layout base: lasciamo che le slide prendano l'altezza del contenuto */
+  #homeHero .swiper,
+  #homeHero .swiper-wrapper,
+  #homeHero .swiper-slide{ height:100%; }
 
-  /* antiflicker: evitiamo trasparenze e repaint strani */
-  #homeHero .swiper-slide{
-    position:relative;
-    backface-visibility:hidden;
-    transform: translateZ(0);
-    contain: paint;
+  /* Ogni slide contiene un figure che imposta l’altezza visiva */
+  #homeHero .swiper-slide{ display:flex; }
+  #homeHero .slide-figure{ position:relative; width:100%; height:70vh; min-height:480px; overflow:hidden; }
+  @supports (height:70svh){
+    #homeHero .slide-figure{ height:70svh; }
+  }
+  @media (max-width: 767px){
+    #homeHero .slide-figure{ height:400px; min-height:400px; }
   }
 
-  /* figura che riempie la slide */
-  .slide-figure{ position:relative; inset:0; width:100%; height:100%; }
-  .slide-media{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-
-  /* UI */
-  #homeHero .swiper-button-next, #homeHero .swiper-button-prev { color:#fff; }
+  /* UI Swiper */
+  #homeHero .swiper-button-next, #homeHero .swiper-button-prev { color:#fff; z-index:20; }
   #homeHero .swiper-pagination-bullet{ background:rgba(255,255,255,.6); opacity:1; }
   #homeHero .swiper-pagination-bullet-active{ background:#fff; }
 </style>
 
 <section class="full-bleed">
-  <div id="homeHeroWrap">
-    <div id="homeHero" class="swiper w-full h-full">
-      <div class="swiper-wrapper">
+  <div id="homeHero" class="swiper w-full">
+    <div class="swiper-wrapper">
+      @foreach($slides as $s)
+        @php
+          $path = $s->image_path ?? null;
 
-        @foreach($slides as $s)
-          @php
-            $path   = $s->image_path ?? null;
-            $src    = $path ? img_url($path, 1920, 1080) : null;   // src solido
-            $srcset = $path ? implode(', ', [
-                          img_url($path, 768, 432).' 768w',
-                          img_url($path, 1200, 675).' 1200w',
-                          img_url($path, 1920, 1080).' 1920w',
-                        ]) : null;
-            $sizes  = '100vw';
-            $alt    = img_alt($s) ?: ($s->title ?? 'Slide');
-          @endphp
+          // URL ottimizzati (CF + fallback) coi tuoi helper
+          $src    = $path ? img_url($path, 1920, 1080) : null;
+          $srcset = $path ? implode(', ', [
+                        img_url($path, 768, 432).' 768w',
+                        img_url($path, 1200, 675).' 1200w',
+                        img_url($path, 1920, 1080).' 1920w',
+                      ]) : null;
+          $sizes  = '100vw';
+          $alt    = img_alt($s) ?: ($s->title ?? 'Slide');
+        @endphp
 
-          {{-- Preload SOLO prime due per evitare contese di rendering --}}
-          @if(($loop->index ?? 0) < 2 && $src)
-            <link rel="preload" as="image"
-                  href="{{ $src }}"
-                  @if($srcset) imagesrcset="{{ $srcset }}" imagesizes="{{ $sizes }}" @endif
-                  fetchpriority="high">
-          @endif
+        {{-- Preload SOLO della prima (LCP) --}}
+        @if($loop->first && $src)
+          <link rel="preload" as="image"
+                href="{{ $src }}"
+                @if($srcset) imagesrcset="{{ $srcset }}" imagesizes="{{ $sizes }}" @endif
+                fetchpriority="high">
+        @endif
 
-          <div class="swiper-slide">
-            <figure class="slide-figure">
-              @if($src)
-                <img
-                  src="{{ $src }}"
-                  @if($srcset) srcset="{{ $srcset }}" sizes="{{ $sizes }}" @endif
-                  alt="{{ $alt }}"
-                  width="1920" height="1080"
-                  class="slide-media"
-                  loading="{{ $loop->first ? 'eager' : 'lazy' }}"
-                  fetchpriority="{{ $loop->index < 2 ? 'high' : 'auto' }}"
-                  decoding="async">
-              @else
-                <div class="slide-media" style="background:linear-gradient(90deg,#e5e7eb,#d1d5db)"></div>
-              @endif
+        <div class="swiper-slide">
+          <figure class="slide-figure">
+            @if($src)
+              <img
+                src="{{ $src }}"
+                @if($srcset) srcset="{{ $srcset }}" sizes="{{ $sizes }}" @endif
+                alt="{{ $alt }}"
+                width="1920" height="1080"
+                class="absolute inset-0 h-full w-full object-cover"
+                loading="{{ $loop->first ? 'eager' : 'eager' }}"   {{-- come richiesto: high per tutte --}}
+                fetchpriority="high"
+                importance="high"
+                decoding="async"
+                draggable="false">
+            @else
+              <div class="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-900 dark:to-gray-800"></div>
+            @endif
 
-              <div class="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/60 pointer-events-none"></div>
+            <div class="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/60 pointer-events-none"></div>
 
-              <figcaption class="relative z-10 mx-auto flex h-full max-w-[1200px] items-center px-4 sm:px-6">
-                <div class="max-w-xl">
-                  @if($s->title)
-                    <h2 class="font-orbitron text-3xl sm:text-4xl md:text-5xl text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
-                      {{ $s->title }}
-                    </h2>
-                  @endif
-                  @if($s->subtitle)
-                    <p class="mt-2 text-white/90 text-base sm:text-lg">{{ $s->subtitle }}</p>
-                  @endif
-                  @if($s->cta_url)
-                    <a href="{{ $s->cta_url }}"
-                       class="mt-5 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-white hover:opacity-90"
-                       style="background:var(--accent)">
-                      {{ $s->cta_label ?? 'Learn more' }}
-                      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M5 12h14M12 5l7 7-7 7"/>
-                      </svg>
-                    </a>
-                  @endif
-                </div>
-              </figcaption>
-            </figure>
-          </div>
-        @endforeach
-
-      </div>
-
-      <div class="swiper-pagination !bottom-3"></div>
-      <div class="swiper-button-prev"></div>
-      <div class="swiper-button-next"></div>
+            <figcaption class="relative z-10 mx-auto flex h-full max-w-[1200px] items-center px-4 sm:px-6">
+              <div class="max-w-xl text-white">
+                @if($s->title)
+                  <h2 class="font-orbitron text-3xl sm:text-4xl md:text-5xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
+                    {{ $s->title }}
+                  </h2>
+                @endif
+                @if($s->subtitle)
+                  <p class="mt-2 text-white/90 text-base sm:text-lg">{{ $s->subtitle }}</p>
+                @endif
+                @if($s->cta_url)
+                  <a href="{{ $s->cta_url }}"
+                     class="mt-5 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-white hover:opacity-90"
+                     style="background:var(--accent)">
+                    {{ $s->cta_label ?? 'Learn more' }}
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                  </a>
+                @endif
+              </div>
+            </figcaption>
+          </figure>
+        </div>
+      @endforeach
     </div>
+
+    <div class="swiper-pagination !bottom-3"></div>
+    <div class="swiper-button-prev"></div>
+    <div class="swiper-button-next"></div>
   </div>
 
+  {{-- Init Swiper (mettilo dopo aver incluso lo script di Swiper via Vite/host) --}}
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       if (!window.Swiper) return;
 
       const hero = new Swiper('#homeHero', {
-        // modalita' a prova di fantasma
-        effect: 'fade',
-        fadeEffect: { crossFade: true },
-        speed: 450,
-
         loop: true,
-        loopAdditionalSlides: 1,
-        allowTouchMove: true,
-        resistanceRatio: 0.85,
-
-        // evitiamo ricalcoli strani
-        autoHeight: false,
-        observeParents: true,
-        observer: true,
+        speed: 600,
+        preloadImages: true,
+        updateOnImagesReady: true,
+        lazy: false,
         watchSlidesProgress: true,
 
-        // niente lazy interno (preloadiamo noi)
-        preloadImages: false,
-        lazy: false,
+        observer: true,
+        observeParents: true,
+        resizeObserver: true,
 
+        autoplay: { delay: 4500, disableOnInteraction: false },
         pagination: { el: '#homeHero .swiper-pagination', clickable: true },
         navigation: { nextEl: '#homeHero .swiper-button-next', prevEl: '#homeHero .swiper-button-prev' },
 
         on: {
-          init(sw){ sw.update(); },
-          slideChange(sw){ /* forza repaint leggero */ sw.el.style.willChange='opacity'; },
-          transitionEnd(sw){ sw.el.style.willChange='auto'; sw.update(); }
+          init(sw) {
+            // evita FOUC/glitch iniziale
+            document.getElementById('homeHero').classList.add('is-ready');
+            sw.updateAutoHeight();
+          },
+          imagesReady(sw){ sw.update(); },
+          slideChange(sw){ sw.updateProgress(); }
         }
       });
     });
