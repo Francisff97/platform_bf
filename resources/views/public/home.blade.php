@@ -2,6 +2,40 @@
 <x-app-layout>
 {{-- ====== HERO FULL-BLEED (slides) — versione base ====== --}}
 <style>
+/* === HERO ARROWS responsive tweak === */
+@media (max-width: 1024px) {
+  #homeHero .swiper-button-next,
+  #homeHero .swiper-button-prev {
+    position: absolute;
+    bottom: 20px !important;
+    top: auto !important;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    opacity: 0.9;
+    transition: opacity .2s, transform .2s;
+  }
+
+  #homeHero .swiper-button-prev {
+    left: calc(50% - 50px);
+  }
+  #homeHero .swiper-button-next {
+    right: calc(50% - 50px);
+  }
+
+  #homeHero .swiper-button-next::after,
+  #homeHero .swiper-button-prev::after {
+    font-size: 14px;
+  }
+
+  #homeHero .swiper-button-next:hover,
+  #homeHero .swiper-button-prev:hover {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
   .full-bleed{
     width:100vw;position:relative;left:50%;right:50%;
     margin-left:-50vw;margin-right:-50vw;overflow:hidden;
