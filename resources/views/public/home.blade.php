@@ -7,33 +7,38 @@
   #homeHero .swiper-button-next,
   #homeHero .swiper-button-prev {
     position: absolute;
-    bottom: 20px !important;
+    bottom: 22px !important;
     top: auto !important;
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     background: var(--accent);
     color: #fff;
     opacity: 0.9;
     transition: opacity .2s, transform .2s;
+    z-index: 10;
   }
 
-  #homeHero .swiper-button-prev {
-    left: calc(50% - 50px);
-  }
-  #homeHero .swiper-button-next {
-    right: calc(50% - 50px);
-  }
+  #homeHero .swiper-button-prev { left: 20px; }
+  #homeHero .swiper-button-next { right: 20px; }
 
   #homeHero .swiper-button-next::after,
   #homeHero .swiper-button-prev::after {
-    font-size: 14px;
+    font-size: 15px;
   }
 
   #homeHero .swiper-button-next:hover,
   #homeHero .swiper-button-prev:hover {
     opacity: 1;
-    transform: scale(1.05);
+    transform: scale(1.08);
+  }
+
+  /* opzionale: rendi i bullet meno invasivi */
+  #homeHero .swiper-pagination {
+    bottom: 70px !important;
+  }
+  #homeHero .swiper-pagination-bullet {
+    background: rgba(255,255,255,.6);
   }
 }
   .full-bleed{
