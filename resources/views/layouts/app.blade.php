@@ -199,7 +199,7 @@
       window.addEventListener('keydown', loadIubenda, { once: true });
 
       // fallback: carica comunque dopo 2.5s
-      setTimeout(loadIubenda, 2500);
+      setTimeout(loadIubenda, 4500);
     })();
   </script>
 @endif
