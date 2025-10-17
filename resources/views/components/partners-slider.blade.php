@@ -22,14 +22,35 @@
         role="region" aria-roledescription="carousel" aria-label="Partners"
       >
         @foreach($partners as $p)
+          @php
+            $path = $p->logo_path ?? null;
+
+            // CDN-cgi (o fallback) via helpers
+            // contain per evitare crop dei loghi rotondi/quadrati
+            $src     = $path ? img_url($path, 160, 160, 82, 'contain') : null;
+            $origin  = $path ? img_origin($path) : null;
+            // ALT da backend SEO; fallback al nome partner
+            $alt     = img_alt($p) ?: ($p->name ?? 'Partner');
+          @endphp
+
           <div class="snap-center w-[68%] shrink-0 sm:w-[42%] md:w-[27%] lg:w-[20%]">
             <div class="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-transparent
                         bg-gradient-to-b from-white/90 to-white/70 p-5 text-center shadow-sm backdrop-blur-md
                         transition hover:-translate-y-1 hover:shadow-lg dark:from-gray-900/80 dark:to-gray-800/70">
 
-              <div class="mx-auto h-20 w-20 overflow-hidden rounded-full ring-2 ring-[color:var(--accent)]/20">
-                @if($p->logo_path)
-                  <x-img :src="Storage::url($p->logo_path)" :alt="$p->name" class="h-full w-full object-cover" />
+              <div class="mx-auto h-20 w-20 overflow-hidden rounded-full ring-2 ring-[color:var(--accent)]/20 bg-white dark:bg-gray-900">
+                @if($src)
+                  {{-- usa <x-img> per avere origin + lazy + sizes coerenti --}}
+                  <x-img
+                    :src="$src"
+                    :origin="$origin"
+                    :alt="$alt"
+                    width="160" height="160"
+                    class="h-full w-full object-contain"
+                    loading="lazy"
+                    decoding="async"
+                    sizes="(min-width:1024px) 160px, 20vw"
+                  />
                 @else
                   <div class="grid h-full w-full place-items-center text-xs text-gray-400">No logo</div>
                 @endif
