@@ -1,34 +1,26 @@
 @php
-  // Path grezzo dal DB
-  $path = $s->image_path ?? null;
-
-  // ALT centralizzato (SEO -> Media), fallback a titolo o stringa generica
-  $alt  = img_alt($s) ?: ($s->title ?? 'About image');
-
-  // Preset dimensioni:
-  // - hero: 16:9 grande
-  // - blocchi left/right: circa 4:3
-  $srcHero = $path ? img_url($path, 1920, 1080) : null;
-  $src43   = $path ? img_url($path, 1200, 900)  : null;
+  $p = $s->image_path ?? null;
+  $srcset = $p ? implode(', ', [
+      img_url($p, 768,  432, 82, 'cover').' 768w',
+      img_url($p, 1200, 675, 82, 'cover').' 1200w',
+      img_url($p, 1920, 1080,82, 'cover').' 1920w',
+  ]) : null;
+  // src “di default” = 1200w per avere LCP veloce e peso ok
+  $src = $p ? img_url($p, 1200, 675, 82, 'cover') : null;
+  $alt = img_alt($s) ?: ($s->title ?? 'Slide');
 @endphp
 
-@if($s->layout === 'hero')
-  <section class="rounded-2xl my-[50px] bg-gradient-to-br from-indigo-50 to-white dark:from-gray-800 dark:to-gray-900 border p-8">
-    @if($s->title)
-      <h2 class="text-2xl font-bold mb-2">{{ $s->title }}</h2>
-    @endif
-    @if($s->body)
-      <p class="text-gray-600 dark:text-gray-300 leading-relaxed">{{ $s->body }}</p>
-    @endif
-
-    @if($srcHero)
-      <img
-        src="{{ $srcHero }}"
-        alt="{{ $alt }}"
-        class="mt-6 rounded-xl w-full object-cover"
-        width="1920" height="1080"
-        loading="eager" fetchpriority="high" decoding="async">
-    @endif
+@if($src)
+  <img
+    src="{{ $src }}"
+    @if($srcset) srcset="{{ $srcset }}" sizes="100vw" @endif
+    alt="{{ $alt }}"
+    width="1200" height="675"
+    class="absolute inset-0 h-full w-full object-cover"
+    loading="{{ $loop->first ? 'eager' : 'lazy' }}"
+    {{ $loop->first ? 'fetchpriority=high importance=high' : '' }}
+    decoding="async">
+@endif
   </section>
 
 @elseif($s->layout === 'image_left' || $s->layout === 'image_right')
