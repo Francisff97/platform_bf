@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+    @stack('preload')
 <head>
   <!-- ===============================
        🌐 BASE META
