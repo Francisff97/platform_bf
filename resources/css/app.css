@@ -14,23 +14,41 @@ h1, h2, h3, h4, h5, h6 {
   font-family: 'Orbitron', sans-serif !important;
     font-weight: 700;
 }
-/* === FIX overflow orizzontale full-bleed / hero / slider === */
-/*
-html, body {
-  overflow-x: hidden !important;
+/* Evita lo scroll orizzontale globale senza castrare i figli */
+html, body { overflow-x: clip; }
+@supports not (overflow-x: clip) {
+  html, body { overflow-x: hidden; }
 }
 
-section.full-bleed,
+/* Full-bleed: taglia solo ai bordi della sezione, non dentro lo slider */
+.full-bleed{
+  width:100vw; position:relative; left:50%; right:50%;
+  margin-left:-50vw; margin-right:-50vw;
+  overflow: clip;
+}
+@supports not (overflow: clip) {
+  .full-bleed{ overflow: hidden; }
+}
+
+/* Swiper: NON mettere overflow hidden qui */
 #homeHero,
 #homeHero .swiper,
 #homeHero .swiper-wrapper,
-#homeHero .swiper-slide {
-  overflow: hidden !important;
-} */
+#homeHero .swiper-slide{
+  overflow: visible;       /* <— fondamentale */
+}
 
-/* in caso di figure o hero personalizzate */
-/*
+/* Taglia i bordi solo sull’elemento che dà l’altezza alla slide */
 figure.inizio,
-.slide-figure {
-  overflow: hidden !important;
-}*/
+#homeHero .slide-figure{
+  position:relative;
+  overflow:hidden;
+}
+
+/* (facoltativo) ottimizza il paint della wrapper */
+#homeHero .swiper-wrapper{
+  will-change: transform;
+  backface-visibility:hidden;
+  -webkit-transform: translateZ(0);
+          transform: translateZ(0);
+}
