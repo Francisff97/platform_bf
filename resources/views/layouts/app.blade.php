@@ -125,12 +125,51 @@
     [x-cloak]{display:none!important}
   </style>
 
-  <!-- ===============================
-       📢 Iubenda banner (se attivo)
-  =============================== -->
-  @if(($privacySettings?->banner_enabled) && $privacySettings?->banner_head_code)
-    {!! $privacySettings->banner_head_code !!}
-  @endif
+ <!-- IUBENDA: config + lazy loader (3s o prima interazione) -->
+<script>
+  // Config di Iubenda
+  window._iub = window._iub || [];
+  _iub.csConfiguration = {
+    siteId: YOUR_SITE_ID,            // <-- metti il tuo
+    cookiePolicyId: YOUR_POLICY_ID,  // <-- metti il tuo
+    lang: "it",
+    enableTcf: true,
+    perPurposeConsent: true,
+    consentOnContinuedBrowsing: false,
+    invalidateConsentWithoutLog: true,
+    timeoutLoad: 0,                  // non caricare automaticamente
+    banner: { position: "bottom" }
+  };
+
+  // Carica lo script di Iubenda dopo 3s oppure alla prima interazione
+  (function () {
+    let loaded = false;
+    function loadIubenda() {
+      if (loaded) return; loaded = true;
+      const s = document.createElement('script');
+      s.src   = "https://cdn.iubenda.com/cs/iubenda_cs.js";
+      s.async = true;
+      document.head.appendChild(s);
+      // rimuovi i listener dopo il load
+      ['scroll','touchstart','click','keydown','mousemove'].forEach(ev =>
+        window.removeEventListener(ev, trigger, opts)
+      );
+      clearTimeout(t);
+    }
+    function trigger(){ loadIubenda(); }
+
+    // 1) Timer 3 secondi
+    const t = setTimeout(loadIubenda, 3000);
+
+    // 2) Prima interazione
+    const opts = { passive: true, once: true };
+    window.addEventListener('scroll',     trigger, opts);
+    window.addEventListener('touchstart', trigger, opts);
+    window.addEventListener('click',      trigger, { once: true });
+    window.addEventListener('keydown',    trigger, { once: true });
+    window.addEventListener('mousemove',  trigger, opts);
+  })();
+</script>
 
   <!-- ===============================
        🧩 Vite bundle
