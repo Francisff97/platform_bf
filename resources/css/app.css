@@ -15,6 +15,7 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
 }
 /* === FIX overflow orizzontale full-bleed / hero / slider === */
+/*
 html, body {
   overflow-x: hidden !important;
 }
@@ -25,10 +26,11 @@ section.full-bleed,
 #homeHero .swiper-wrapper,
 #homeHero .swiper-slide {
   overflow: hidden !important;
-}
+} */
 
 /* in caso di figure o hero personalizzate */
+/*
 figure.inizio,
 .slide-figure {
   overflow: hidden !important;
-}
+}*/
