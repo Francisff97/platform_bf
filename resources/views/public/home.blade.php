@@ -67,7 +67,30 @@
   <section class="full-bleed">
     <div id="homeHero" class="swiper w-full">
       <div class="swiper-wrapper">
+        @php
+    // prima slide (se c’è)
+    $first = $slides[0] ?? null;
+    $p     = $first?->image_path;
 
+    // URL ottimizzati via tuoi helper (CF fallback)
+    $w = [768, 1200, 1920];
+    $srcset = $p ? implode(', ', [
+        img_url($p, 768,  432, 82, 'cover').' 768w',
+        img_url($p, 1200, 675, 82, 'cover').' 1200w',
+        img_url($p, 1920, 1080,82, 'cover').' 1920w',
+    ]) : null;
+
+    $lcpSrc = $p ? img_url($p, 1200, 675, 82, 'cover') : null; // compromesso ottimo per LCP
+@endphp
+
+@push('preload')
+  @if($lcpSrc)
+    <link rel="preload" as="image"
+          href="{{ $lcpSrc }}"
+          @if($srcset) imagesrcset="{{ $srcset }}" imagesizes="100vw" @endif
+          fetchpriority="high">
+  @endif
+@endpush
         @foreach($slides as $s)
           @php
             $path = $s->image_path ?? null;
