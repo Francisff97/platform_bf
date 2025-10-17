@@ -67,7 +67,7 @@
   (function () {
     // carico web-vitals in modo leggero
     var s = document.createElement('script');
-    s.src = 'https://unpkg.com/web-vitals@3/dist/web-vitals.attribution.umd.min.js';
+    s.src = 'https://unpkg.com/web-vitals@3.5.2/dist/web-vitals.attribution.umd.js';
     s.defer = true;
     s.onload = function () {
       // funzione unica che invia sia a console che a GTM/GA
