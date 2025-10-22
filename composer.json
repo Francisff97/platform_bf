@@ -11,8 +11,8 @@
         "intervention/image": "^3.8",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
+        "league/csv": "^9.27",
         "spatie/laravel-permission": "^6.21",
-        "league/csv": "^9.15",
         "stripe/stripe-php": "^17.6"
     },
     "require-dev": {
