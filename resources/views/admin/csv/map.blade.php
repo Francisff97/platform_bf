@@ -6,7 +6,7 @@
         Map Columns: {{ ucfirst($entity) }}
       </h1>
       <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-        Associa ogni intestazione del CSV a un campo dell’entity. Le colonne non mappate verranno ignorate.
+        Map each CSV header to an entity field. Unmapped columns will be ignored.
       </p>
     </div>
     <div class="text-xs text-gray-500 dark:text-gray-400">
@@ -28,12 +28,12 @@
             <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
             {{ count($headers) }} columns
           </span>
-          <span class="hidden text-xs text-gray-500 sm:inline dark:text-gray-400">Esempio mostrato dalla prima riga valida</span>
+          <span class="hidden text-xs text-gray-500 sm:inline dark:text-gray-400">Example shown from the first valid row</span>
         </div>
 
         {{-- Quick filter headers --}}
         <div x-data="{q:''}" class="relative w-full sm:w-72">
-          <input x-model="q" type="search" placeholder="Filtra colonne CSV..."
+          <input x-model="q" type="search" placeholder="Filter CSV columns..."
                  class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
           <svg class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -63,7 +63,7 @@
                   <div class="relative max-w-xs">
                     <select name="mapping[{{ $h }}]"
                             class="block w-full appearance-none rounded-lg border border-gray-300 bg-white px-3 py-2.5 pr-9 text-sm text-gray-900 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
-                      <option value="">— Non mappare —</option>
+                      <option value="">— Do not map —</option>
                       @foreach($fields as $field => $meta)
                         <option value="{{ $field }}" @selected(($mapping[$h]??'') === $field)>
                           {{ $field }} — {{ $meta['label'] ?? $field }}
@@ -86,7 +86,7 @@
     </div>
 
     {{-- Run mode + sticky footer actions --}}
-    <div class="h-16"></div> {{-- spacer per lo sticky --}}
+    <div class="h-16"></div> {{-- spacer for sticky footer --}}
     <div class="fixed inset-x-0 bottom-0 z-20 border-t border-gray-200 bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:border-gray-800 dark:bg-gray-900/80">
       <div class="mx-auto max-w-7xl px-4 py-3">
         <div class="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -99,14 +99,14 @@
             <span class="h-full w-px bg-gray-200 dark:bg-gray-700"></span>
             <label class="inline-flex items-center gap-2 px-3 py-2 text-gray-700 dark:text-gray-200">
               <input type="radio" name="mode" value="sync" class="accent-indigo-600 dark:accent-indigo-500">
-              Sync <span class="hidden sm:inline text-xs text-gray-500 dark:text-gray-400">(piccoli file)</span>
+              Sync <span class="hidden sm:inline text-xs text-gray-500 dark:text-gray-400">(small files)</span>
             </label>
           </fieldset>
 
           <div class="flex items-center gap-3">
             <a href="{{ route('admin.csv.index') }}"
                class="inline-flex items-center justify-center rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800">
-              Annulla
+              Cancel
             </a>
             <button type="submit"
                     class="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 dark:bg-indigo-500 dark:hover:bg-indigo-400">
