@@ -479,3 +479,15 @@ Route::middleware(['auth', AdminOnly::class]) // oppure il tuo middleware d'admi
 
 Route::get('/app.webmanifest', [PwaController::class, 'manifest'])->name('pwa.manifest');
 Route::get('/sw.js',           [PwaController::class, 'serviceWorker'])->name('pwa.sw');
+
+use App\Http\Controllers\Admin\CsvImportController;
+
+Route::middleware(['auth', \App\Http\Middleware\DemoReadOnly::class, AdminOnly::class])
+    ->prefix('admin/csv')
+    ->name('admin.csv.')
+    ->group(function () {
+        Route::get('/', [CsvImportController::class, 'index'])->name('index');
+        Route::post('/upload', [CsvImportController::class, 'upload'])->name('upload');               // carica CSV e mostra mapping
+        Route::post('/preview', [CsvImportController::class, 'preview'])->name('preview');           // opzionale, per vedere prime righe
+        Route::post('/import', [CsvImportController::class, 'import'])->name('import');              // avvia import (sync/queue)
+    });
