@@ -348,56 +348,62 @@
           </div>
         @endif
       </nav>
-      <script>
-  (function(){
-    let deferredPrompt = null;
+<script>
+  (function () {
     const btn = document.getElementById('pwaInstallBtn');
     if (!btn) return;
 
-    // di default nascondi se non supportato
-    const hide = () => btn.style.display = 'none';
-    const show = () => btn.style.display = '';
+    const isIos        = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
-    hide();
+    // Mostra il bottone su mobile. Nascondi solo se già installata.
+    const show = () => { btn.style.display = ''; };
+    const hide = () => { btn.style.display = 'none'; };
 
-    // Android/Chrome desktop
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      show();
-    });
+    // Se l'app è già installata, non mostrare il bottone
+    if (isStandalone) { hide(); return; }
+
+    // Mostra il bottone:
+    // - se abbiamo già catturato il prompt (Android/Chrome ecc.)
+    // - oppure se è iOS (mostreremo istruzioni "Aggiungi a Home")
+    const markVisible = () => show();
+
+    const pwaState = window.__pwa || { ready: false, deferred: null };
+    if (pwaState.ready || isIos) {
+      markVisible();
+    } else {
+      // Se l’evento arriva dopo, mostra il bottone
+      document.addEventListener('pwa:ready', markVisible, { once: true });
+      // Fallback: se non arriva nulla entro 2s ma siamo su mobile, mostra lo stesso
+      setTimeout(() => {
+        if (!window.__pwa?.ready) {
+          // mostra lo stesso su mobile: l’utente vedrà le istruzioni se necessario
+          markVisible();
+        }
+      }, 2000);
+    }
 
     btn.addEventListener('click', async () => {
-      // iOS (non supporta beforeinstallprompt)
-      const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+      const deferred = window.__pwa?.deferred || null;
 
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        deferredPrompt = null;
-        if (outcome !== 'accepted') {
-          // opzionale: lascia il bottone visibile per riprovare
-        } else {
-          hide();
-        }
+      // Chrome/Android/desktop con prompt disponibile
+      if (deferred) {
+        deferred.prompt();
+        const { outcome } = await deferred.userChoice;
+        window.__pwa.deferred = null; // consumato
+        if (outcome === 'accepted') hide();
         return;
       }
 
+      // iOS: niente beforeinstallprompt → mostra istruzioni
       if (isIos && !isStandalone) {
-        // Mostra istruzioni iOS (Add to Home Screen)
-        alert('To install: tap the Share icon ➜ “Add to Home Screen”.');
+        alert('To install: tap the Share icon → “Add to Home Screen”.');
         return;
       }
 
-      // Nessun supporto
+      // Altri casi (browser non supportato)
       alert('Installation not supported on this browser.');
     });
-
-    // se già in app standalone, non mostrare
-    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
-      hide();
-    }
   })();
 </script>
 
