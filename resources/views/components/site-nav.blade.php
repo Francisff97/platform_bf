@@ -320,7 +320,15 @@
             </svg>
           </a>
         @endforeach
-
+        {{-- Esempio dentro <x-site-nav /> nella sezione mobile menu --}}
+<button
+  id="pwaInstallBtn"
+  class="md:hidden w-full mt-2 rounded-lg px-4 py-2 text-white"
+  style="background: var(--accent);"
+  type="button"
+>
+  Download Web App
+</button>
         @if($showDiscordExtras)
           <div x-data="{ openMore:false }" class="pt-1">
             <button type="button"
@@ -340,6 +348,58 @@
           </div>
         @endif
       </nav>
+      <script>
+  (function(){
+    let deferredPrompt = null;
+    const btn = document.getElementById('pwaInstallBtn');
+    if (!btn) return;
+
+    // di default nascondi se non supportato
+    const hide = () => btn.style.display = 'none';
+    const show = () => btn.style.display = '';
+
+    hide();
+
+    // Android/Chrome desktop
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      show();
+    });
+
+    btn.addEventListener('click', async () => {
+      // iOS (non supporta beforeinstallprompt)
+      const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        if (outcome !== 'accepted') {
+          // opzionale: lascia il bottone visibile per riprovare
+        } else {
+          hide();
+        }
+        return;
+      }
+
+      if (isIos && !isStandalone) {
+        // Mostra istruzioni iOS (Add to Home Screen)
+        alert('To install: tap the Share icon ➜ “Add to Home Screen”.');
+        return;
+      }
+
+      // Nessun supporto
+      alert('Installation not supported on this browser.');
+    });
+
+    // se già in app standalone, non mostrare
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+      hide();
+    }
+  })();
+</script>
 
             <!-- Footer auth -->
       <div class="border-t border-black/10 px-4 py-3 backdrop-blur shrink-0 dark:border-white/10">
