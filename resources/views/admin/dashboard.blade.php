@@ -74,67 +74,67 @@
     @endforeach
   </section>
 
-  {{-- ===== TRENDS + HEALTH ===== --}}
-  @php
-    $ordersPerDay    = $ordersPerDay ?? [3,6,4,9,7,10,5];
-    $max             = max($ordersPerDay) ?: 1;
-    $pts             = collect($ordersPerDay)->map(fn($v,$i)=> ($i*100/(max(1,count($ordersPerDay)-1))).','. (100 - ($v/$max*100)) )->implode(' ');
-    $orders7dPeakDay = $orders7dPeakDay ?? '—';
-    $ordersPending   = (int)($ordersPending ?? 0);
-    $refunds30d      = (int)($refunds30d ?? 0);
-    $newCustomers7d  = (int)($newCustomers7d ?? 0);
-  @endphp
+{{-- ====== TRENDS + HEALTH (SAFE) ====== --}}
+@php
+  use Illuminate\Support\Arr;
+  use Illuminate\Support\Collection;
 
-  <section class="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
-    {{-- trend --}}
-    <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900 lg:col-span-2">
-      <div class="mb-3 flex items-center justify-between gap-3">
-        <div>
-          <h3 class="font-semibold text-gray-900 dark:text-gray-50">Orders — last 7 days</h3>
-          <p class="text-xs text-gray-500 dark:text-gray-400">Peak day: {{ $orders7dPeakDay }}</p>
-        </div>
-        <a href="{{ route('admin.orders.index') }}" class="rounded-lg border px-2.5 py-1 text-xs hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">Open</a>
-      </div>
+  // Normalizza input
+  $ordersPerDay     = $ordersPerDay     ?? [];                // es: [2,0,3,...]
+  $revenuePerDay    = $revenuePerDay    ?? [];                // es: [120, 0, 90,...]
+  $orders7d         = ($orders7d ?? collect()) instanceof Collection ? $orders7d : collect($orders7d);
+  $revenue7d        = ($revenue7d ?? collect()) instanceof Collection ? $revenue7d : collect($revenue7d);
 
-      <div class="relative h-36 w-full overflow-hidden rounded-xl border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/60">
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" class="h-full w-full">
-          <polyline points="{{ $pts }}" fill="none" stroke="currentColor" stroke-width="2" class="text-[color:var(--accent)] opacity-90"/>
-        </svg>
-        <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-white/70 to-transparent dark:from-gray-900/60"></div>
-      </div>
+  // Helper inline
+  $safeMax = function ($arr, $default = 0) {
+      $a = is_array($arr) ? $arr : Arr::wrap($arr);
+      return count($a) ? max($a) : $default;
+  };
+  $safeSum = function ($arr) { $a = is_array($arr) ? $arr : Arr::wrap($arr); return array_sum($a); };
 
-      <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
-        <span class="rounded-full bg-gray-100 px-2 py-0.5 text-gray-700 dark:bg-gray-800 dark:text-gray-200">Total: <strong>{{ array_sum($ordersPerDay) }}</strong></span>
-        <span class="rounded-full bg-gray-100 px-2 py-0.5 text-gray-700 dark:bg-gray-800 dark:text-gray-200">Avg/day: <strong>{{ number_format(array_sum($ordersPerDay)/max(1,count($ordersPerDay)),1) }}</strong></span>
-        <span class="rounded-full bg-gray-100 px-2 py-0.5 text-gray-700 dark:bg-gray-800 dark:text-gray-200">Max: <strong>{{ $max }}</strong></span>
-      </div>
-    </div>
+  // Calcoli "safe"
+  $ordersMax     = $safeMax($ordersPerDay, 0);
+  $revenueMax    = $safeMax($revenuePerDay, 0);
 
-    {{-- health --}}
-    <div class="grid grid-cols-1 gap-4">
-      <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900">
-        <div class="mb-2 flex items-center justify-between">
-          <h4 class="font-semibold">Pending / Processing</h4>
-          <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">{{ $ordersPending }}</span>
-        </div>
-        <p class="text-sm text-gray-600 dark:text-gray-300">Orders awaiting fulfillment.</p>
-      </div>
-      <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900">
-        <div class="mb-2 flex items-center justify-between">
-          <h4 class="font-semibold">Refunds (30d)</h4>
-          <span class="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-semibold text-rose-800 dark:bg-rose-900/40 dark:text-rose-200">{{ $refunds30d }}</span>
-        </div>
-        <p class="text-sm text-gray-600 dark:text-gray-300">Chargebacks or refunded orders.</p>
-      </div>
-      <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900">
-        <div class="mb-2 flex items-center justify-between">
-          <h4 class="font-semibold">New customers (7d)</h4>
-          <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">{{ $newCustomers7d }}</span>
-        </div>
-        <p class="text-sm text-gray-600 dark:text-gray-300">First-time buyers this week.</p>
-      </div>
-    </div>
-  </section>
+  $ordersTotal7d  = (int) ($orders7d->sum('count') ?? 0);
+  $revenueTotal7d = (float)($revenue7d->sum('amount') ?? 0);
+
+  // Flag per mostrare / nascondere intere card o grafici
+  $hasOrdersData  = $safeSum($ordersPerDay)  > 0 || $ordersTotal7d  > 0;
+  $hasRevenueData = $safeSum($revenuePerDay) > 0 || $revenueTotal7d > 0;
+@endphp
+
+<section class="grid gap-4 md:grid-cols-2">
+  {{-- ORDERS --}}
+  <div class="rounded-xl border p-4 dark:border-gray-800">
+    <h4 class="mb-2 font-semibold">Orders (last 7 days)</h4>
+
+    @if($hasOrdersData)
+      {{-- il tuo grafico qui, usando $ordersPerDay / $ordersMax ecc. --}}
+      <div id="ordersChart" data-series='@json($ordersPerDay)' data-max="{{ $ordersMax }}"></div>
+      <div class="mt-3 text-sm opacity-70">Total: {{ $ordersTotal7d }}</div>
+    @else
+      {{-- stato vuoto / scheletro --}}
+      <div class="text-sm text-gray-500 dark:text-gray-400">No data available.</div>
+      <div class="mt-3 h-28 animate-pulse rounded bg-gray-100 dark:bg-gray-800"></div>
+      <div class="mt-3 text-sm opacity-70">Total: 0</div>
+    @endif
+  </div>
+
+  {{-- REVENUE --}}
+  <div class="rounded-xl border p-4 dark:border-gray-800">
+    <h4 class="mb-2 font-semibold">Revenue (last 7 days)</h4>
+
+    @if($hasRevenueData)
+      <div id="revenueChart" data-series='@json($revenuePerDay)' data-max="{{ $revenueMax }}"></div>
+      <div class="mt-3 text-sm opacity-70">Total: @money($revenueTotal7d, $currency ?? 'EUR')</div>
+    @else
+      <div class="text-sm text-gray-500 dark:text-gray-400">No data available.</div>
+      <div class="mt-3 h-28 animate-pulse rounded bg-gray-100 dark:bg-gray-800"></div>
+      <div class="mt-3 text-sm opacity-70">Total: @money(0, $currency ?? 'EUR')</div>
+    @endif
+  </div>
+</section>
 
   {{-- ===== CONTENT MIX + RECENT PURCHASES (50/50) ===== --}}
 @php
