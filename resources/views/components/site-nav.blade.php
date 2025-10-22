@@ -320,15 +320,7 @@
             </svg>
           </a>
         @endforeach
-        {{-- Esempio dentro <x-site-nav /> nella sezione mobile menu --}}
-<button
-  id="pwaInstallBtn"
-  class="md:hidden w-full mt-2 rounded-lg px-4 py-2 text-white"
-  style="background: var(--accent);"
-  type="button"
->
-  Download Web App
-</button>
+        
         @if($showDiscordExtras)
           <div x-data="{ openMore:false }" class="pt-1">
             <button type="button"
@@ -347,6 +339,15 @@
             </div>
           </div>
         @endif
+        {{-- Esempio dentro <x-site-nav /> nella sezione mobile menu --}}
+<button
+  id="pwaInstallBtn"
+  class="md:hidden w-full my-[20px] rounded-lg px-4 py-2 text-white"
+  style="background: var(--accent);"
+  type="button"
+>
+  Download Web App
+</button>
       </nav>
 <script>
   (function () {
