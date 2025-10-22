@@ -13,6 +13,8 @@ use App\Http\Controllers\Admin\AdminUserController;
 
 use App\Http\Controllers\PwaController;
 
+use App\Http\Controllers\Admin\CsvImportController;
+
 
 //Privacy //
 use App\Http\Controllers\PrivacyPublicController;
@@ -479,8 +481,6 @@ Route::middleware(['auth', AdminOnly::class]) // oppure il tuo middleware d'admi
 
 Route::get('/app.webmanifest', [PwaController::class, 'manifest'])->name('pwa.manifest');
 Route::get('/sw.js',           [PwaController::class, 'serviceWorker'])->name('pwa.sw');
-
-use App\Http\Controllers\Admin\CsvImportController;
 
 Route::middleware(['auth', \App\Http\Middleware\DemoReadOnly::class, AdminOnly::class])
     ->prefix('admin/csv')
