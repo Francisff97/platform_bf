@@ -10,6 +10,10 @@ use App\Http\Controllers\RobotsController;
 
 use App\Http\Controllers\Admin\AdminUserController;
 
+
+use App\Http\Controllers\PwaController;
+
+
 //Privacy //
 use App\Http\Controllers\PrivacyPublicController;
 use App\Http\Controllers\Admin\PrivacyController;
@@ -472,3 +476,6 @@ Route::middleware(['auth', AdminOnly::class]) // oppure il tuo middleware d'admi
         Route::get('/{user}/edit', [AdminUserController::class,'edit'])->name('edit');
         Route::put('/{user}',      [AdminUserController::class,'update'])->name('update');
     });
+
+Route::get('/app.webmanifest', [PwaController::class, 'manifest'])->name('pwa.manifest');
+Route::get('/sw.js',           [PwaController::class, 'serviceWorker'])->name('pwa.sw');
