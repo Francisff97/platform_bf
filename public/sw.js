@@ -3,7 +3,7 @@ const ASSETS = [
   '/',                 // homepage
   '/manifest.webmanifest',
   '/favicon-192.png',
-  '/favicon-512.png'
+  '/favicon.png'
 ];
 
 // install
