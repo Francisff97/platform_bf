@@ -75,35 +75,25 @@
   </section>
 
 {{-- ====== TRENDS + HEALTH (SAFE) ====== --}}
+{{-- ====== TRENDS + HEALTH (SAFE) ====== --}}
 @php
-  use Illuminate\Support\Arr;
-  use Illuminate\Support\Collection;
+    // Normalizza: qualsiasi cosa arrivi => array numerici
+    $ordersPerDay  = array_values(array_map('intval',   (array)($ordersPerDay  ?? [])));
+    $revenuePerDay = array_values(array_map('floatval', (array)($revenuePerDay ?? [])));
 
-  // Normalizza input
-  $ordersPerDay     = $ordersPerDay     ?? [];                // es: [2,0,3,...]
-  $revenuePerDay    = $revenuePerDay    ?? [];                // es: [120, 0, 90,...]
-  $orders7d         = ($orders7d ?? collect()) instanceof Collection ? $orders7d : collect($orders7d);
-  $revenue7d        = ($revenue7d ?? collect()) instanceof Collection ? $revenue7d : collect($revenue7d);
+    // Evita errori: max() su array vuoti -> usa [0] come fallback
+    $ordersPeak   = max($ordersPerDay  ?: [0]);
+    $revenuePeak  = max($revenuePerDay ?: [0]);
 
-  // Helper inline
-  $safeMax = function ($arr, $default = 0) {
-      $a = is_array($arr) ? $arr : Arr::wrap($arr);
-      return count($a) ? max($a) : $default;
-  };
-  $safeSum = function ($arr) { $a = is_array($arr) ? $arr : Arr::wrap($arr); return array_sum($a); };
+    // KPI con fallback
+    $orders7d     = (int)   ($orders7d     ?? 0);
+    $revenue7d    = (float) ($revenue7d    ?? 0.0);
+    $customers7d  = (int)   ($customers7d  ?? 0);
 
-  // Calcoli "safe"
-  $ordersMax     = $safeMax($ordersPerDay, 0);
-  $revenueMax    = $safeMax($revenuePerDay, 0);
-
-  $ordersTotal7d  = (int) ($orders7d->sum('count') ?? 0);
-  $revenueTotal7d = (float)($revenue7d->sum('amount') ?? 0);
-
-  // Flag per mostrare / nascondere intere card o grafici
-  $hasOrdersData  = $safeSum($ordersPerDay)  > 0 || $ordersTotal7d  > 0;
-  $hasRevenueData = $safeSum($revenuePerDay) > 0 || $revenueTotal7d > 0;
+    // Serie "sicure" per eventuali chart
+    $ordersSeries  = $ordersPerDay;          // già int
+    $revenueSeries = $revenuePerDay;         // già float
 @endphp
-
 <section class="grid gap-4 md:grid-cols-2">
   {{-- ORDERS --}}
   <div class="rounded-xl border p-4 dark:border-gray-800">
