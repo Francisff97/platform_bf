@@ -2,6 +2,19 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     @stack('preload')
 <head>
+  <script>
+  // Cattura PRESTO il beforeinstallprompt e rendilo disponibile ovunque
+  window.__pwa = { deferred: null, ready: false };
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();                // blocca il prompt auto
+    window.__pwa.deferred = e;         // salva il prompt
+    window.__pwa.ready = true;         // segnala disponibilità
+    document.dispatchEvent(new CustomEvent('pwa:ready'));
+  });
+</script>
+  
+  
   {{-- Manifest + SW + theme --}}
 <link rel="manifest" href="{{ route('pwa.manifest') }}">
 <meta name="theme-color" content="{{ optional(\App\Models\SiteSetting::first())->color_accent ?? '#4f46e5' }}">
