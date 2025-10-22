@@ -139,7 +139,7 @@
         ['label'=>'Platform info',   'route'=>'admin.platform.info',    'match'=>['admin.platform.*']],
         ['label'=>'Privacy e Cookies','route'=>'admin.privacy.edit',   'match'=>['admin.privacy.*']],
         ['label'=>'Google Analytics','route'=>'admin.analytics.edit',   'match'=>['admin.analytics.*']],
-        ['label'=>'Import CSV','route'=>'admin.csv.index',   'match'=>['admin.csv.*']],
+        ['label'=>'Import CSV','route'=>'admin.csv.index',   'match'=>['admin.csv.*']]
       ];
 
       // ------------------------------
@@ -192,7 +192,7 @@
       'items' => [
         ['label'=>'Dashboard', 'route'=>'admin.dashboard', 'match'=>['admin.dashboard']],
         ['label'=>'Image optimizer', 'route'=>'admin.webp.index', 'match'=>['admin.webp.*']],
-        ['label'=>'CSV importer','route'=>'admin.csv.index',   'match'=>['admin.csv.*']],
+        ['label'=>'CSV importer','route'=>'admin.csv.index',   'match'=>['admin.csv.*']]
       ],
     ],
     [
