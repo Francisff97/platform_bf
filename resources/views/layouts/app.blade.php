@@ -2,38 +2,56 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     @stack('preload')
 <head>
-  <link rel="manifest" href="/manifest.webmanifest">
-<link rel="apple-touch-icon" href="/favicon.png">
-<meta name="theme-color" content="#4f46e5">
-  <script>
-  // Cattura PRESTO il beforeinstallprompt e rendilo disponibile ovunque
-  window.__pwa = { deferred: null, ready: false };
+{{-- ================== PWA: Manifest + Icons + Theme ================== --}}
+<link rel="manifest" href="{{ route('pwa.manifest') }}"> {{-- usa SOLO questo, niente duplicati --}}
+<meta name="theme-color" content="{{ optional(\App\Models\SiteSetting::first())->color_accent ?? '#4f46e5' }}">
 
+{{-- Icone (stesse sorgenti della favicon) --}}
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="/favicon.png">  {{-- iOS home screen --}}
+<link rel="mask-icon" href="/favicon.svg" color="{{ optional(\App\Models\SiteSetting::first())->color_accent ?? '#4f46e5' }}">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+{{-- (Opzionale ma utile) dichiara icona maskable nel manifest --}}
+<link rel="prefetch" href="/favicon.png" as="image" imagesizes="512x512">
+  
+  <!-- ================== PWA: beforeinstallprompt (una sola volta in tutta la pagina) ================== -->
+<script>
+  window.__pwa = { deferred: null, ready: false };
   window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();                // blocca il prompt auto
-    window.__pwa.deferred = e;         // salva il prompt
-    window.__pwa.ready = true;         // segnala disponibilità
+    e.preventDefault();
+    window.__pwa.deferred = e;
+    window.__pwa.ready = true;
     document.dispatchEvent(new CustomEvent('pwa:ready'));
   });
 </script>
-  
-  
-  {{-- Manifest + SW + theme --}}
-<link rel="manifest" href="{{ route('pwa.manifest') }}">
-<meta name="theme-color" content="{{ optional(\App\Models\SiteSetting::first())->color_accent ?? '#4f46e5' }}">
 
-{{-- Icone: usa la favicon come logo dell’app --}}
-<link rel="icon" href="/favicon.ico">
-<link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="apple-touch-icon" href="/favicon.png"> {{-- iOS home screen --}}
-
-{{-- Registrazione SW (defer) --}}
+{{-- ================== PWA: Service Worker registration (defer) ================== --}}
 <script defer>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('{{ route('pwa.sw') }}');
+  (function () {
+    if (!('serviceWorker' in navigator)) return;
+
+    const swUrl = '{{ route('pwa.sw') }}'; // il tuo endpoint Laravel del SW
+
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register(swUrl, { scope: '/' }).then(function (reg) {
+        // segnala aggiornamenti del SW (per refresh soft o toast)
+        reg.addEventListener('updatefound', function () {
+          const nw = reg.installing;
+          if (!nw) return;
+          nw.addEventListener('statechange', function () {
+            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+              document.dispatchEvent(new CustomEvent('pwa:updated'));
+            }
+          });
+        });
+      }).catch(function (err) {
+        console.debug('SW register error:', err);
+      });
     });
-  }
+  })();
 </script>
   
   <!-- ===============================
