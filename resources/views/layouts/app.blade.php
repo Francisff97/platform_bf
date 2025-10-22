@@ -2,6 +2,9 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     @stack('preload')
 <head>
+  <link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/favicon.png">
+<meta name="theme-color" content="#4f46e5">
   <script>
   // Cattura PRESTO il beforeinstallprompt e rendilo disponibile ovunque
   window.__pwa = { deferred: null, ready: false };
