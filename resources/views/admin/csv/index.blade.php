@@ -4,7 +4,7 @@
     <div>
       <h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-50">CSV Import</h1>
       <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-        Carica un file CSV e seleziona l’<span class="font-medium">entity</span> di destinazione. Supporto header autodetect.
+        upload a CSV File and select the<span class="font-medium">entity</span> of destination. Support for the header autodetect.
       </p>
     </div>
   </div>
@@ -52,11 +52,11 @@
             <path d="M7 18a2 2 0 01-2-2V8a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1.5M15 13l-3 3m0 0l-3-3m3 3V10" />
           </svg>
           <p class="text-sm text-gray-700 dark:text-gray-200">
-            Trascina qui il CSV o <span class="font-medium text-indigo-600 underline underline-offset-2 dark:text-indigo-400">selezionalo</span>
+            Drag and drop here the CSV or <span class="font-medium text-indigo-600 underline underline-offset-2 dark:text-indigo-400">select it</span>
           </p>
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Formato: .csv — Consigliato UTF-8, delimitatore “,”</p>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Format: .csv — Suggested UTF-8, with separator “,”</p>
           <input x-ref="input" id="file" name="file" type="file" accept=".csv,text/csv" required
-                 class="absolute inset-0 h-full w-full cursor-pointer opacity-0" aria-label="Seleziona file CSV">
+                 class="absolute inset-0 h-full w-full cursor-pointer opacity-0" aria-label="Select CSV file">
         </div>
 
         @error('file')
@@ -67,7 +67,7 @@
       {{-- Actions --}}
       <div class="flex items-center justify-between">
         <p class="text-xs text-gray-500 dark:text-gray-400">
-          I dati non vengono ancora importati: nel passo successivo mapperai le colonne.
+          Dats will be not imported yer: they will be imported on the next step with column map.
         </p>
         <button type="submit"
                 class="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 dark:bg-indigo-500 dark:hover:bg-indigo-400">
