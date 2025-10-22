@@ -2,6 +2,25 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     @stack('preload')
 <head>
+  //PWA //
+  {{-- Manifest + SW + theme --}}
+<link rel="manifest" href="{{ route('pwa.manifest') }}">
+<meta name="theme-color" content="{{ optional(\App\Models\SiteSetting::first())->color_accent ?? '#4f46e5' }}">
+
+{{-- Icone: usa la favicon come logo dell’app --}}
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/favicon.png"> {{-- iOS home screen --}}
+
+{{-- Registrazione SW (defer) --}}
+<script defer>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('{{ route('pwa.sw') }}');
+    });
+  }
+</script>
+  
   <!-- ===============================
        🌐 BASE META
   =============================== -->
