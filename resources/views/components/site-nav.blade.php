@@ -342,8 +342,8 @@
         {{-- Esempio dentro <x-site-nav /> nella sezione mobile menu --}}
 <button
   id="pwaInstallBtn"
-  class="md:hidden w-full my-[20px] rounded-lg px-4 py-2 text-white"
-  style="background: var(--accent);"
+  class="md:hidden w-full rounded-lg px-4 py-2 text-white"
+  style="background: var(--accent); margin: 20px 0"
   type="button"
 >
   Download Web App
