@@ -1,7 +1,7 @@
 const CACHE = 'bf-v1';
 const ASSETS = [
   '/',                 // homepage
-  '/manifest.webmanifest',
+  '/app.webmanifest',
   '/favicon-192.png',
   '/favicon.png'
 ];
