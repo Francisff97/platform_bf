@@ -4,7 +4,7 @@
     <div>
       <h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-50">CSV Import</h1>
       <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-        upload a CSV File and select the<span class="font-medium">entity</span> of destination. Support for the header autodetect.
+        upload a CSV File and select the <span class="font-medium">entity</span> of destination. Support for the header autodetect.
       </p>
     </div>
   </div>
@@ -31,7 +31,7 @@
             </svg>
           </span>
         </div>
-        <p class="text-xs text-gray-500 dark:text-gray-400">Scegli l’oggetto su cui verranno mappate le colonne.</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">Select the entity where the column will be mapped.</p>
       </div>
 
       {{-- File uploader (drag & drop) --}}
@@ -67,7 +67,7 @@
       {{-- Actions --}}
       <div class="flex items-center justify-between">
         <p class="text-xs text-gray-500 dark:text-gray-400">
-          Dats will be not imported yer: they will be imported on the next step with column map.
+          Data will be not imported yer: they will be imported on the next step with column map.
         </p>
         <button type="submit"
                 class="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 dark:bg-indigo-500 dark:hover:bg-indigo-400">
