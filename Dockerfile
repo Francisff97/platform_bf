@@ -1,11 +1,5 @@
-# =========================
-# Base image: PHP + Apache
-# =========================
 FROM php:8.3-apache
 
-# =========================
-# System dependencies
-# =========================
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -18,60 +12,29 @@ RUN apt-get update && apt-get install -y \
     npm \
     && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd
 
-# Enable Apache rewrite
 RUN a2enmod rewrite
 RUN sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
-# Make Apache listen on 8080
+# Listen 8080 + vhost 8080
 RUN sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf \
  && sed -i 's/<VirtualHost \*:80>/<VirtualHost \*:8080>/' /etc/apache2/sites-available/000-default.conf
 
-# Set Apache document root to Laravel public
-RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
+# Single DocumentRoot
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
+ && sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-
-
-# =========================
-# Set working directory
-# =========================
 WORKDIR /var/www/html
-
-# =========================
-# Copy project files
-# =========================
 COPY . .
 
-# =========================
-# Install Composer
-# =========================
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
-# =========================
-# Install PHP dependencies
-# =========================
 RUN composer install --no-dev --optimize-autoloader
 
-# =========================
-# Install Node deps & build Vite
-# =========================
 RUN npm install && npm run build
 
-# =========================
 # Permissions
-# =========================
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# =========================
-# Apache config for Laravel
-# =========================
-RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
-
-# =========================
-# Expose port
-# =========================
 EXPOSE 8080
-
-# =========================
-# Start Apache
-# =========================
 CMD ["apache2-foreground"]
