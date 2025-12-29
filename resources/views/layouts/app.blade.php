@@ -183,7 +183,10 @@
   <!-- ===============================
        🧩 Vite bundle
   =============================== -->
-  @vite(['resources/css/app.css', 'resources/js/app.js'])
+  @if (file_exists(public_path('build/manifest.json')))
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+@endif
+
 </head>
 
 <body class="min-h-screen bg-[var(--bg-light)] dark:bg-[var(--bg-dark)] text-gray-900 dark:text-gray-100 font-sans">
