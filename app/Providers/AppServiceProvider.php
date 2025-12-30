@@ -31,9 +31,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-            if(env('FORCE_HTTPS', false)) {
-            URL::forceScheme('https');
-    }
         
         View::composer('*', function ($view) {
         static $privacy = null;
