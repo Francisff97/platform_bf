@@ -45,4 +45,7 @@ RUN npm install && npm run build
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
 EXPOSE 8080
+# Aggiungi questo prima di CMD ["apache2-foreground"]
+RUN chown -R www-data:www-data /var/www/html/public
+RUN chmod -R 755 /var/www/html/public
 CMD ["apache2-foreground"]
