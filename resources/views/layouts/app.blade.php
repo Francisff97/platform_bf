@@ -2,77 +2,72 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     @stack('preload')
 <head>
-{{-- ================== PWA: Manifest + Icons + Theme ================== --}}
-<link rel="manifest" href="{{ route('pwa.manifest') }}"> {{-- usa SOLO questo, niente duplicati --}}
-<meta name="theme-color" content="{{ optional(\App\Models\SiteSetting::first())->color_accent ?? '#4f46e5' }}">
+  {{-- ================== PWA: Manifest + Icons + Theme ================== --}}
+  <link rel="manifest" href="{{ route('pwa.manifest') }}">
+  <meta name="theme-color" content="{{ optional(\App\Models\SiteSetting::first())->color_accent ?? '#4f46e5' }}">
 
-{{-- Icone (stesse sorgenti della favicon) --}}
-<link rel="icon" href="/favicon.ico">
-<link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="apple-touch-icon" sizes="180x180" href="/favicon.png">  {{-- iOS home screen --}}
-<link rel="mask-icon" href="/favicon.svg" color="{{ optional(\App\Models\SiteSetting::first())->color_accent ?? '#4f46e5' }}">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="icon" href="/favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png">
+  <link rel="mask-icon" href="/favicon.svg" color="{{ optional(\App\Models\SiteSetting::first())->color_accent ?? '#4f46e5' }}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
-{{-- (Opzionale ma utile) dichiara icona maskable nel manifest --}}
-<link rel="prefetch" href="/favicon.png" as="image" imagesizes="512x512">
-  
-  <!-- ================== PWA: beforeinstallprompt (una sola volta in tutta la pagina) ================== -->
-<script>
-  window.__pwa = { deferred: null, ready: false };
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    window.__pwa.deferred = e;
-    window.__pwa.ready = true;
-    document.dispatchEvent(new CustomEvent('pwa:ready'));
-  });
-</script>
+  <link rel="prefetch" href="/favicon.png" as="image" imagesizes="512x512">
 
-{{-- ================== PWA: Service Worker registration (defer) ================== --}}
-<script defer>
-  (function () {
-    if (!('serviceWorker' in navigator)) return;
-
-    const swUrl = '{{ route('pwa.sw') }}'; // il tuo endpoint Laravel del SW
-
-    window.addEventListener('load', function () {
-      navigator.serviceWorker.register(swUrl, { scope: '/' }).then(function (reg) {
-        // segnala aggiornamenti del SW (per refresh soft o toast)
-        reg.addEventListener('updatefound', function () {
-          const nw = reg.installing;
-          if (!nw) return;
-          nw.addEventListener('statechange', function () {
-            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-              document.dispatchEvent(new CustomEvent('pwa:updated'));
-            }
-          });
-        });
-      }).catch(function (err) {
-        console.debug('SW register error:', err);
-      });
+  {{-- ================== PWA: beforeinstallprompt (una sola volta) ================== --}}
+  <script>
+    window.__pwa = { deferred: null, ready: false };
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      window.__pwa.deferred = e;
+      window.__pwa.ready = true;
+      document.dispatchEvent(new CustomEvent('pwa:ready'));
     });
-  })();
-</script>
-  
-  <!-- ===============================
+  </script>
+
+  {{-- ================== PWA: Service Worker registration (defer) ================== --}}
+  <script defer>
+    (function () {
+      if (!('serviceWorker' in navigator)) return;
+
+      const swUrl = '{{ route('pwa.sw') }}';
+
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register(swUrl, { scope: '/' }).then(function (reg) {
+          reg.addEventListener('updatefound', function () {
+            const nw = reg.installing;
+            if (!nw) return;
+            nw.addEventListener('statechange', function () {
+              if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                document.dispatchEvent(new CustomEvent('pwa:updated'));
+              }
+            });
+          });
+        }).catch(function (err) {
+          console.debug('SW register error:', err);
+        });
+      });
+    })();
+  </script>
+
+  {{-- ===============================
        🌐 BASE META
-  =============================== -->
+  =============================== --}}
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-  <link rel="icon" href="/favicon.ico">
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-
-  <!-- ===============================
+  {{-- ===============================
        🔍 SEO (SeoManager)
-  =============================== -->
+  =============================== --}}
   @php
     use App\Support\SeoManager;
     $meta = SeoManager::pageMeta(null, null, $seoCtx ?? []);
     $s = \App\Models\SiteSetting::first();
     $gtm = $s?->gtm_container_id;
   @endphp
+
   <title>{{ $meta['title'] ?? config('app.name') }}</title>
   @if(!empty($meta['description'])) <meta name="description" content="{{ $meta['description'] }}"> @endif
   <meta property="og:title" content="{{ $meta['title'] ?? config('app.name') }}">
@@ -81,9 +76,9 @@
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
 
-  <!-- ===============================
+  {{-- ===============================
        ⚡ Preconnect essenziali
-  =============================== -->
+  =============================== --}}
   <link rel="dns-prefetch" href="//fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -91,17 +86,15 @@
   <link rel="dns-prefetch" href="//unpkg.com">
   <link rel="preconnect" href="https://unpkg.com" crossorigin>
 
-  <!-- Thumbnails YouTube -->
   <link rel="dns-prefetch" href="//i.ytimg.com">
   <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
 
-  <!-- Iubenda (nuova UI) -->
   <link rel="dns-prefetch" href="//embeds.iubenda.com">
   <link rel="preconnect" href="https://embeds.iubenda.com" crossorigin>
 
-  <!-- ===============================
+  {{-- ===============================
        🧩 Google Tag Manager (se presente)
-  =============================== -->
+  =============================== --}}
   @if($gtm)
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -115,9 +108,9 @@
     </script>
   @endif
 
-  <!-- ===============================
+  {{-- ===============================
        🖋️ Google Fonts + Swiper CSS
-  =============================== -->
+  =============================== --}}
   <link rel="preload"
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
         as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -135,12 +128,11 @@
         as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://unpkg.com/swiper@10.3.1/swiper-bundle.min.css"></noscript>
 
-  <!-- Swiper JS non-bloccante -->
   <script defer src="https://unpkg.com/swiper@10.3.1/swiper-bundle.min.js"></script>
 
-  <!-- ===============================
+  {{-- ===============================
        🎨 Theme bootstrap (inline)
-  =============================== -->
+  =============================== --}}
   <script>
     (function(){
       try{
@@ -167,9 +159,9 @@
     })();
   </script>
 
-  <!-- ===============================
+  {{-- ===============================
        🎨 Colori globali (inline critico)
-  =============================== -->
+  =============================== --}}
   <style>
     :root{
       --bg-light: {{ $s->color_light_bg ?? '#f8fafc' }};
@@ -179,12 +171,10 @@
     [x-cloak]{display:none!important}
   </style>
 
-
-  <!-- ===============================
+  {{-- ===============================
        🧩 Vite bundle
-  =============================== -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-
+  =============================== --}}
+  @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
 <body class="min-h-screen bg-[var(--bg-light)] dark:bg-[var(--bg-dark)] text-gray-900 dark:text-gray-100 font-sans">
