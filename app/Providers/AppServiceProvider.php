@@ -84,3 +84,4 @@ class AppServiceProvider extends ServiceProvider
         // opzionale: \Log::warning('Flags load failed', ['e'=>$e->getMessage()]);
     }
 }
+}
