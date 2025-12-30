@@ -2,6 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     @stack('preload')
 <head>
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
   {{-- ================== PWA: Manifest + Icons + Theme ================== --}}
   <link rel="manifest" href="{{ route('pwa.manifest') }}">
   <meta name="theme-color" content="{{ optional(\App\Models\SiteSetting::first())->color_accent ?? '#4f46e5' }}">
