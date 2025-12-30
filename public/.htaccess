@@ -1,50 +1,38 @@
-FROM php:8.3-apache
+<IfModule mod_rewrite.c>
+    RewriteEngine On
 
-RUN apt-get update && apt-get install -y \
-    git \
-    unzip \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    libzip-dev \
-    nodejs \
-    npm \
-    && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd
+    # 1. Forza HTTPS basandosi sull'header di Cloudflare
+    RewriteCond %{HTTP:X-Forwarded-Proto} =http
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-# Abilitiamo i moduli necessari
-RUN a2enmod rewrite
-RUN a2enmod remoteip
-RUN a2enmod headers
+    # 2. Gestione Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-RUN sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+    # 3. Rimuovi Slash finali
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
 
-# FIX: Forza HTTPS se riceve l'header da Cloudflare
-RUN echo 'SetEnvIf X-Forwarded-Proto "^https$" HTTPS=on' >> /etc/apache2/apache2.conf
+    # 4. Front Controller (Laravel/Northfalks)
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
 
-# Configurazione Porte e Vhost
-RUN sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf \
- && sed -i 's/<VirtualHost \*:80>/<VirtualHost \*:8080>/' /etc/apache2/sites-available/000-default.conf
+<IfModule mod_headers.c>
+    # Forza il browser a caricare tutto in HTTPS
+    Header always set Content-Security-Policy "upgrade-insecure-requests"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-Content-Type-Options "nosniff"
+</IfModule>
 
-ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
- && sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
-
-WORKDIR /var/www/html
-COPY . .
-
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-RUN composer install --no-dev --optimize-autoloader
-
-# Build degli asset (Vite)
-RUN npm install && npm run build
-
-# PERMESSI: Fondamentali per evitare i 504 e i file non trovati
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage \
-    && chmod -R 755 /var/www/html/bootstrap/cache \
-    && chmod -R 755 /var/www/html/public
-
-EXPOSE 8080
-CMD ["apache2-foreground"]
+# Cache Asset Vite
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>
