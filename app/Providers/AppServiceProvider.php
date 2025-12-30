@@ -9,6 +9,7 @@ use App\Support\Cart;                   // se usi Cart::count() nel composer
 use App\Models\SiteSetting;       
 use App\Services\FlagsClient;      // per leggere la currency
 use App\Models\PrivacySetting;
+use Illuminate\Support\Facades\URL;
 
 
 class AppServiceProvider extends ServiceProvider
@@ -82,5 +83,7 @@ class AppServiceProvider extends ServiceProvider
         View::share('features', config('features'));
         // opzionale: \Log::warning('Flags load failed', ['e'=>$e->getMessage()]);
     }
+        if(env('FORCE_HTTPS', false)) {
+            URL::forceScheme('https');
     }
 }
