@@ -13,8 +13,16 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd
 
 RUN a2enmod rewrite
+# ABILITIAMO ANCHE IL MODULO REMOTEIP
+RUN a2enmod remoteip
+
 RUN sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+# --- FORZATURA HTTPS PER CLOUDFLARE/PROXY ---
+# Diciamo ad Apache di considerare la connessione sicura se riceve l'header da Cloudflare
+RUN echo 'SetEnvIf X-Forwarded-Proto "^https$" HTTPS=on' >> /etc/apache2/apache2.conf
+# --------------------------------------------
 
 # Listen 8080 + vhost 8080
 RUN sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf \
