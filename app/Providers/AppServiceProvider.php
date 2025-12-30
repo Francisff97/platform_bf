@@ -31,6 +31,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+            if(env('FORCE_HTTPS', false)) {
+            URL::forceScheme('https');
+    }
         
         View::composer('*', function ($view) {
         static $privacy = null;
@@ -82,8 +85,5 @@ class AppServiceProvider extends ServiceProvider
     } catch (\Throwable $e) {
         View::share('features', config('features'));
         // opzionale: \Log::warning('Flags load failed', ['e'=>$e->getMessage()]);
-    }
-        if(env('FORCE_HTTPS', false)) {
-            URL::forceScheme('https');
     }
 }
