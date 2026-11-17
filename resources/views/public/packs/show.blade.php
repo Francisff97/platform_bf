@@ -1,0 +1,325 @@
+{{-- resources/views/public/packs/show.blade.php --}}
+<x-app-layout>
+  @php
+    ($seoSubject = $pack);
+    $catColor = $pack->category->color ?? 'indigo';
+
+    // Path immagine: stessa logica della pack-card
+    $img = $pack->image_url
+      ?? ($pack->image_path ? asset('storage/'.$pack->image_path) : null);
+
+    $titleColorMap = [
+      'indigo'  => 'text-indigo-600 dark:text-indigo-300',
+      'emerald' => 'text-emerald-600 dark:text-emerald-300',
+      'amber'   => 'text-amber-600 dark:text-amber-300',
+      'rose'    => 'text-rose-600 dark:text-rose-300',
+      'sky'     => 'text-sky-600 dark:text-sky-300',
+    ];
+    $titleColor = $titleColorMap[$catColor] ?? 'text-gray-900 dark:text-gray-100';
+
+    $badgeLight = [
+      'indigo'=>'bg-indigo-50 text-indigo-700',
+      'emerald'=>'bg-emerald-50 text-emerald-700',
+      'amber'=>'bg-amber-50 text-amber-700',
+      'rose'=>'bg-rose-50 text-rose-700',
+      'sky'=>'bg-sky-50 text-sky-700',
+    ];
+    $badgeDark = [
+      'indigo'=>'dark:bg-indigo-900 dark:text-indigo-100',
+      'emerald'=>'dark:bg-emerald-900 dark:text-emerald-100',
+      'amber'=>'dark:bg-amber-900 dark:text-amber-100',
+      'rose'=>'dark:bg-rose-900 dark:text-rose-100',
+      'sky'=>'dark:bg-sky-900 dark:text-sky-100',
+    ];
+    $badgeCls = ($badgeLight[$catColor] ?? 'bg-gray-100 text-gray-700').' '.($badgeDark[$catColor] ?? 'dark:bg-gray-800 dark:text-gray-100');
+  @endphp
+
+  {{-- HERO --}}
+  <section class="relative isolate">
+    <div class="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-[var(--accent)]/15 via-transparent to-transparent"></div>
+
+    <div class="mx-auto max-w-6xl px-4 pt-14 sm:pt-20">
+      @if($pack->category)
+        <span class="mb-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-medium {{ $badgeCls }}">
+          {{ $pack->category->name }}
+        </span>
+      @endif
+
+      <h1 class="text-3xl font-extrabold leading-tight {{ $titleColor }} sm:text-4xl">
+        {{ $pack->title }}
+      </h1>
+
+      <div class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+        @if($pack->builder) by <span class="font-medium">{{ $pack->builder->name }}</span> @endif
+      </div>
+    </div>
+  </section>
+
+  {{-- COVER (usa <x-img> + stessa path della card) --}}
+ @php $img = $pack->image_url; @endphp
+
+<div class="relative mt-[50px] aspect-[4/3] w-full h-[500px] overflow-hidden rounded-2xl bg-gray-200 dark:bg-gray-800">
+  @if($img)
+    <x-img :src="$img"
+           alt="{{ $pack->title }}"
+           class="absolute inset-0 h-full w-full object-cover"
+           :width="1200"
+           :height="600"
+           loading="eager"
+    />
+  @else
+    <div class="absolute inset-0 grid place-items-center text-xs text-gray-500">No image</div>
+  @endif
+</div>
+
+  {{-- BODY + BUYBOX --}}
+  <div class="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 py-10 md:grid-cols-3">
+    <section class="md:col-span-2">
+      @if($pack->excerpt)
+        <p class="mb-4 text-lg text-gray-700 dark:text-gray-200">{{ $pack->excerpt }}</p>
+      @endif
+
+      <div class="rounded-2xl border border-gray-100 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/60">
+        <div class="prose max-w-none prose-p:leading-relaxed dark:prose-invert">
+          {!! nl2br(e($pack->description)) !!}
+        </div>
+      </div>
+    </section>
+
+    <aside class="md:col-span-1">
+      <div class="md:sticky md:top-24">
+        <div class="overflow-hidden rounded-2xl border border-[color:var(--accent)]/30 bg-white/80 p-5 shadow-sm backdrop-blur dark:border-[color:var(--accent)]/30 dark:bg-gray-900/60">
+          <div class="text-xs uppercase text-gray-500">Price</div>
+          <div class="mt-1 text-2xl font-extrabold text-gray-900 dark:text-white">
+            @money($pack->price_cents, $pack->currency)
+          </div>
+
+          <form method="POST" action="{{ route('cart.add.pack',$pack) }}" class="mt-5">
+            @csrf
+            <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-white shadow transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3h2l.4 2M7 13h10l3-6H6.4M7 13l-2 7h14M10 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/></svg>
+              Add to cart
+            </button>
+          </form>
+
+          <ul class="mt-5 space-y-2 text-sm text-gray-600 dark:text-gray-300">
+            <li class="flex items-center gap-2"><span class="inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent)]"></span>We contact you after payment</li>
+            <li class="flex items-center gap-2"><span class="inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent)]"></span>Secure checkout via PayPal</li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  {{-- ====== VIDEO / TUTORIALS SOLO SE FLAG ABILITATO ====== --}}
+  @php
+    $tutorialsEnabled = false;
+    if (class_exists(\App\Support\FeatureFlags::class)) {
+      $FF = \App\Support\FeatureFlags::class;
+      foreach (['tutorials','addons.tutorials','video_tutorials'] as $key) {
+        if (
+          (method_exists($FF,'enabled')   && $FF::enabled($key)) ||
+          (method_exists($FF,'isEnabled') && $FF::isEnabled($key)) ||
+          (method_exists($FF,'on')        && $FF::on($key)) ||
+          (method_exists($FF,'get')       && $FF::get($key))
+        ) { $tutorialsEnabled = true; break; }
+      }
+    }
+  @endphp
+
+  @if($tutorialsEnabled)
+    @php
+      $isBuyer = auth()->check() && method_exists(auth()->user(),'hasPurchasedPack')
+        ? auth()->user()->hasPurchasedPack($pack->id)
+        : false;
+
+      $tutorials = $isBuyer
+        ? $pack->tutorials()->orderBy('sort_order')->get()
+        : $pack->tutorials()->where('is_public', true)->orderBy('sort_order')->get();
+
+      $videos = collect();
+
+      // Fallback “Overview”
+      $fallbackUrl = $isBuyer ? ($pack->private_video_url ?? $pack->video_url) : $pack->video_url;
+      if (!empty($fallbackUrl)) {
+        if ($embed = \App\Support\VideoEmbed::from($fallbackUrl)) {
+          $vis = ($isBuyer && $pack->private_video_url && $fallbackUrl === $pack->private_video_url) ? 'private' : 'public';
+          $videos->push(['title'=>'Overview', 'embed'=>$embed, 'visibility'=>$vis]);
+        }
+      }
+
+      // Tutorial collegati
+      foreach ($tutorials as $t) {
+        if (!$t->video_url) continue;
+        if ($embed = \App\Support\VideoEmbed::from($t->video_url)) {
+          $videos->push([
+            'title'      => $t->title ?: 'Tutorial',
+            'embed'      => $embed,
+            'visibility' => $t->is_public ? 'public' : 'private',
+          ]);
+        }
+      }
+
+      $videos   = $videos->unique('embed')->values();
+      $featured = $videos->first();
+      $others   = $videos->slice(1);
+    @endphp
+
+    {{-- ====== PLAYER GRANDE ====== --}}
+    @if($featured)
+      <div class="mx-auto max-w-6xl px-4 pt-6">
+        <div x-data="videoPlayer('{{ $featured['embed'] }}')" class="relative rounded-2xl ring-1 ring-black/5 dark:ring-white/10 bg-white/60 dark:bg-gray-900/60">
+          <div class="relative w-full overflow-hidden rounded-2xl" style="padding-top:56.25%">
+            <iframe
+              x-ref="frame"
+              title="Featured video"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+              loading="lazy"
+              style="position:absolute;inset:0;width:100%;height:100%;border:0;display:block"
+              x-show="loaded"
+              x-cloak
+            ></iframe>
+
+            {{-- Cover + Play --}}
+            <button type="button"
+                    x-show="!loaded" x-cloak
+                    @click="play()"
+                    class="absolute inset-0 grid place-items-center"
+                    :style="`background:#0b0d12 url('${thumb()}') center/cover no-repeat`">
+              <span class="inline-flex h-14 w-14 items-center justify-center rounded-full bg-white/90 shadow">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-gray-900" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              </span>
+            </button>
+          </div>
+
+          {{-- footer: titolo + chip --}}
+          <div class="mt-2 flex items-center justify-between gap-3 px-1 pb-1 text-sm">
+            <div class="px-2 font-medium truncate">{{ $featured['title'] }}</div>
+            @php $visF = $featured['visibility'] ?? 'public'; @endphp
+            <span class="mr-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold
+                         {{ $visF==='public'
+                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200'
+                            : 'bg-rose-50 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200' }}">
+              {{ $visF==='public' ? 'PUBLIC' : 'PRIVATE' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    @endif
+
+    {{-- ====== MORE VIDEOS ====== --}}
+    @if($others->count())
+      <div class="mx-auto max-w-6xl px-4 pb-10 pt-6">
+        <div class="mb-2 flex items-center justify-between">
+          <h3 class="text-lg font-semibold">More videos</h3>
+          <div class="text-xs text-gray-500 sm:hidden">Swipe to watch more →</div>
+        </div>
+
+        {{-- Mobile slider --}}
+        <div class="sm:hidden relative">
+          <div class="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-[var(--bg-light)]/90 to-transparent dark:from-[var(--bg-dark)]/90"></div>
+          <div class="-mx-4 overflow-x-auto px-4">
+            <div class="flex snap-x snap-mandatory gap-4">
+              @foreach($others as $i => $v)
+                <div class="w-[85%] shrink-0 snap-start">
+                  <div x-data="videoPlayer('{{ $v['embed'] }}')"
+                       class="relative overflow-hidden rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-black/5 backdrop-blur
+                              dark:border-gray-800 dark:bg-gray-900/60 dark:ring-white/10">
+                    <div class="relative w-full overflow-hidden rounded-t-2xl" style="padding-top:56.25%">
+                      <iframe x-ref="frame" title="Video {{ $i+1 }}"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                              allowfullscreen loading="lazy"
+                              style="position:absolute;inset:0;width:100%;height:100%;border:0;display:block"
+                              x-show="loaded" x-cloak></iframe>
+
+                      <button type="button" x-show="!loaded" x-cloak @click="play()"
+                              class="absolute inset-0 grid place-items-center"
+                              :style="`background:#0b0d12 url('${thumb()}') center/cover no-repeat`">
+                        <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-900" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                        </span>
+                      </button>
+                    </div>
+
+                    <div class="flex items-center justify-between gap-3 border-t border-black/5 px-3 py-2 text-sm dark:border-white/10">
+                      <div class="font-medium truncate">{{ $v['title'] }}</div>
+                      @php $vis = $v['visibility'] ?? 'public'; @endphp
+                      <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold
+                                   {{ $vis==='public'
+                                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200'
+                                      : 'bg-rose-50 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200' }}">
+                        {{ $vis==='public' ? 'PUBLIC' : 'PRIVATE' }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              @endforeach
+            </div>
+          </div>
+        </div>
+
+        {{-- Desktop grid --}}
+        <div class="hidden sm:grid grid-cols-3 gap-6">
+          @foreach($others as $i => $v)
+            <div x-data="videoPlayer('{{ $v['embed'] }}')"
+                 class="relative overflow-hidden rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-black/5 backdrop-blur
+                        dark:border-gray-800 dark:bg-gray-900/60 dark:ring-white/10">
+              <div class="relative w-full overflow-hidden rounded-t-2xl" style="padding-top:56.25%">
+                <iframe x-ref="frame" title="Video {{ $i+1 }}"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowfullscreen loading="lazy"
+                        style="position:absolute;inset:0;width:100%;height:100%;border:0;display:block"
+                        x-show="loaded" x-cloak></iframe>
+
+                <button type="button" x-show="!loaded" x-cloak @click="play()"
+                        class="absolute inset-0 grid place-items-center"
+                        :style="`background:#0b0d12 url('${thumb()}') center/cover no-repeat`">
+                  <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-900" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                  </span>
+                </button>
+              </div>
+              <div class="flex items-center justify-between gap-3 border-t border-black/5 px-3 py-2 text-sm dark:border-white/10">
+                <div class="font-medium truncate">{{ $v['title'] }}</div>
+                @php $vis = $v['visibility'] ?? 'public'; @endphp
+                <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold
+                             {{ $vis==='public'
+                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200'
+                                : 'bg-rose-50 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200' }}">
+                  {{ $vis==='public' ? 'PUBLIC' : 'PRIVATE' }}
+                </span>
+              </div>
+            </div>
+          @endforeach
+        </div>
+      </div>
+    @endif
+  @endif
+
+  {{-- ==== Alpine helper: anteprima + autoplay al click ==== --}}
+  <script>
+    function videoPlayer(src){
+      return {
+        src,
+        loaded: false,
+        thumb(){
+          try {
+            const s = this.src || '';
+            let m = s.match(/\/embed\/([A-Za-z0-9_-]{6,})/);
+            if (!m) m = s.match(/[?&]v=([A-Za-z0-9_-]{6,})/);
+            if (!m) m = s.match(/youtu\.be\/([A-Za-z0-9_-]{6,})/);
+            const id = m ? m[1] : null;
+            return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : '';
+          } catch(e){ return ''; }
+        },
+        play(){
+          if (this.loaded || !this.$refs.frame) return;
+          const sep = this.src.includes('?') ? '&' : '?';
+          this.$refs.frame.src = `${this.src}${sep}autoplay=1&rel=0`;
+          this.loaded = true;
+        }
+      }
+    }
+  </script>
+</x-app-layout>

@@ -1,0 +1,16 @@
+Aggiunte manuali richieste:
+
+1) app/Http/Kernel.php (array $routeMiddleware) aggiungi:
+    'role' => \Spatie\Permission\Middlewares\RoleMiddleware::class,
+    'permission' => \Spatie\Permission\Middlewares\PermissionMiddleware::class,
+
+2) app/Models/User.php aggiungi nel top:
+    use Spatie\Permission\Traits\HasRoles;
+
+   e dentro la classe:
+    use HasRoles;
+
+3) Esegui:
+    php artisan migrate
+    php artisan db:seed --class=AdminUserSeeder
+    php artisan storage:link
